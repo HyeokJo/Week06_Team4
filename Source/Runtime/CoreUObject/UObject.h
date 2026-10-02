@@ -155,4 +155,52 @@ public:
 	const T* Cast() const {
 		return IsA<T>() ? static_cast<const T*>(this) : nullptr;
 	}
+
+	//Outer 관련 함수,변수들
+public:
+	UObject* GetOuter() const{ return Outer; }
+
+	//부모중 가장 가까운 해당 타입의 객체를 리턴하는 함수
+	template<typename T>
+	T* GetTypedOuter()
+	{
+		for (UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (T* Result = Current->Cast<T>()){ return Result; }
+		}
+		return nullptr;
+	}
+	//부모중 가장 가까운 해당 타입의 객체를 리턴하는 함수
+	template<typename T>
+	const T* GetTypedOuter() const
+	{
+		for (const UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (const T* Result = Current->Cast<T>())
+			{
+				return Result;
+			}
+		}
+		return nullptr;
+	}
+
+	bool IsIn(const UObject* Ancestor) const
+	{
+		if (!Ancestor){	return false; }
+		for (const UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (Current == Ancestor) { return true; }
+		}
+		return false;
+	}
+
+private:
+	UObject* Outer = nullptr;
+
+	// Outer 추가용 생성 헬퍼. 현재 구조를 바꾸고싶지않아서 이런형태임
+	// TODO? : Outer가 필수가 되면 NewObject를 이 로직으로 바꾼다?
+	template<typename TObject, typename... TArgs>
+		requires std::derived_from<TObject, UObject>
+	friend TObject* NewObjectWithOuter(UObject* InOuter,TArgs&&... Args);
+	friend UObject* NewObjectWithOuter(UClass* ClassType,UObject* InOuter);
 };
