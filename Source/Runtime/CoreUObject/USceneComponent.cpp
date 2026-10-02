@@ -1,69 +1,34 @@
-#include "UClass.h"
 #include "USceneComponent.h"
-#include "ThirdParty/Json/json.hpp"
-#include "UObjectGlobals.h" 
-#include "UPrimitiveComponent.h"
+#include "UObjectGlobals.h"
+#include "Runtime/Actors/AActor.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+
+#include <numbers>
 
 
-IMPLEMENT_UCLASS(USceneComponent, UObject)
+IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
 
 void USceneComponent::Initialize()
 {
     Super::Initialize();
-    Scene = nullptr;
-    bHasBegunPlay = false;
-    bTickEnabled = false;
+    bGlobalDirty = true;
 }
 void USceneComponent::Release()
 {
-    if (bHasBegunPlay) { EndPlay(); }
-    if (Scene) { Unregister(); }
-
-    ActorOwner = nullptr;
-    SceneOwner = nullptr;
-    Scene = nullptr;
-
+    // 등록 해제 중에는 기존 소유/부착 관계를 사용할 수 있어야 한다.
     Super::Release();
-}
-
-void USceneComponent::Register(UScene& InScene)
-{
-    if (Scene == &InScene) { return; }
-    if (Scene) { Unregister(); }
-
-    Scene = &InScene;
-}
-
-void USceneComponent::BeginPlay()
-{
-    if (!Scene || bHasBegunPlay) { return; }
-    bHasBegunPlay = true;
-}
-
-void USceneComponent::EndPlay()
-{
-    if (!bHasBegunPlay) { return; }
-    bHasBegunPlay = false;
-}
-
-void USceneComponent::Unregister()
-{
-    if (bHasBegunPlay) { EndPlay(); }
-    Scene = nullptr;
+    AttachParent = nullptr;
+    CachedParent = nullptr;
+    bGlobalDirty = true;
 }
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
     if (InParent == this) { return; }
 
-    SceneOwner = InParent;
-    bGlobalDirty = true;
-    if (InParent)
-    {
-        ActorOwner = InParent->GetActorOwner();
-    }
+    AttachParent = InParent;
+    // 부착 관계는 Transform에만 영향을 주며 Actor 소유권은 변경하지 않는다.
+    MarkActorTransformDirty();
 }
 
 void USceneComponent::Serialize(FArchive& Archive) const
@@ -105,17 +70,18 @@ void USceneComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 
 USceneComponent* USceneComponent::GetTransformParent() const
 {
-    if (SceneOwner)
+    if (AttachParent)
     {
-        return SceneOwner;
+        return AttachParent;
     }
 
-    if (!ActorOwner)
+    AActor* Owner = GetActorOwner();
+    if (!Owner)
     {
         return nullptr;
     }
 
-    USceneComponent* Root = ActorOwner->GetRootComponent();
+    USceneComponent* Root = Owner->GetRootComponent();
     return Root == this ? nullptr : Root;
 }
 
@@ -138,7 +104,7 @@ const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모
     {
         CachedGlobal = RelativeTransform;
     }
-    else if (SceneOwner || bInheritRotation)
+    else if (AttachParent || bInheritRotation)
     {
         CachedGlobal = Parent->CachedGlobal * RelativeTransform;
     }
@@ -177,9 +143,9 @@ void USceneComponent::MarkActorTransformDirty()
     bGlobalDirty = true;
     OnTransformChanged();
 
-    if (ActorOwner)
+    if (AActor* Owner = GetActorOwner())
     {
-        ActorOwner->MarkComponentsTransformDirty();
+        Owner->MarkComponentsTransformDirty();
     }
 }
 

@@ -2,6 +2,8 @@
 #include "Core.h"
 //#include "Core/Container/Array.h"
 
+// TODO : 틱 그룹 형태가 Update,PostUpdate,Count인데, 이건 틱을 호출하는 순서에 관한 내용임.
+// 지금 씬 구조를 생각하면 Editor,PIE,Game,Count등으로 나눠서 어느 모드에서 틱이 돌아가는지로 바꿔야할지도.
 enum class ETickGroup : uint32
 {
     Update,

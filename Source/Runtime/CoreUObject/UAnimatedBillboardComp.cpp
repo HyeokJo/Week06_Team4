@@ -10,7 +10,7 @@ UCLASS_META(UAnimatedBillboardComp, DisplayName, "AnimatedBillboard")
 void UAnimatedBillboardComp::Initialize()
 {
   Super::Initialize();
-  bTickEnabled = true;
+  SetComponentTickEnabled(true);
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,

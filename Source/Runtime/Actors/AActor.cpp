@@ -190,7 +190,7 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 		Addcomp->SetupAttachment(nullptr);
 	}
 
-	else if (Addcomp->GetSceneOwner() == nullptr)
+	else if (Addcomp->GetAttachParent() == nullptr)
 	{
 		Addcomp->SetupAttachment(RootComponent);
 	}

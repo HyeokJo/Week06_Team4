@@ -16,6 +16,7 @@ class AActor : public UObject
 	friend class UScene;
 
 protected:
+	//nullptr일 경우 위치정보가 필요없는 논리적 액터
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
 	bool bTickEnabled = false;
