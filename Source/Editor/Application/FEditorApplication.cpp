@@ -27,19 +27,20 @@
 #include <Runtime/CoreUObject/FStatsManager.h>
 #include "Runtime/Core/Globals.h"
 
+#include "Runtime/Engine/UWorldManager.h"
 
 void FEditorApplication::Initialize_ImguiWin32DX11(
     HWND &Window, ID3D11Device *Device, ID3D11DeviceContext *Context) {
   ImguiManager.Initialize_ImplWin32DX11(Window, Device, Context);
 }
 
-void FEditorApplication::Initialize_Runtime(USceneManager *SceneManager,
+void FEditorApplication::Initialize_Runtime(UWorldManager* WorldManager,
                                             FRenderView *RenderView) {
   this->RenderView = RenderView;
-  this->SceneManager = SceneManager;
-  this->CurrentScene = SceneManager->CurrentScene;
+  this->WorldManager = WorldManager;
+  this->CurrentWorld = WorldManager->CurrentWorld;
 
-  Editor.Initialize(SceneManager);
+  Editor.Initialize(WorldManager);
   Editor.InitMultiViewport(FEditorViewportClient{});
   Editor.LoadState();
   Editor.SetViewLayout(Editor.State.GetSplitMode());
@@ -82,7 +83,7 @@ void FEditorApplication::Render() {
       //컬링 준비 시간 기록?
       // 
       //이동한 오브젝트는 월드 AABB 재계산
-      SceneManager->CurrentScene->UpdateDirtyBounds();
+      WorldManager->CurrentWorld->UpdateDirtyBounds();
   }
 
   //Active인 ViewportClient만 렌더링
@@ -118,7 +119,7 @@ void FEditorApplication::Render() {
           }
 
           // 뷰포트 렌더링 일괄 수행
-          RenderView->RenderView(sceneview, *SceneManager->CurrentScene, EditorCtx);
+          RenderView->RenderView(sceneview, *WorldManager->CurrentWorld, EditorCtx);
 
   }
 

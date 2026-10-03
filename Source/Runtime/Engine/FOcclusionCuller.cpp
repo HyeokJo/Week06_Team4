@@ -1,7 +1,7 @@
 #include "FOcclusionCuller.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Geometry/FAxisAlignedBoundingBox.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FSceneView.h"
 #include "Runtime/Engine/FCamera.h"
 #include "Runtime/Engine/FCameraProjection.h"
@@ -632,11 +632,11 @@ void FOcclusionBuffer::RasterizeConvexPolygon(const FScreenVertex* Polygon, int3
 	//}
 }
 
-uint32 FOcclusionCuller::Cull(const FSceneView& View, const UScene& Scene, 
+uint32 FOcclusionCuller::Cull(const FSceneView& View, const UWorld& World, 
 							  TArray<uint8>& InOutVisibleFlags, TArray<uint8>& OutOccludedFlags)
 {
-	const TArray<UPrimitiveComponent*>& Prims = Scene.GetRenderComponents();
-	const TArray<FAxisAlignedBoundingBox>& Bounds = Scene.GetCullDataList();
+	const TArray<UPrimitiveComponent*>& Prims = World.GetRenderComponents();
+	const TArray<FAxisAlignedBoundingBox>& Bounds = World.GetCullDataList();
 	OutOccludedFlags.assign(Prims.size(), 0);
 
 	// 월드 → D3D 클립
@@ -662,7 +662,7 @@ uint32 FOcclusionCuller::Cull(const FSceneView& View, const UScene& Scene,
 		Candidates.reserve(Prims.size());
 
 		//Prims[]로 접근하는 것보다 연속된 배열인 TargetFlags로 가져오는게 캐시 효율이 좋다.
-		const TArray<uint8>& TargetFlags = Scene.GetOcclusionTargetFlags();
+		const TArray<uint8>& TargetFlags = World.GetOcclusionTargetFlags();
 
 		// 중심의 w만 필요하다 → 클립 좌표 4번째 성분 = (x, y, z, 1) · (4번째 열)
 		// 전부 행렬 계산할 거까진 없다.

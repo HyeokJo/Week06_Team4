@@ -6,14 +6,14 @@
 #include <type_traits>
 #include <concepts>
 
-class UScene;
+class UWorld;
 
 class AActor : public UObject
 {
 	DECLARE_UCLASS(AActor, UObject)
 	GENERATED_BODY()
 
-	friend class UScene;
+	friend class UWorld;
 
 protected:
 	//nullptr일 경우 위치정보가 필요없는 논리적 액터
@@ -29,7 +29,7 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
-	UScene* GetOwner() const { return Owner; }
+	UWorld* GetOwner() const { return Owner; }
 
 	void CreateRootComponent(UClass* ClassType);
 
@@ -45,7 +45,7 @@ public:
 	void MarkComponentsTransformDirty();
 
 	void AddComponent(USceneComponent* Addcomp);
-	virtual void Register(UScene& Scene);
+	virtual void Register(UWorld& World);
 	virtual void BeginPlay();
 	virtual void Update(float DeltaTime);
 	virtual void EndPlay();
@@ -57,6 +57,6 @@ public:
 	void Destroy();
 
 private:
-	UScene* Owner = nullptr; // SpawnActor될 때 설정됨
+	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
 };

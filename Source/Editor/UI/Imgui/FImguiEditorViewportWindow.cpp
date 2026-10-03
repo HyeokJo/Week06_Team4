@@ -3,7 +3,7 @@
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Engine/FRayCastingManager.h"
 #include "Runtime/Engine/FSceneBVH.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Input/FInputManager.h"
 #include "Runtime/Math/FVector.h"
 #include "Runtime/Core/Log.h"
@@ -379,7 +379,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     FVector ImpactPoint;
     bool bHit = false;
 
-    UScene *PickScene = Editor.GetCurrentScene();
+    UWorld *PickWorld = Editor.GetCurrentWorld();
 
     // 1) 마우스 화면 좌표 획득
     // 2) 화면 좌표 -> 월드 좌표로의 픽 레이(Pick Ray) 계산
@@ -397,9 +397,9 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     ++Editor.PickingAttempts;
 
     // 5) 모든 오브젝트(프리미티브)에 대해 충돌 판정
-    if (Editor.bUseBVHPicking && PickScene)
+    if (Editor.bUseBVHPicking && PickWorld)
     {
-        bHit = PickScene->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
+        bHit = PickWorld->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
     }
     else
     {

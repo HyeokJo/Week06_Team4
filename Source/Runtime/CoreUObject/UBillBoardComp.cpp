@@ -1,6 +1,6 @@
 #include "UBillBoardComp.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Core/Log.h"

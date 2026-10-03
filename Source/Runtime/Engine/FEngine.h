@@ -3,7 +3,7 @@
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Engine/FRenderView.h"
-#include "Runtime/Engine/USceneManager.h"
+#include "Runtime/Engine/UWorldManager.h"
 #include "Editor/Application/IApplication.h"
 
 class FEngineLoop;
@@ -18,7 +18,7 @@ private:
 	FRenderView RenderView{ Renderer };
 	FEngineLoop& EngineLoop;
 	TUniquePtr<IApplication> Application;
-	USceneManager SceneManager;
+	UWorldManager WorldManager;
 
 public:
 	FEngine(FEngineLoop& InEngineLoop)

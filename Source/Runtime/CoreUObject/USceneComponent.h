@@ -5,7 +5,7 @@
 #include "UObject.h"
 #include "UActorComponent.h"
 
-class UScene;
+class UWorld;
 //class AActor;
 class FArchive;
 
