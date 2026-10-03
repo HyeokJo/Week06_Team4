@@ -30,6 +30,12 @@ void UWorld::Initialize()
     bInitialized = true;
 }
 
+void UWorld::Initialize(EWorldType InWorldType)
+{
+    Initialize();
+    WorldType = InWorldType;
+}
+
 void UWorld::Release()
 {
     if (bHasBegunPlay) {

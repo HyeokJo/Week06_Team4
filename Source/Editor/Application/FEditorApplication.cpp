@@ -26,21 +26,18 @@
 #include <Editor/UI/Imgui/FImguiStatsWindow.h>
 #include <Runtime/CoreUObject/FStatsManager.h>
 #include "Runtime/Core/Globals.h"
-
-#include "Runtime/Engine/UWorldManager.h"
+#include "Runtime/Engine/FEngine.h"
 
 void FEditorApplication::Initialize_ImguiWin32DX11(
     HWND &Window, ID3D11Device *Device, ID3D11DeviceContext *Context) {
   ImguiManager.Initialize_ImplWin32DX11(Window, Device, Context);
 }
 
-void FEditorApplication::Initialize_Runtime(UWorldManager* WorldManager,
-                                            FRenderView *RenderView) {
+void FEditorApplication::Initialize_Runtime(FRenderView *RenderView)
+{
   this->RenderView = RenderView;
-  this->WorldManager = WorldManager;
-  this->CurrentWorld = WorldManager->CurrentWorld;
 
-  Editor.Initialize(WorldManager);
+  Editor.Initialize();
   Editor.InitMultiViewport(FEditorViewportClient{});
   Editor.LoadState();
   Editor.SetViewLayout(Editor.State.GetSplitMode());
@@ -74,8 +71,6 @@ void FEditorApplication::Tick(float DeltaTime) {
 }
 
 void FEditorApplication::Render() {
-  TArray<FEditorViewportClient> &EditorViewports = Editor.GetViewports();
-  
   // 렌더 준비
   RenderView->PrepareRender();
 
@@ -83,78 +78,11 @@ void FEditorApplication::Render() {
       //컬링 준비 시간 기록?
       // 
       //이동한 오브젝트는 월드 AABB 재계산
-      WorldManager->CurrentWorld->UpdateDirtyBounds();
+      GEngine->UpdateWorldBounds();
   }
 
-  //Active인 ViewportClient만 렌더링
-  for (SWindow& Leaf : Editor.Leaf)
-  {
-      if (!Leaf.bisActive) continue;
-      FEditorViewportClient& EditorViewport = EditorViewports[Leaf.ViewportIndex];
-
-          // 뷰포트 렌더링 명세 구성
-          FSceneView sceneview{
-              .Camera = EditorViewport.ViewportCamera,
-              .ViewProj = EditorViewport.ViewportCamera.GetViewProjectionMatrix(),
-              .TopLeftUV = EditorViewport.TopLeftUV,
-              .LengthUV = EditorViewport.LengthUV,
-              .ViewMode = EditorViewport.ViewMode,
-              .ShowFlags = EditorViewport.ShowFlags,
-              .LightConstants = Editor.GlobalLight
-          };
-
-          // 에디터 렌더링 컨텍스트 구성
-          FEditorRenderContext EditorCtx;
-          EditorCtx.SelectedActor = Editor.GetSelectedActor();
-          EditorCtx.SelectedTransform = Editor.SelectedTransform;
-          EditorCtx.Gizmo = Editor.ObjectSelected() ? &Editor.GetGizmo() : nullptr;
-          EditorCtx.TextComp = Editor.ObjectSelected() ? Editor.GetTextcomp() : nullptr;
-          EditorCtx.Grid = &EditorViewport.GetGrid();
-          EditorCtx.VisualizerRegistry = &VisualizerRegistry;
-
-          if (EditorCtx.SelectedActor) {
-              if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
-                  EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
-              }
-          }
-
-          // 뷰포트 렌더링 일괄 수행
-          RenderView->RenderView(sceneview, *WorldManager->CurrentWorld, EditorCtx);
-
-  }
-
-  //기즈모 그리기
-  if (Editor.ObjectSelected())
-  {
-      for (const SWindow& Leaf : Editor.Leaf)
-      {
-          if (!Leaf.bisActive)
-              continue;
-
-          const auto& Viewport = EditorViewports[Leaf.ViewportIndex];
-
-          FSceneView SceneView{
-    .Camera = Viewport.ViewportCamera,
-    .ViewProj = Viewport.ViewportCamera.GetViewProjectionMatrix(),
-    .TopLeftUV = Viewport.TopLeftUV,
-    .LengthUV = Viewport.LengthUV,
-    .ViewMode = Viewport.ViewMode,
-    .ShowFlags = Viewport.ShowFlags,
-    .LightConstants = Editor.GlobalLight
-          };
-
-          RenderView->RenderOverlayPass(Viewport.ViewportCamera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());
-          // 마지막으로 그린 뷰의 렌더 모드가 남지 않도록 설정
-
-          RenderView->SetRenderMode(Viewport.ViewMode);
-          RenderView->RenderGizmo(
-              Editor.SelectedTransform,
-              Viewport.ViewportCamera,
-              Viewport.TopLeftUV,
-              Viewport.LengthUV,
-              Editor.GetGizmo());
-      }
-  }
+  Editor.RenderViewports(*RenderView);
+  Editor.RenderGizmo(*RenderView);
 
   ImguiManager.RenderUI();
 }

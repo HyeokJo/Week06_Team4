@@ -25,6 +25,7 @@ class UWorld : public UObject
 
 public:
     void Initialize() override;
+    void Initialize(EWorldType InWorldType);
     void Release() override;
     void Activate();
     void Deactivate();
@@ -103,6 +104,8 @@ public:
     void DestroyActor(AActor* Actor);
 
     AActor* SpawnActor(UClass* ClassType);
+
+    const EWorldType GetWorldType() const { return WorldType; }
 
 private:
     FScene* Scene;

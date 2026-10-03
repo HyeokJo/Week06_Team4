@@ -1,4 +1,4 @@
-    #pragma once
+#pragma once
 
 #include "Editor/EditorViewport/FEditorViewportClient.h"
 #include "Editor/Gizmo/FGizmo.h"
@@ -8,10 +8,11 @@
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/TWeakObjectPtr.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Engine/UWorldManager.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/UI/SSplitter.h"
+#include "Runtime/Engine/FEngine.h"
+#include "Editor/Visualizer/FVisualizerRegistry.h"
 
 enum class EEditorPrimitiveType : uint8 {
   Cube,
@@ -20,6 +21,8 @@ enum class EEditorPrimitiveType : uint8 {
   Billboard,
   Spotlight,
 };
+
+class FRenderView;
 
 class FEditor {
 public:
@@ -50,62 +53,66 @@ public:
   }
 
 public:
-  void Initialize(UWorldManager* WorldManager);
-  void Shutdown();
+    void Initialize();
+    void Shutdown();
 
-  void Process();
+    void Process();
 
-  void NewScene();
-  void SaveWorld(const FString &Path);
-  void LoadWorld(const FString &Path);
-  bool CheckSceneExists();
+    void NewScene();
+    void SaveWorld(const FString &Path);
+    void LoadWorld(const FString &Path);
 
-  void AddViewport(FEditorViewportClient Viewport);
-  void InitMultiViewport(FEditorViewportClient Viewport);
-  void ResizeView(FEditorState::SplitViewMode mode);
-  void DeleteViewport(int32 IndexOfViewport);
-  FEditorViewportClient* GetActiveViewport(); // 임시로 0번 반환
+    void AddViewport(FEditorViewportClient Viewport);
+    void InitMultiViewport(FEditorViewportClient Viewport);
+    void ResizeView(FEditorState::SplitViewMode mode);
+    void DeleteViewport(int32 IndexOfViewport);
+    FEditorViewportClient* GetActiveViewport(); // 임시로 0번 반환
 
-  void UpdateCamera();
+    void UpdateCamera();
 
-  bool SelectActor(AActor *Actor);
-  void UnSelectActor();
-  AActor *GetSelectedActor() const { return SelectedActor.Get(); }
-  [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
-  [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
+    bool SelectActor(AActor *Actor);
+    void UnSelectActor();
+    AActor *GetSelectedActor() const { return SelectedActor.Get(); }
+    [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
+    [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
 
-  [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
-    return EditorViewports;
-  }
-  [[nodiscard]] UWorld* GetCurrentWorld() const {
-    return WorldManager ? WorldManager->CurrentWorld : nullptr;
-  }
-  void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
-  // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
-  [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
-  FGizmo &GetGizmo() { return Gizmo; }
-  FRenderResourceLibrary *GetRendererLibrary();
+    [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
+        return EditorViewports;
+    }
+    [[nodiscard]] UWorld* GetCurrentWorld() const
+    {
+        return GEngine ? GEngine->GetWorld(EWorldType::Editor) : nullptr;
+    }
+    void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
+    // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
+    [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
+    FGizmo& GetGizmo() { return Gizmo; }
+    FRenderResourceLibrary *GetRendererLibrary();
 
-  void ClearSelectionForGC();
+    void ClearSelectionForGC();
 
-  void SaveState();
-  void LoadState();
-  void SetViewLayout(FEditorState::SplitViewMode mode);
-  UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+    void SaveState();
+    void LoadState();
+    void SetViewLayout(FEditorState::SplitViewMode mode);
+    UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+
+    void RenderViewports(FRenderView& RenderView);
+    void RenderGizmo(FRenderView& RenderView);
   
- //Viewport관련
-  int32 ActiveViewportIndex = 0;
-  SWindow* Root=nullptr;
-  SWindow Leaf[4];
-  SSplitterH HorizonSplitter; //세로선
-  SSplitterH HorizonSplitter2; //세로선
-  SSplitterV VerticalSplitter; // 가로선
+    //Viewport관련
+    int32 ActiveViewportIndex = 0;
+    SWindow* Root = nullptr;
+    SWindow Leaf[4];
+    SSplitterH HorizonSplitter; //세로선
+    SSplitterH HorizonSplitter2; //세로선
+    SSplitterV VerticalSplitter; // 가로선
+    FVisualizerRegistry VisualizerRegistry;
+
 private:
-  UWorldManager* WorldManager =
-      nullptr; // 씬을 다중으로 가질 수 있도록 구조개선 가능-이경우 에디터쪽에
-               // 클래스를 추가해 씬과 FEditorViewportClient들을 연관
-  TArray<FEditorViewportClient> EditorViewports;
-  FGizmo Gizmo;
-  TWeakObjectPtr<AActor> SelectedActor;
-  TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
+    // 씬을 다중으로 가질 수 있도록 구조개선 가능-이경우 에디터쪽에
+    // 클래스를 추가해 씬과 FEditorViewportClient들을 연관
+    TArray<FEditorViewportClient> EditorViewports;
+    FGizmo Gizmo;
+    TWeakObjectPtr<AActor> SelectedActor;
+    TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 };
