@@ -157,7 +157,7 @@ void FEngine::RemoveWorld(UWorld* InWorld)
 {
 	if (InWorld == nullptr) { return; }
 
-	int Index = 0;
+	int Index = -1;
 
 	for (int i = 0; i < WorldList.size(); ++i)
 	{
@@ -168,8 +168,11 @@ void FEngine::RemoveWorld(UWorld* InWorld)
 		}
 	}
 
-	std::swap(WorldList[Index], WorldList.back());
-	WorldList.pop_back();
+	if (Index >= 0)
+	{
+		std::swap(WorldList[Index], WorldList.back());
+		WorldList.pop_back();
+	}
 
 	InWorld->EndPlay();
 	InWorld->Deactivate();
