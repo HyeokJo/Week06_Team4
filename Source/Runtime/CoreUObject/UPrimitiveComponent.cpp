@@ -5,6 +5,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/Asset/UStaticMesh.h"
 #include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(UPrimitiveComponent, USceneComponent)
 
@@ -58,9 +59,9 @@ void UPrimitiveComponent::SetColor(const FVector4& Color, int32 Index)
 
 void UPrimitiveComponent::MarkBoundDirty()
 {
-    if (World)
+    if (Level)
     {
-        World->MarkBoundsDirty(this);
+        Level->GetWorld()->MarkBoundsDirty(this);
     }
 }
 
@@ -90,22 +91,22 @@ FAxisAlignedBoundingBox UPrimitiveComponent::GetViewBounds(const FCamera& Camera
     return FAxisAlignedBoundingBox(GetWorldBounds(), Camera.GetViewMatrix());
 }
 
-void UPrimitiveComponent::Register(UWorld& InWorld)
+void UPrimitiveComponent::Register(ULevel& InLevel)
 {
     if (RenderData.Type == ERenderType::None)
     {
         RenderData.Type = ERenderType::Primitive;
     }
 
-    Super::Register(InWorld);
-    InWorld.AddRenderComponent(this);
+    Super::Register(InLevel);
+    InLevel.GetWorld()->AddRenderComponent(this);
 }
 
 void UPrimitiveComponent::Unregister()
 {
-    if (World)
+    if (Level)
     {
-        World->RemoveRenderComponent(this);
+        Level->GetWorld()->RemoveRenderComponent(this);
     }
     Super::Unregister();
 }
