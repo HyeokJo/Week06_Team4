@@ -145,7 +145,9 @@ void FEngine::AddWorld(UWorld* World, EWorldType WorldType)
 	World->Initialize(WorldType);
 	World->SetRenderResourceLibrary(&FRenderResourceLibrary::Get());
 	World->Activate();
-	World->BeginPlay();
+
+	if (WorldType == EWorldType::PIE || WorldType == EWorldType::Game)
+		World->BeginPlay();
 
 	WorldList.push_back(World);
 
