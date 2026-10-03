@@ -36,7 +36,7 @@ void AActor::Release()
 
 	while (!AttachedComp.empty())
 	{
-		USceneComponent* Component = AttachedComp.back();
+		UActorComponent* Component = AttachedComp.back();
 		std::erase(AttachedComp, Component);
 
 		if (RootComponent == Component)
@@ -168,33 +168,37 @@ void AActor::SetRootComponent(USceneComponent* Component)
 
 void AActor::MarkComponentsTransformDirty()
 {
-	for (USceneComponent* Component : AttachedComp)
+	if (RootComponent) 
 	{
-		if (Component)
+		RootComponent->OnTransformChanged();
+		for (USceneComponent* Component : RootComponent->AttachedComponents)
 		{
-			Component->OnTransformChanged();
+			if (Component)
+			{
+				Component->OnTransformChanged();
+			}
 		}
-	}
+	}	
 }
 
-void AActor::AddComponent(USceneComponent* Addcomp)
+void AActor::AddComponent(UActorComponent* Addcomp)
 {
 	if (Addcomp == nullptr)
 	{
 		return;
 	}
-
-	if (RootComponent == nullptr)
-	{
-		RootComponent = Addcomp;
-		Addcomp->SetupAttachment(nullptr);
+	if (Addcomp->IsA(USceneComponent::StaticClass())) {
+		USceneComponent* SceneComp = static_cast<USceneComponent*>(Addcomp);
+		if (RootComponent == nullptr)
+		{
+			RootComponent = SceneComp;
+			SceneComp->SetupAttachment(nullptr);
+		}
+		else if (SceneComp->GetAttachParent() == nullptr)
+		{
+			SceneComp->SetupAttachment(RootComponent);
+		}
 	}
-
-	else if (Addcomp->GetAttachParent() == nullptr)
-	{
-		Addcomp->SetupAttachment(RootComponent);
-	}
-
 	Addcomp->ActorOwner = this;
 	AttachedComp.push_back(Addcomp);
 	Addcomp->Initialize();
@@ -223,7 +227,7 @@ void AActor::Register(UWorld& World)
 	}
 
 	Owner = &World;
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
@@ -239,7 +243,7 @@ void AActor::BeginPlay() {
 	}
 
 	bHasBegunPlay = true;
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
@@ -254,7 +258,7 @@ void AActor::Update(float DeltaTime) {
 		return;
 	}
 
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component && Component->IsTickEnabled())
 		{

@@ -203,4 +203,8 @@ private:
 		requires std::derived_from<TObject, UObject>
 	friend TObject* NewObjectWithOuter(UObject* InOuter,TArgs&&... Args);
 	friend UObject* NewObjectWithOuter(UClass* ClassType,UObject* InOuter);
+
+
+	//복사 정책 관련 함수
+	UObject* Duplicate(UObject* Source) const;
 };

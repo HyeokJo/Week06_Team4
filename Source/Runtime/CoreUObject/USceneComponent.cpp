@@ -4,6 +4,7 @@
 #include "Runtime/Engine/FArchive.h"
 
 #include <numbers>
+#include <algorithm>
 
 
 IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
@@ -17,18 +18,53 @@ void USceneComponent::Release()
 {
     // 등록 해제 중에는 기존 소유/부착 관계를 사용할 수 있어야 한다.
     Super::Release();
+    if (AttachParent)
+    {
+        std::erase(AttachParent->AttachedComponents, this);
+    }
     AttachParent = nullptr;
+    // 자식의 수명은 소유 Actor가 관리한다. 여기서는 부착 참조만 끊는다.
+    for (USceneComponent* Child : AttachedComponents)
+    {
+        if (Child && Child->AttachParent == this)
+        {
+            Child->AttachParent = nullptr;
+            Child->CachedParent = nullptr;
+            Child->MarkActorTransformDirty();
+        }
+    }
+    AttachedComponents.clear();
     CachedParent = nullptr;
     bGlobalDirty = true;
 }
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
-    if (InParent == this) { return; }
+    if (InParent == AttachParent) { return; }
+
+    // 자기 자신이나 자손에 부착하면 Transform 계산과 트리 순회가 순환한다.
+    for (USceneComponent* Parent = InParent; Parent; Parent = Parent->GetTransformParent())
+    {
+        if (Parent == this) { return; }
+    }
+
+    if (AttachParent)
+    {
+        std::erase(AttachParent->AttachedComponents, this);
+    }
 
     AttachParent = InParent;
+    if (AttachParent)
+    {
+        AttachParent->AttachedComponents.push_back(this);
+    }
     // 부착 관계는 Transform에만 영향을 주며 Actor 소유권은 변경하지 않는다.
     MarkActorTransformDirty();
+}
+
+void USceneComponent::SetupDetachment()
+{
+    SetupAttachment(nullptr);
 }
 
 void USceneComponent::Serialize(FArchive& Archive) const

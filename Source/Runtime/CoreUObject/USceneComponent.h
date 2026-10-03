@@ -21,7 +21,7 @@ public:
     USceneComponent* GetAttachParent() const { return AttachParent; }
 
     void SetupAttachment(USceneComponent* InParent);
-
+    void SetupDetachment();
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
     
@@ -58,8 +58,10 @@ public:
     void SetBatchIndex(int32 Index) { BatchIndex = Index; }
     int32 GetBatchIndex() const { return BatchIndex; }
 
+	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComponents; }
 protected:
     USceneComponent* AttachParent = nullptr;
+    TArray<USceneComponent*> AttachedComponents;
     bool bInheritRotation = true;
 
     int32 BatchIndex = -1;

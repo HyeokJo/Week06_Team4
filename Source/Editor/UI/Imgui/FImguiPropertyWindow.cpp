@@ -42,14 +42,11 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ShowActorHeader(*SelectedActor);
 		ImGui::Separator();
 
-		if (SelectedActor->GetRootComponent())
-		{
-			ShowComponentHierarchy(*SelectedActor);
-			ImGui::Separator();
+		ShowComponentHierarchy(*SelectedActor);
+		ImGui::Separator();
+		ShowComponentSections(Editor, *SelectedActor);
 
-			ShowComponentSections(Editor, *SelectedActor);
-		}
-		else
+		if (!SelectedActor->GetRootComponent())
 		{
 			ImGui::TextDisabled("No RootComponent");
 		}
@@ -73,7 +70,7 @@ void FImguiPropertyWindow::ShowActorHeader(const AActor& Actor) const
 
 void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
 {
-	ImGui::TextDisabled("Components Hierarchy");
+	ImGui::TextDisabled("Owned Components");
 
 	const USceneComponent* RootComp = Actor.GetRootComponent();
 	if (RootComp)
@@ -82,7 +79,7 @@ void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
 		ImGui::BulletText("[Root] %s (ID: %u)", RootName, RootComp->GetUUID());
 	}
 
-	for (const USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (const UActorComponent* Comp : Actor.GetAttachedComponents())
 	{
 		if (!Comp || Comp == RootComp)
 		{
@@ -90,9 +87,7 @@ void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
 		}
 
 		const char* SubName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "SubComponent";
-		ImGui::Indent(15.0f);
-		ImGui::BulletText("└── [Sub] %s (ID: %u)", SubName, Comp->GetUUID());
-		ImGui::Unindent(15.0f);
+		ImGui::BulletText("%s (ID: %u)", SubName, Comp->GetUUID());
 	}
 }
 
@@ -100,7 +95,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
 	USceneComponent* RootComp = Actor.GetRootComponent();
 
-	for (USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetAttachedComponents())
 	{
 		if (!Comp)
 		{
@@ -111,7 +106,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 		const char* CompTypeName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
 
 		// ### 뒤쪽이 실제 ID 라서, 앞의 표시 이름이 바뀌어도 접힘 상태가 유지된다.
-		std::string SectionTitle = (bIsRoot ? "[Root] " : "[Sub] ") + std::string(CompTypeName)
+		std::string SectionTitle = (bIsRoot ? "[Root] " : "") + std::string(CompTypeName)
 			+ " (ID: " + std::to_string(Comp->GetUUID()) + ")###CompHeader_" + std::to_string(Comp->GetUUID());
 
 		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
@@ -129,9 +124,12 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 }
 
 void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	USceneComponent& Comp, bool bIsRoot)
+	UActorComponent& Comp, bool bIsRoot)
 {
-	ShowTransform(Editor, Comp, bIsRoot);
+	if (USceneComponent* SceneComp = Comp.Cast<USceneComponent>())
+	{
+		ShowTransform(Editor, *SceneComp, bIsRoot);
+	}
 
 	if (Comp.IsA<UTextInstanceComponent>())
 	{

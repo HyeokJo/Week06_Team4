@@ -18,7 +18,7 @@ class AActor : public UObject
 protected:
 	//nullptr일 경우 위치정보가 필요없는 논리적 액터
 	USceneComponent* RootComponent = nullptr;
-	TArray<USceneComponent*> AttachedComp;
+	TArray<UActorComponent*> AttachedComp;
 	bool bTickEnabled = false;
 
 	explicit AActor() = default;
@@ -35,7 +35,7 @@ public:
 
 	void SetRootComponent(USceneComponent* Component);
 	USceneComponent* GetRootComponent() const { return RootComponent; }
-	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
+	const TArray<UActorComponent*>& GetAttachedComponents() const { return AttachedComp; }
 
 
 	FTransform GetTransform() const { return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{}; }
@@ -44,7 +44,7 @@ public:
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
 
-	void AddComponent(USceneComponent* Addcomp);
+	void AddComponent(UActorComponent* Addcomp);
 	virtual void Register(UWorld& World);
 	virtual void BeginPlay();
 	virtual void Update(float DeltaTime);

@@ -106,7 +106,8 @@ public:
 
 private:
     FScene* Scene;
-    ULevel* Level;
+    ULevel* Level;// persistent level
+	// TODO: SubLevel 지원 필요
     EWorldType WorldType;
 
     bool bInitialized = false;
