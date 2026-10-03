@@ -10,12 +10,13 @@
 #include "Runtime/Geometry/FFrustum.h"
 #include "Runtime/Engine/FCulling.h"
 #include "Runtime/Engine/FOcclusionCuller.h"
+#include "Runtime/Engine/UWorld.h"
 
 class FCamera;
 class FGizmo;
 class FGrid;
 class AActor;
-class UScene;
+class UWorld;
 
 // 커맨드로 제어하는 컬링 옵션
 struct FCullingSettings
@@ -38,8 +39,8 @@ public:
 	void PrepareRender();
 
 	// 전체 뷰포트 렌더링
-	void RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx);
-	void CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor);
+	void RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx);
+	void CollectScenePrimitives(const UWorld& World, const FSceneView& View, const AActor* SelectedActor);
 
 	// 뷰포트 패스 파이프라인
 	void BeginView(const FSceneView& View);
@@ -78,7 +79,7 @@ public:
 	void SetCullingEnabled(bool pCullingEnable);
 
 	//렌더 전에 컬링 판정
-	void CullScene(const FSceneView& View, const UScene& Scene);
+	void CullScene(const FSceneView& View, const UWorld& World);
 
 	//void SetOcclusionEnabled(bool bEnable) { bOcclusionEnabled = bEnable; }
 	//bool IsOcclusionEnabled() const { return bOcclusionEnabled; }

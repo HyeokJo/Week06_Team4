@@ -1,29 +1,30 @@
 #include "UActorComponent.h"
 #include "UObjectGlobals.h"
 #include "Runtime/Actors/AActor.h"
+#include "Runtime/Engine/UWorld.h"
 
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
 void UActorComponent::Release()
 {
     if (bHasBegunPlay) { EndPlay(); }
-    if (Scene) { Unregister(); }
+    if (World) { Unregister(); }
 
     ActorOwner = nullptr;
-    Scene = nullptr;
+    World = nullptr;
     Super::Release();
 }
 
-void UActorComponent::Register(UScene& InScene)
+void UActorComponent::Register(UWorld& InWorld)
 {
-    if (Scene == &InScene) { return; }
-    if (Scene) { Unregister(); }
-    Scene = &InScene;
+    if (World == &InWorld) { return; }
+    if (World) { Unregister(); }
+    World = &InWorld;
 }
 
 void UActorComponent::BeginPlay()
 {
-    if (!Scene || bHasBegunPlay) { return; }
+    if (!World || bHasBegunPlay) { return; }
     bHasBegunPlay = true;
 }
 
@@ -36,7 +37,7 @@ void UActorComponent::EndPlay()
 void UActorComponent::Unregister()
 {
     if (bHasBegunPlay){ EndPlay(); }
-    Scene = nullptr;
+    World = nullptr;
 }
 
 void UActorComponent::SetComponentTickEnabled(bool bEnabled)

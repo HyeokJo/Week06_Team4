@@ -12,15 +12,15 @@
 #include "Editor/UI/Imgui/FImguiStatsWindow.h"
 #include "Runtime/Engine/FRenderView.h"
 #include "Runtime/Input/FCameraInputController.h"
-
+#include "Runtime/Engine/UWorldManager.h"
 #include "Editor/Visualizer/FVisualizerRegistry.h"
 #include "Runtime/UI/SWindow.h"
 
 class FEditorApplication final : public IApplication {
 	FEditor Editor;
 
-	USceneManager* SceneManager = nullptr;
-	UScene* CurrentScene = nullptr;
+	UWorldManager* WorldManager = nullptr;
+	UWorld* CurrentWorld = nullptr;
 
 	FImguiManager ImguiManager;
 
@@ -53,7 +53,7 @@ public:
 	FEditorApplication& operator=(FEditorApplication&&) = delete;
 
 	void Initialize_ImguiWin32DX11(HWND& Window, ID3D11Device* Device, ID3D11DeviceContext* Context);
-	void Initialize_Runtime(USceneManager* SceneManager, FRenderView* RenderView);
+	void Initialize_Runtime(UWorldManager* WorldManager, FRenderView* RenderView);
 	void Shutdown() override;
 	void Update(float DeltaTime) override;
 	void Render() override;

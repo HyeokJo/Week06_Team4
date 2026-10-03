@@ -26,7 +26,7 @@ class FImguiWorldOutliner final
 
 public:
 	void Process(FEditor& Editor);
-	void RefreshCache(UScene* Scene);
+	void RefreshCache(UWorld* World);
 	void UpdateFilter(const FString& FilterStr);
 
 private:
@@ -43,7 +43,7 @@ private:
 	// 펼쳐진 상태를 연속해서 저장하고 삽입한다.
 	void RebuildDisplayList();
 
-	UScene* LastScene = nullptr;
+	UWorld* LastWorld = nullptr;
 	// 원본 액터 데이터 캐시
 	TArray<FOutlinerItem> CachedActors;
 	TArray<int32> FilteredIndices;
