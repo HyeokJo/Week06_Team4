@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <concepts>
 
-class UWorld;
+class ULevel;
 
 class AActor : public UObject
 {
@@ -32,7 +32,7 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
-	UWorld* GetOwner() const { return Owner; }
+	ULevel* GetOwner() const { return Owner; }
 
 	void CreateRootComponent(UClass* ClassType);
 
@@ -46,9 +46,9 @@ public:
 
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
-
 	void AddComponent(UActorComponent* Addcomp);
-	virtual void Register(UWorld& World);
+
+	virtual void Register(ULevel& InLevel);
 	virtual void BeginPlay();
 	virtual void Update(float DeltaTime);
 	virtual void EndPlay();
@@ -60,7 +60,7 @@ public:
 	void Destroy();
 
 private:
-	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
+	ULevel* Owner = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
 	//소유권만 삭제, 객체 삭제는 하지않음.
 	void RemoveOwnedComponentReference(UActorComponent* Component);

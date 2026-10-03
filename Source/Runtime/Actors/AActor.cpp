@@ -6,6 +6,7 @@
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/UWorld.h"
 #include <algorithm>
+#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -19,7 +20,7 @@ void AActor::Initialize()
 
 void AActor::Release()
 {
-	UWorld* RegisteredWorld = Owner;
+	ULevel* RegisteredLevel = Owner;
 	if (bHasBegunPlay)
 	{
 		EndPlay();
@@ -30,9 +31,9 @@ void AActor::Release()
 		Unregister();
 	}
 
-	if (RegisteredWorld)
+	if (RegisteredLevel)
 	{
-		RegisteredWorld->RemoveActor(this);
+		RegisteredLevel->GetWorld()->RemoveActor(this);
 	}
 
 	while (!AttachedComp.empty())
@@ -247,9 +248,9 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 	}
 }
 
-void AActor::Register(UWorld& World)
+void AActor::Register(ULevel& InLevel)
 {
-	if (Owner == &World)
+	if (Owner == &InLevel)
 	{
 		return;
 	}
@@ -259,12 +260,12 @@ void AActor::Register(UWorld& World)
 		Unregister();
 	}
 
-	Owner = &World;
+	Owner = &InLevel;
 	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
-			Component->Register(World);
+			Component->Register(InLevel);
 		}
 	}
 }
@@ -340,7 +341,7 @@ void AActor::Unregister() {
 void AActor::Destroy() {
 	if (Owner)
 	{
-		Owner->DestroyActor(this);
+		Owner->GetWorld()->DestroyActor(this);
 		return;
 	}
 	DestroyObject(this);
