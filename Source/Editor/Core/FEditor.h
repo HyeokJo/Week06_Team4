@@ -81,7 +81,7 @@ public:
     }
     [[nodiscard]] UWorld* GetCurrentWorld() const
     {
-        return GEngine->GetWorld(EWorldType::Editor);
+        return GEngine ? GEngine->GetWorld(EWorldType::Editor) : nullptr;
     }
     void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
     // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
