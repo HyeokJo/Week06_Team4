@@ -199,7 +199,7 @@ void UWorld::DestroyActor(AActor* Actor)
 
 AActor* UWorld::SpawnActor(UClass* ClassType)
 {
-    UObject* Object = NewObjectWithOuter<UObject>(Level, ClassType);
+    UObject* Object = NewObjectWithOuter(Level, ClassType);
 	if (!Object)
 	{
 		return nullptr;

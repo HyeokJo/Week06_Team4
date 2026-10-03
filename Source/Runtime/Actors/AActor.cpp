@@ -130,7 +130,11 @@ void AActor::CreateRootComponent(UClass* ClassType)
 {
 	if (RootComponent) { return; }
 
-	UObject* Object = NewObject(ClassType);
+	UObject* Object = NewObjectWithOuter(this, ClassType);
+	if(!Object)
+	{
+		return;
+	}
 	USceneComponent* Component = Object->Cast<USceneComponent>();
 
 	if (!Component)
