@@ -22,6 +22,8 @@ FEngine* GEngine = nullptr;
 
 void FEngine::Init()
 {
+	GEngine = this;
+
 	HWND Window = EngineLoop.GetMainWindowHandle();
 	if (!Renderer.Initialize(Window))
 	{
@@ -63,8 +65,6 @@ void FEngine::Init()
 	EditorApp->Initialize_Runtime(&RenderView);
 	Application = std::move(EditorApp);
 #endif
-
-	GEngine = this;
 }
 
 void FEngine::Tick(float DeltaTime)
