@@ -13,8 +13,10 @@
 #include "Runtime/Asset/FAssetRegistry.h"
 #include <numbers>
 #include <Runtime/Engine/FSceneBVH.h>
+#include "Runtime/Engine/FWorldSerializer.h"
+#include "Runtime/Engine/FRenderView.h"
 
-void FEditor::Initialize(UWorldManager* WorldManager) {
+void FEditor::Initialize() {
   State.ReadFromFile();
   Gizmo.Initialize();
   SelectedActorTextComp = NewObject<UTextInstanceComponent>();
@@ -27,7 +29,6 @@ void FEditor::Initialize(UWorldManager* WorldManager) {
     SelectedActorTextComp->SetMaterial(Registry.Get<UMaterial>("Material/SelectedActor_Text.json"));
     SelectedActorTextComp->SetFont(FName("bazziotf"));
   }
-  this->WorldManager = WorldManager;
 }
 
 void FEditor::Shutdown() {
@@ -40,12 +41,12 @@ FRenderResourceLibrary *FEditor::GetRendererLibrary() {
 }
 
 void FEditor::Process() {
-  if (FInputManager::Get().IsKeyDown(VK_F11))
-  {
-    bZenMode = !bZenMode;
-  }
+    if (FInputManager::Get().IsKeyDown(VK_F11))
+    {
+        bZenMode = !bZenMode;
+    }
 
-  // 씬의 액터 업데이트
+    // 씬의 액터 업데이트
   
     if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
     {
@@ -53,10 +54,6 @@ void FEditor::Process() {
         UnSelectActor();
         Target->Destroy();
     }
-    
-  if (WorldManager && WorldManager->CurrentWorld) {
-      WorldManager->CurrentWorld->Update(FTimeManager::GetDeltaTime());
-  }
 
   if (SelectedActor) {
     SelectedActor->SetTransform(SelectedTransform);
@@ -104,43 +101,37 @@ void FEditor::LoadState()
 
 void FEditor::NewScene() {
     UnSelectActor();
-    WorldManager->SetWorld(NewObject<UWorld>());
+    GEngine->AddWorld(NewObject<UWorld>());
     State.ResetToDefaults();
     LoadState();
 }
 
-void FEditor::SaveWorld(const FString& Path) { WorldManager->SaveWorld(Path); }
+void FEditor::SaveWorld(const FString& Path)
+{
+    UWorld* CurrentWorld = GEngine->GetWorld(EWorldType::Editor);
+
+    if (CurrentWorld)
+        FWorldSerializer::SaveWorld(Path, CurrentWorld);
+}
 
 void FEditor::LoadWorld(const FString& Path)
 {
     // 씬 로드
     FEditorViewportClient* Viewport = GetActiveViewport();
-    WorldManager->LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+    UWorld* LoadedWorld = FWorldSerializer::LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+    GEngine->AddWorld(LoadedWorld);
     SelectedActor = nullptr;
-
-    // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-    if (WorldManager->CurrentWorld)
-    {
-        UWorld* World = WorldManager->CurrentWorld;
-        World->GetSceneBVH().Build(World->GetRenderComponents());
-    }
-}
-
-bool FEditor::CheckSceneExists() {
-    if (WorldManager->CurrentWorld == nullptr)
-    return false;
-  return true;
 }
 
 void FEditor::AddViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
+    EditorViewports.push_back(Viewport);
 }
-void FEditor::InitMultiViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
 
+void FEditor::InitMultiViewport(FEditorViewportClient Viewport) {
+    EditorViewports.push_back(Viewport);
+    EditorViewports.push_back(Viewport);
+    EditorViewports.push_back(Viewport);
+    EditorViewports.push_back(Viewport);
 }
 void FEditor::DeleteViewport(int32 IndexOfViewport) {
   EditorViewports.erase(EditorViewports.begin() + IndexOfViewport);
@@ -188,12 +179,15 @@ void FEditor::UnSelectActor() {
     SelectedActor = nullptr;
 }
 
-const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
+const TArray<UPrimitiveComponent*>& FEditor::GetPrimitiveComponents() const
+{
     static const TArray<UPrimitiveComponent*> Empty;
-  if (!WorldManager || !WorldManager->CurrentWorld) {
-    return Empty;
-  }
-  return WorldManager->CurrentWorld->GetRenderComponents();
+    UWorld* EditorWorld = GEngine->GetWorld(EWorldType::Editor);
+
+    // TODO: Fix so PIE World can be getted too
+    if (!EditorWorld) { return Empty; }
+
+    return EditorWorld->GetRenderComponents();
 }
 
 void FEditor::ClearSelectionForGC() {
@@ -205,9 +199,9 @@ void FEditor::ClearSelectionForGC() {
 }
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
-    if (!WorldManager || !WorldManager->CurrentWorld) {
-        return;
-    }
+    UWorld* EditorWorld = GEngine->GetWorld(EWorldType::Editor);
+
+    if (!EditorWorld) { return; }
 
     if (Size <= 0) { return; }
 
@@ -224,7 +218,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = WorldManager->CurrentWorld->SpawnActor(Type);
+        AActor* NewActor = EditorWorld->SpawnActor(Type);
         if (!NewActor) { return; }
 
 
@@ -238,10 +232,10 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         SelectActor(NewActor);
     }
 
-    FSceneBVH& BVH = WorldManager->CurrentWorld->GetSceneBVH();
+    FSceneBVH& BVH = EditorWorld->GetSceneBVH();
     if (BVH.ShouldRebuild())
     {
-        BVH.Build(WorldManager->CurrentWorld->GetRenderComponents());
+        BVH.Build(EditorWorld->GetRenderComponents());
     }
 }
 
@@ -359,5 +353,38 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
         State.SetSplitMode(FEditorState::SplitViewMode::QUAD);
         break;
 
+    }
+}
+
+void FEditor::RenderViewports(FRenderView& RenderView)
+{
+    //Active인 ViewportClient만 렌더링
+    for (SWindow& Lf : Leaf)
+    {
+        if (!Lf.bisActive) 
+            continue;
+
+        FEditorViewportClient& EditorViewport = EditorViewports[Lf.ViewportIndex];
+        
+        // TODO: Draw PIE World
+        UWorld* EditorWorld = GEngine->GetWorld(EWorldType::Editor);
+
+        if (EditorWorld)
+            EditorViewport.Draw(RenderView, *EditorWorld, *this);
+    }
+}
+
+void FEditor::RenderGizmo(FRenderView& RenderView)
+{
+    if (ObjectSelected())
+    {
+        for (const SWindow& Lf : Leaf)
+        {
+            if (!Lf.bisActive)
+                continue;
+
+            FEditorViewportClient& Viewport = EditorViewports[Lf.ViewportIndex];
+            Viewport.DrawGizmo(RenderView, *this);
+        }
     }
 }

@@ -2,8 +2,12 @@
 #include "Runtime/Math/FVector2.h"
 #include "Runtime/Engine/FCamera.h"
 #include "Editor/Grid/FGrid.h"
-
 #include "Runtime/Engine/ShowFlags.h"
+
+class UWorld;
+class FEditor;
+class FRenderView;
+
 class FEditorViewportClient final {
 	bool bFocused = false;
 	bool bHovered = false;
@@ -36,10 +40,6 @@ public:
 	                   static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
 					   static_cast<uint64>(EEngineShowFlags::SF_Grid);
 
-	
-	
-	
-	
 	FGrid& GetGrid() { return Grid; }
 	void UpdateFocusedAndHovered(bool bFocused, bool bHovered);
 	const FGrid& GetGrid() const { return Grid; }
@@ -54,6 +54,8 @@ public:
 
 	[[nodiscard]] bool IsFocused() const { return bFocused; }
 	[[nodiscard]] bool IsHovered() const { return bHovered; }
-	void Update();
 
+	void Update();
+	void Draw(FRenderView& RenderView, UWorld& InWorld, FEditor& Editor);
+	void DrawGizmo(FRenderView& RenderView, FEditor& Editor);
 };
