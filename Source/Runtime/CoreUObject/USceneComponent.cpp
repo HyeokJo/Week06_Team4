@@ -38,33 +38,38 @@ void USceneComponent::Release()
     bGlobalDirty = true;
 }
 
-void USceneComponent::SetupAttachment(USceneComponent* InParent)
+bool USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
-    if (InParent == AttachParent) { return; }
+    if (InParent == AttachParent) { return true; }
 
     // 자기 자신이나 자손에 부착하면 Transform 계산과 트리 순회가 순환한다.
     for (USceneComponent* Parent = InParent; Parent; Parent = Parent->GetTransformParent())
     {
-        if (Parent == this) { return; }
+        if (Parent == this) { return false; }
     }
 
+    if (InParent) InParent->AttachedComponents.push_back(this);
     if (AttachParent)
     {
         std::erase(AttachParent->AttachedComponents, this);
     }
-
     AttachParent = InParent;
-    if (AttachParent)
-    {
-        AttachParent->AttachedComponents.push_back(this);
-    }
     // 부착 관계는 Transform에만 영향을 주며 Actor 소유권은 변경하지 않는다.
     MarkActorTransformDirty();
+    return true;
 }
 
-void USceneComponent::SetupDetachment()
+void USceneComponent::SetupDetachment(bool bKeepWorldTransform)
 {
-    SetupAttachment(nullptr);
+    if (!AttachParent) return;
+
+    // 부모를 끊기 전에 World Transform을 확보한다.
+    const FTransform NewRelative = bKeepWorldTransform ? GetGlobalTransform() : RelativeTransform;
+
+    std::erase(AttachParent->AttachedComponents, this);
+    AttachParent = nullptr;
+    RelativeTransform = NewRelative;
+    MarkActorTransformDirty();
 }
 
 void USceneComponent::Serialize(FArchive& Archive) const
@@ -97,6 +102,15 @@ void USceneComponent::Deserialize(const FArchive& Archive)
     MarkActorTransformDirty();
 }
 
+void USceneComponent::SetInheritRotation(bool bInherit)
+{
+    if (bInheritRotation == bInherit) return;
+
+    // 부모를 해석하는 방법이 달라지므로 자손까지 갱신한다.
+    bInheritRotation = bInherit;
+    MarkActorTransformDirty();
+}
+
 void USceneComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 {
     if (this->RelativeTransform == RelativeTransform) { return; }
@@ -106,22 +120,10 @@ void USceneComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 
 USceneComponent* USceneComponent::GetTransformParent() const
 {
-    if (AttachParent)
-    {
-        return AttachParent;
-    }
-
-    AActor* Owner = GetActorOwner();
-    if (!Owner)
-    {
-        return nullptr;
-    }
-
-    USceneComponent* Root = Owner->GetRootComponent();
-    return Root == this ? nullptr : Root;
+    // 부착 부모가 없으면 독립된 Transform이다.
+    return AttachParent;
 }
-
-const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모 rootcomponent world좌표 써야됨
+const FTransform& USceneComponent::GetGlobalTransform() const
 {
     const USceneComponent* Parent = GetTransformParent();
     uint32 ParentVersion = 0;
@@ -140,18 +142,15 @@ const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모
     {
         CachedGlobal = RelativeTransform;
     }
-    else if (AttachParent || bInheritRotation)
+    else if (bInheritRotation)
     {
         CachedGlobal = Parent->CachedGlobal * RelativeTransform;
     }
     else
     {
-        // 부모 회전 무시 - 위치와 스케일만 상속
-        FTransform Result;
-        Result.SetScale3D(RelativeTransform.GetScale3D());
-        Result.SetRotation(RelativeTransform.GetRotation()); // 자신의 회전만 사용
-        Result.SetLocation(Parent->CachedGlobal.GetLocation() + RelativeTransform.GetLocation()); // 월드 축 기준 오프셋
-        CachedGlobal = Result;
+        // 부모 위치만 따라가며 회전과 스케일은 자신의 값을 사용.
+        CachedGlobal = RelativeTransform;
+        CachedGlobal.SetLocation(Parent->CachedGlobal.GetLocation() + RelativeTransform.GetLocation());
     }
 
     CachedGlobal.GetMatrix(); // 행렬도 이 시점에 한 번만 계산해 둔다
@@ -179,9 +178,10 @@ void USceneComponent::MarkActorTransformDirty()
     bGlobalDirty = true;
     OnTransformChanged();
 
-    if (AActor* Owner = GetActorOwner())
+    for (USceneComponent* Child : AttachedComponents)
     {
-        Owner->MarkComponentsTransformDirty();
+        if (Child && Child->AttachParent == this)
+            Child->MarkActorTransformDirty();
     }
 }
 
@@ -227,3 +227,4 @@ const FVector& USceneComponent::GetRelativeScale() const
 {
     return GetRelativeTransform().GetScale3D();
 }
+

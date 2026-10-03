@@ -20,12 +20,13 @@ public:
     
     USceneComponent* GetAttachParent() const { return AttachParent; }
 
-    void SetupAttachment(USceneComponent* InParent);
-    void SetupDetachment();
+    bool SetupAttachment(USceneComponent* InParent);
+    void SetupDetachment(bool bKeepWorldTransform = true);
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
-    
-    void SetInheritRotation(bool bInherit) { bInheritRotation = bInherit; bGlobalDirty = true; }
+    void SetInheritRotation(bool bInherit);
+    //Transform이 바뀔 때 본인 및 자식 컴포넌트에 알림.
+    void MarkActorTransformDirty();
 protected:
 	USceneComponent() = default;
 
@@ -42,9 +43,6 @@ public:
 	// 월드 행렬의 역행렬. 스케일이 0에 가까워 역행렬이 없으면 nullptr.
 	const FMatrix* GetGlobalInverseMatrix() const;
 	//void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
-
-    //Transform이 바뀔 때 알림. 액터 전체 컴포넌트에 전파
-    void MarkActorTransformDirty();
 
     virtual void SetRelativeLocation(const FVector& RelativeLocation);
     virtual void SetRelativeRotation(const FVector& RelativeRotation);

@@ -14,6 +14,7 @@ class AActor : public UObject
 	GENERATED_BODY()
 
 	friend class UWorld;
+	friend class UActorComponent;
 
 protected:
 	//nullptr일 경우 위치정보가 필요없는 논리적 액터
@@ -26,6 +27,8 @@ protected:
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
 
+	// 파생 Actor가 별도로 보관하는 컴포넌트 포인터를 정리한다.
+	virtual void OnComponentRemoved(UActorComponent* Component) {}
 public:
 	void Initialize() override;
 	void Release() override;
@@ -59,4 +62,6 @@ public:
 private:
 	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
+	//소유권만 삭제, 객체 삭제는 하지않음.
+	void RemoveOwnedComponentReference(UActorComponent* Component);
 };

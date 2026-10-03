@@ -5,6 +5,7 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/UWorld.h"
+#include <algorithm>
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -142,43 +143,63 @@ void AActor::CreateRootComponent(UClass* ClassType)
 
 void AActor::SetRootComponent(USceneComponent* Component)
 {
+	if (!Component)
+	{
+		throw EngineUtil::CreateError("RootComponent가 nullptr입니다.");
+	}
+	if (RootComponent == Component) { return; }
 	if (RootComponent)
 	{
 		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
 	}
+	if (Component->GetActorOwner() && Component->GetActorOwner() != this)
+	{
+		throw EngineUtil::CreateError("다른 Actor가 소유한 컴포넌트입니다.");
+	}
 
+	Component->SetupDetachment(false);
 	RootComponent = Component;
 
-	// TODO ActorOwner를 이렇게 지정하면 안됨
-	RootComponent->ActorOwner = this;
-	RootComponent->SetupAttachment(nullptr);
-	RootComponent->Initialize();
-	AttachedComp.push_back(RootComponent);
+	AddComponent(Component);
+}
 
-	if (Owner)
+void AActor::RemoveOwnedComponentReference(UActorComponent* Component)
+{
+	if (!Component)
 	{
-		RootComponent->Register(*Owner);
+		return;
 	}
+	const bool bWasRoot = RootComponent == Component;
+	const auto RemovedCount = std::erase(AttachedComp, Component);
 
-	if (bHasBegunPlay)
-	{
-		RootComponent->BeginPlay();
-	}
+	// 자동승격 구현 안됨
+	// TODO: 정책에따라 구현안된상태를 유지할지/아니면 자동승격을 구현할지 결정해야함.
+	if (bWasRoot) RootComponent = nullptr;
+	if (RemovedCount > 0 || bWasRoot) OnComponentRemoved(Component);
+
 }
 
 void AActor::MarkComponentsTransformDirty()
 {
-	if (RootComponent) 
+	for (UActorComponent* Component : AttachedComp)
 	{
-		RootComponent->OnTransformChanged();
-		for (USceneComponent* Component : RootComponent->AttachedComponents)
+		USceneComponent* SceneComponent = Component ? Component->Cast<USceneComponent>() : nullptr;
+		if (!SceneComponent) continue;
+
+		// 같은 Actor가 소유한 조상이 있으면 그 조상의 순회에서 처리된다.
+		bool bHasOwnedAncestor = false;
+		for (USceneComponent* Parent = SceneComponent->GetAttachParent(); Parent; Parent = Parent->GetAttachParent())
 		{
-			if (Component)
+			if (Parent->GetActorOwner() == this)
 			{
-				Component->OnTransformChanged();
+				bHasOwnedAncestor = true;
+				break;
 			}
 		}
-	}	
+
+		if (!bHasOwnedAncestor)
+			SceneComponent->MarkActorTransformDirty();
+	}
 }
 
 void AActor::AddComponent(UActorComponent* Addcomp)
@@ -187,17 +208,29 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 	{
 		return;
 	}
-	if (Addcomp->IsA(USceneComponent::StaticClass())) {
-		USceneComponent* SceneComp = static_cast<USceneComponent*>(Addcomp);
-		if (RootComponent == nullptr)
-		{
+	// 이미 ActorOwner가 있는 컴포넌트 예외처리
+	if (Addcomp->ActorOwner && Addcomp->ActorOwner != this)
+		throw EngineUtil::CreateError("다른 Actor가 소유한 컴포넌트입니다.");
+
+	// 중복 추가와 중복 Initialize를 방지한다.
+	if (std::find(AttachedComp.begin(), AttachedComp.end(), Addcomp) != AttachedComp.end())
+		return;
+
+	USceneComponent* SceneComp = Addcomp->Cast<USceneComponent>();
+
+	if (SceneComp) {
+		if (!RootComponent) {
+			SceneComp->SetupDetachment(false);
 			RootComponent = SceneComp;
-			SceneComp->SetupAttachment(nullptr);
+
 		}
-		else if (SceneComp->GetAttachParent() == nullptr)
+		else if (SceneComp != RootComponent && !SceneComp->GetAttachParent())
 		{
-			SceneComp->SetupAttachment(RootComponent);
+			// 부모를 지정하지 않은 추가 SceneComponent는 Root에 부착한다.
+			if (!SceneComp->SetupAttachment(RootComponent))
+				throw EngineUtil::CreateError("컴포넌트 부착 관계에 순환이 발생합니다.");
 		}
+
 	}
 	Addcomp->ActorOwner = this;
 	AttachedComp.push_back(Addcomp);
