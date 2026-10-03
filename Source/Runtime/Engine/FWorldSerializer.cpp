@@ -13,6 +13,8 @@
 
 void FWorldSerializer::SaveWorld(const FString& InPath, UWorld* InWorld)
 {
+	if (!InWorld) { return; }
+
 	std::filesystem::path fsPath(InPath);
 	std::filesystem::path directory = fsPath.parent_path();
 
