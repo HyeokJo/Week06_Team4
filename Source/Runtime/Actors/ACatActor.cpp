@@ -27,6 +27,7 @@ void ACatActor::Initialize()
 void ACatActor::Update(float DeltaTime)
 {
 	Super::Update(DeltaTime);
+	if (!CatStaticMeshComp) return;
 	ElapsedTime += DeltaTime;
 
 	if (ElapsedTime >= SpinRate)
@@ -54,4 +55,10 @@ void ACatActor::Update(float DeltaTime)
 		CurrentTransform.SetRotation(Rotation);
 		SetTransform(CurrentTransform);
 	}
+}
+void ACatActor::OnComponentRemoved(UActorComponent* Component)
+{
+	// 소유 목록 밖에 보관한 별도 참조도 정리한다.
+	Super::OnComponentRemoved(Component);
+	if (Component == CatStaticMeshComp) CatStaticMeshComp = nullptr;
 }

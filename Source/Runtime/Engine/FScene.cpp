@@ -37,10 +37,15 @@ void FScene::RemoveRenderComponent(UPrimitiveComponent* Prim) {
 
     //TODO 제거할 때 마지막 요소와 교환하는 방식의 Swap and Pop으로 처리하도록 수정할 것
 
-    std::erase(RenderComponents, Prim);
+    const auto It = std::find(RenderComponents.begin(), RenderComponents.end(), Prim);
+    if (It == RenderComponents.end()) return;
+    const size_t Index = static_cast<size_t>(It - RenderComponents.begin());
+
+    std::erase(DirtyBoundsList, Prim);
+    Prim->SetBoundDirtyQueued(false);
     SceneBVH.RemoveObject(Prim);
 
-    const size_t Index = static_cast<size_t>(Prim->GetSceneIndex());
+    RenderComponents.erase(It);
     CullDataList.erase(CullDataList.begin() + Index);
 
     //오클루전 대상에서 제거
@@ -53,14 +58,8 @@ void FScene::RemoveRenderComponent(UPrimitiveComponent* Prim) {
         RenderComponents[i]->SetBatchIndex(static_cast<int32>(i));
     }
 
-    // 파괴될 포인터가 dirty 목록에 남지 않게
-    if (Prim->GetBoundDirtyQueued())
-    {
-        std::erase(DirtyBoundsList, Prim);
-        Prim->SetBoundDirtyQueued(false);
-    }
-
     Prim->SetSceneIndex(-1);
+    Prim->SetBatchIndex(-1);
 }
 
 void FScene::MarkBoundsDirty(UPrimitiveComponent* Prim)
@@ -77,18 +76,41 @@ void FScene::UpdateDirtyBounds()
 {
     for (UPrimitiveComponent* Prim : DirtyBoundsList)
     {
+        if (!Prim) continue;
         Prim->SetBoundDirtyQueued(false);
+        const int32 Index = Prim->GetSceneIndex();
+        if (Index < 0 || static_cast<size_t>(Index) >= RenderComponents.size() ||
+            RenderComponents[Index] != Prim)
+            continue;
+
+        // WorldBounds는 한 번 계산하고 컬링과 BVH에서 공유한다.
         Prim->UpdateWorldBounds();
-        int32 Index = static_cast<size_t>(Prim->GetSceneIndex());
         CullDataList[Index] = Prim->GetWorldBounds();
         OcclusionTargetFlags[Index] = Prim->IsOcclusionTarget() ? 1 : 0;
     }
+    if (SceneBVH.ShouldRebuild())
+        SceneBVH.Build(RenderComponents);
+    else
+        SceneBVH.RefitObjects(DirtyBoundsList);
+
     DirtyBoundsList.clear();
 }
 
 void FScene::Clear()
-{
+{    // 등록된 객체가 살아 있다면 외부에 남는 인덱스도 초기화한다.
+    for (UPrimitiveComponent* Component : RenderComponents)
+    {
+        if (!Component) continue;
+        Component->SetSceneIndex(-1);
+        Component->SetBatchIndex(-1);
+        Component->SetBoundDirtyQueued(false);
+    }
+
+    // 기존 Build는 이전 BVH 인덱스와 내부 배열을 정리한다.
+    SceneBVH.Build(TArray<UPrimitiveComponent*>{});
+
     RenderComponents.clear();
+    RenderIndices.clear();
     CullDataList.clear();
     DirtyBoundsList.clear();
     OcclusionTargetFlags.clear();

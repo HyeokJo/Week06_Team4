@@ -10,8 +10,11 @@ void UActorComponent::Release()
     if (bHasBegunPlay) { EndPlay(); }
     if (Level) { Unregister(); }
 
+	AActor* PreviousOwner = ActorOwner;
     ActorOwner = nullptr;
     Level = nullptr;
+
+    if (PreviousOwner) PreviousOwner->RemoveOwnedComponentReference(this);
     Super::Release();
 }
 

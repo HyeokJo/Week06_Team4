@@ -59,15 +59,7 @@ void FEditor::Process() {
   }
 
   if (SelectedActor) {
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
-    
     SelectedActor->SetTransform(SelectedTransform);
-
-    // Transform이 변경되었을 때만 Refit
-    if (bChanged && WorldManager && WorldManager->CurrentWorld) {
-        RefitActorInBVH(WorldManager->CurrentWorld->GetSceneBVH(), SelectedActor);
-    }
   }
 
   SaveState();
@@ -174,12 +166,14 @@ bool FEditor::SelectActor(AActor *Actor) {
       Gizmo.Mode = EGizmoMode::Translate;
     }
 
-    if (SelectedActorTextComp) {
-      SelectedActorTextComp->SetActorOwner(SelectedActor.Get());
-      FTransform RelativeTrans;
-      RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
-      SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
-      SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
+    if (SelectedActorTextComp)
+    {
+        SelectedActorTextComp->SetupAttachment(SelectedActor->GetRootComponent());
+        SelectedActorTextComp->SetInheritRotation(false);
+        FTransform RelativeTrans;
+        RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
+        SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
+        SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
     }
   }
 
@@ -187,13 +181,11 @@ bool FEditor::SelectActor(AActor *Actor) {
 }
 
 void FEditor::UnSelectActor() {
-  if (SelectedActor) {
-    SelectedActor->SetTransform(SelectedTransform);
-  }
-  SelectedActor = nullptr;
-  if (SelectedActorTextComp) {
-    SelectedActorTextComp->SetActorOwner(nullptr);
-  }
+    if (SelectedActor) SelectedActor->SetTransform(SelectedTransform);
+
+    // 선택 Actor의 소유 컴포넌트가 아니므로 삭제하지 않고 분리한다.
+    if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
+    SelectedActor = nullptr;
 }
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
@@ -205,9 +197,11 @@ const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
 }
 
 void FEditor::ClearSelectionForGC() {
-  SelectedActor = nullptr;
-  Gizmo.EndInteraction();
-  Gizmo.HoveredHandle = EGizmoHandle::None;
+    // World가 폐기되기 전에 에디터 오버레이의 연결부터 끊는다.
+    if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
+    SelectedActor = nullptr;
+    Gizmo.EndInteraction();
+    Gizmo.HoveredHandle = EGizmoHandle::None;
 }
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {

@@ -21,7 +21,7 @@ class FArchive
 	// 그래서 JSON을 Serialize/Deserialize 함수에 때려박지 않고 이 클래스가 별도로 존재하는 것
 
 	// 따라서, 언젠가는 이 코드가 JSON에 강하게 커플링된 문제를 해소해야할지도 모름
-
+	// 지금입니다 2트 ㅋㅋㅋ
 private:
 	nlohmann::json Object;
 

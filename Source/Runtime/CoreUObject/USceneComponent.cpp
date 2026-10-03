@@ -16,26 +16,25 @@ void USceneComponent::Initialize()
 }
 void USceneComponent::Release()
 {
-    // 등록 해제 중에는 기존 소유/부착 관계를 사용할 수 있어야 한다.
-    Super::Release();
-    if (AttachParent)
+    if (bHasBegunPlay) EndPlay();
+    if (Level) Unregister();
+
+    while (!AttachedComponents.empty())
     {
-        std::erase(AttachParent->AttachedComponents, this);
-    }
-    AttachParent = nullptr;
-    // 자식의 수명은 소유 Actor가 관리한다. 여기서는 부착 참조만 끊는다.
-    for (USceneComponent* Child : AttachedComponents)
-    {
+        USceneComponent* Child = AttachedComponents.back();
         if (Child && Child->AttachParent == this)
-        {
-            Child->AttachParent = nullptr;
-            Child->CachedParent = nullptr;
-            Child->MarkActorTransformDirty();
-        }
+            Child->SetupDetachment(true);
+        else
+            AttachedComponents.pop_back();
     }
-    AttachedComponents.clear();
+
+    // 자식의 World Transform을 보존한 다음 자신의 부모 연결을 끊는다.
+    if (AttachParent) std::erase(AttachParent->AttachedComponents, this);
+    AttachParent = nullptr;
     CachedParent = nullptr;
     bGlobalDirty = true;
+
+    Super::Release();
 }
 
 bool USceneComponent::SetupAttachment(USceneComponent* InParent)

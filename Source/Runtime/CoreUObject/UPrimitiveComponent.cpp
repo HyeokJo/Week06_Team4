@@ -63,11 +63,21 @@ void UPrimitiveComponent::MarkBoundDirty()
     {
         Level->GetWorld()->MarkBoundsDirty(this);
     }
+    else
+    {
+        // 레벨에 등록하지 않고 직접 그리는 에디터 오버레이 등.
+        UpdateWorldBounds();
+    }
+
 }
 
 void UPrimitiveComponent::UpdateWorldBounds()
 {
-    WorldBounds = FAxisAlignedBoundingBox(GetLocalBounds(), GetGlobalTransformMatrix());
+    // 유효하지 않은 LocalBounds를 변환하면 잘못된 유효 박스가 생길 수 있다.
+    const FAxisAlignedBoundingBox Local = GetLocalBounds();
+    WorldBounds = Local.IsValid()
+        ? FAxisAlignedBoundingBox(Local, GetGlobalTransformMatrix())
+        : FAxisAlignedBoundingBox{};
 }
 
 void UPrimitiveComponent::OnTransformChanged()
@@ -78,7 +88,6 @@ void UPrimitiveComponent::OnTransformChanged()
 void UPrimitiveComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 {
     Super::SetRelativeTransform(RelativeTransform);
-    UpdateWorldBounds();
 }
 
 const FAxisAlignedBoundingBox &UPrimitiveComponent::GetWorldBounds() const

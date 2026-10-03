@@ -1,0 +1,9 @@
+{
+    "NextUUID": 83,
+    "Version": 2,
+    "World": {
+        "Actors": [],
+        "Type": "UWorld",
+        "UUID": 80
+    }
+}

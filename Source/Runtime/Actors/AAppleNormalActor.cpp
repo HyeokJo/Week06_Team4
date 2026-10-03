@@ -21,3 +21,9 @@ void AAppleNormalActor::Update(float DeltaTime)
 {
 	Super::Update(DeltaTime);
 }
+void AAppleNormalActor::OnComponentRemoved(UActorComponent* Component)
+{
+	// 소유 목록 밖에 보관한 별도 참조도 정리한다.
+	Super::OnComponentRemoved(Component);
+	if (Component == AppleStaticMeshComp) AppleStaticMeshComp = nullptr;
+}

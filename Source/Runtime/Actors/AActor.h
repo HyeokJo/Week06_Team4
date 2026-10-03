@@ -53,7 +53,7 @@ public:
 	virtual void Update(float DeltaTime);
 	virtual void EndPlay();
 	virtual void Unregister();
-
+	 
 	[[nodiscard]] bool IsRegistered() const { return Owner != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 

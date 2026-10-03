@@ -39,9 +39,6 @@ public:
 	// Component Tick의 실행 그룹을 변경합니다.
 	void SetComponentTickGroup(ETickGroup Group);
 
-	//TODO : Owner를 액터만 설정할수 있도록,  하단 함수를 private로 걸고, 액터에 등록될때 이 함수가 호출되도록 함.
-	//TODO : Outer 구조 도입시 구조 수정해야함.
-	void SetActorOwner(AActor* InOwner) { ActorOwner = InOwner; }
 
 protected:
 	AActor* ActorOwner = nullptr;
@@ -51,6 +48,8 @@ protected:
 	FTickSettings PrimaryComponentTick;
 
 private:
+	//TODO : Outer 구조 도입시 구조 수정해야함.
+	void SetActorOwner(AActor* InOwner) { ActorOwner = InOwner; }
 
 
 };
