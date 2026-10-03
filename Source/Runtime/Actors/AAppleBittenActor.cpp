@@ -10,7 +10,7 @@ UCLASS_META(AAppleBittenActor, DisplayName, "Apple Bitten Actor")
 
 AAppleBittenActor::AAppleBittenActor()
 {	
-	AppleStaticMeshComp = NewObject<UStaticMeshComponent>();
+	AppleStaticMeshComp = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(AppleStaticMeshComp);
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();

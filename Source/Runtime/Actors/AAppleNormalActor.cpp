@@ -10,7 +10,7 @@ UCLASS_META(AAppleNormalActor, DisplayName, "Apple Normal Actor")
 
 AAppleNormalActor::AAppleNormalActor()
 {	
-	AppleStaticMeshComp = NewObject<UStaticMeshComponent>();
+	AppleStaticMeshComp = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(AppleStaticMeshComp);
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();

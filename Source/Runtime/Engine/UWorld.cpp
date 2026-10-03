@@ -33,7 +33,14 @@ void UWorld::Initialize()
 void UWorld::Initialize(EWorldType InWorldType)
 {
     Initialize();
-    WorldType = InWorldType;
+    Level = NewObjectWithOuter<ULevel>(this);
+	Level->OwningWorld = this;
+    Level->Initialize();
+
+	Scene = new FScene();
+	Super::Initialize();
+    WorldType = InWorldType;    //WorldType이 있어야하는지 없어야하는지 판단이 서지않음.    
+    // PIE를 만들때 월드 타입이 있으면 훨씬 편하게 만들 수 있지 않을까?하는 생각이 있음.
 }
 
 void UWorld::Release()
@@ -44,13 +51,18 @@ void UWorld::Release()
     if (bActive) {
         Deactivate();
     }
+	DestroyObject(Level);   //여기서 Level->Release()가 호출됨
+    Level = nullptr;
+    if (Scene)
+    {
+        Scene->Clear();
+        delete Scene;
+        Scene = nullptr;
+    }
 
-    Level->Release();
-    Scene->Clear();
-    
     bInitialized = false;
-
     Super::Release();
+
 }
 
 void UWorld::Activate()
@@ -187,7 +199,11 @@ void UWorld::DestroyActor(AActor* Actor)
 
 AActor* UWorld::SpawnActor(UClass* ClassType)
 {
-    UObject* Object = NewObject(ClassType);
+    UObject* Object = NewObjectWithOuter<UObject>(Level, ClassType);
+	if (!Object)
+	{
+		return nullptr;
+	}
     AActor* Actor = Object->Cast<AActor>();
     if (!Actor)
     {

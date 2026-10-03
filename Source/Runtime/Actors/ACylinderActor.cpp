@@ -10,7 +10,7 @@ UCLASS_META(ACylinderActor, DisplayName, "Cylinder Actor")
 ACylinderActor::ACylinderActor()
 {
 	// 기본 실린더 컴포넌트 장착
-	UStaticMeshComponent* Object = NewObject<UStaticMeshComponent>();
+	UStaticMeshComponent* Object = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(Object);
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();

@@ -44,7 +44,7 @@ public:
         requires std::derived_from<TActor, AActor>
     TActor* SpawnActor(const FVector& Location, const FVector& Scale, TArgs &&...Args) 
     {
-        TActor* Actor = NewObject<TActor>(std::forward<TArgs>(Args)...);
+        TActor* Actor = NewObjectWithOuter<TActor>(Level, std::forward<TArgs>(Args)...);
         Actor->Initialize();
 
         if (Actor->GetRootComponent()) {
@@ -108,8 +108,8 @@ public:
     const EWorldType GetWorldType() const { return WorldType; }
 
 private:
-    FScene* Scene;
-    ULevel* Level;// persistent level
+    FScene* Scene = nullptr;
+    ULevel* Level = nullptr;// persistent level
 	// TODO: SubLevel 지원 필요
     EWorldType WorldType;
 

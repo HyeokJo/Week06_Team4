@@ -34,7 +34,7 @@ TObject* NewObjectWithOuter(UObject* InOuter, TArgs&&... Args)
     return Object;
 }
 
-inline UObject* NewObjectWithOuter(UClass* ClassType, UObject* InOuter)
+inline UObject* NewObjectWithOuter(UObject* InOuter, UClass* ClassType)
 {
     if (!ClassType){ return nullptr; }
     UObject* Object = NewObject(ClassType);

@@ -11,7 +11,7 @@ UCLASS_META(ACatActor, DisplayName, "Cat Actor")
 
 ACatActor::ACatActor()
 {	
-	CatStaticMeshComp = NewObject<UStaticMeshComponent>();
+	CatStaticMeshComp = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(CatStaticMeshComp);
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();

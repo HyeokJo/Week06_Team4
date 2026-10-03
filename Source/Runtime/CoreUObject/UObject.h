@@ -202,7 +202,7 @@ private:
 	template<typename TObject, typename... TArgs>
 		requires std::derived_from<TObject, UObject>
 	friend TObject* NewObjectWithOuter(UObject* InOuter,TArgs&&... Args);
-	friend UObject* NewObjectWithOuter(UClass* ClassType,UObject* InOuter);
+	friend UObject* NewObjectWithOuter(UObject* InOuter, UClass* ClassType);
 
 
 	//복사 정책 관련 함수
