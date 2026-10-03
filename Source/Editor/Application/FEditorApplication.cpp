@@ -71,8 +71,6 @@ void FEditorApplication::Tick(float DeltaTime) {
 }
 
 void FEditorApplication::Render() {
-  TArray<FEditorViewportClient> &EditorViewports = Editor.GetViewports();
-  
   // 렌더 준비
   RenderView->PrepareRender();
 
