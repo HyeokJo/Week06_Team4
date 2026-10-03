@@ -5,7 +5,7 @@
 //#include "Runtime/Actors/AActor.h"
 
 class AActor;
-class UWorld;
+class ULevel;
 
 // AActor에 부착되어 액터의 일부 기능을 수행하는 컴포넌트 클래스입니다.
 class UActorComponent : public UObject {
@@ -18,7 +18,7 @@ public:
 
 	AActor* GetActorOwner() const { return ActorOwner; };
 
-	virtual void Register(UWorld& InWorld);
+	virtual void Register(ULevel& InLevel);
 	virtual void BeginPlay();
 	virtual void Update(float DeltaTime) {}
 	virtual void EndPlay();
@@ -26,7 +26,7 @@ public:
 
 	// TODO : FTick에 Register 하는 형태로 변경해야함.
 	//[[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
-	[[nodiscard]] bool IsRegistered() const { return World != nullptr; }
+	[[nodiscard]] bool IsRegistered() const { return Level != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 
 	//virtual void Serialize(FArchive& Archive) const override;
@@ -45,7 +45,7 @@ public:
 
 protected:
 	AActor* ActorOwner = nullptr;
-	UWorld* World = nullptr;
+	ULevel* Level = nullptr;
 	bool bHasBegunPlay = false;
 	//bool bTickEnabled = false;
 	FTickSettings PrimaryComponentTick;

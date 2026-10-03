@@ -22,6 +22,7 @@ void UWorld::Initialize()
     
     Level = NewObject<ULevel>();
     Level->Initialize();
+    Level->OwningWorld = this;
 
     Scene = new FScene();
 
@@ -55,7 +56,7 @@ void UWorld::Activate()
     for (AActor* Actor : Level->Actors)
     {
         if (Actor)
-            Actor->Register(*this);
+            Actor->Register(*Level);
     }
     bActive = true;
 }
@@ -160,7 +161,7 @@ void UWorld::Deserialize(const FArchive& Archive)
         Actor->Deserialize(Item);
 
         if (bActive)
-            Actor->Register(*this);
+            Actor->Register(*Level);
 
         if (bHasBegunPlay)
             Actor->BeginPlay();
@@ -189,7 +190,7 @@ AActor* UWorld::SpawnActor(UClass* ClassType)
     }
 
     Actor->Initialize();
-    Actor->Register(*this);
+    Actor->Register(*Level);
 
     Level->Actors.push_back(Actor);
 

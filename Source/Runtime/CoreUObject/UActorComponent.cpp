@@ -1,30 +1,30 @@
 #include "UActorComponent.h"
 #include "UObjectGlobals.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
 void UActorComponent::Release()
 {
     if (bHasBegunPlay) { EndPlay(); }
-    if (World) { Unregister(); }
+    if (Level) { Unregister(); }
 
     ActorOwner = nullptr;
-    World = nullptr;
+    Level = nullptr;
     Super::Release();
 }
 
-void UActorComponent::Register(UWorld& InWorld)
+void UActorComponent::Register(ULevel& InLevel)
 {
-    if (World == &InWorld) { return; }
-    if (World) { Unregister(); }
-    World = &InWorld;
+    if (Level == &InLevel) { return; }
+    if (Level) { Unregister(); }
+    Level = &InLevel;
 }
 
 void UActorComponent::BeginPlay()
 {
-    if (!World || bHasBegunPlay) { return; }
+    if (!Level || bHasBegunPlay) { return; }
     bHasBegunPlay = true;
 }
 
@@ -36,8 +36,8 @@ void UActorComponent::EndPlay()
 
 void UActorComponent::Unregister()
 {
-    if (bHasBegunPlay){ EndPlay(); }
-    World = nullptr;
+    if (bHasBegunPlay) { EndPlay(); }
+    Level = nullptr;
 }
 
 void UActorComponent::SetComponentTickEnabled(bool bEnabled)
