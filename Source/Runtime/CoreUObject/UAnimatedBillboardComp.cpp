@@ -1,5 +1,5 @@
 #include "UAnimatedBillboardComp.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FArchive.h"
 #include "UClass.h"
 #include <algorithm>
@@ -10,7 +10,7 @@ UCLASS_META(UAnimatedBillboardComp, DisplayName, "AnimatedBillboard")
 void UAnimatedBillboardComp::Initialize()
 {
   Super::Initialize();
-  bTickEnabled = true;
+  SetComponentTickEnabled(true);
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,

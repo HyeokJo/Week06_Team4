@@ -4,7 +4,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -18,7 +18,7 @@ void AActor::Initialize()
 
 void AActor::Release()
 {
-	UScene* RegisteredScene = Owner;
+	UWorld* RegisteredWorld = Owner;
 	if (bHasBegunPlay)
 	{
 		EndPlay();
@@ -29,9 +29,9 @@ void AActor::Release()
 		Unregister();
 	}
 
-	if (RegisteredScene)
+	if (RegisteredWorld)
 	{
-		RegisteredScene->RemoveActor(this);
+		RegisteredWorld->RemoveActor(this);
 	}
 
 	while (!AttachedComp.empty())
@@ -190,7 +190,7 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 		Addcomp->SetupAttachment(nullptr);
 	}
 
-	else if (Addcomp->GetSceneOwner() == nullptr)
+	else if (Addcomp->GetAttachParent() == nullptr)
 	{
 		Addcomp->SetupAttachment(RootComponent);
 	}
@@ -210,9 +210,9 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 	}
 }
 
-void AActor::Register(UScene& Scene)
+void AActor::Register(UWorld& World)
 {
-	if (Owner == &Scene)
+	if (Owner == &World)
 	{
 		return;
 	}
@@ -222,12 +222,12 @@ void AActor::Register(UScene& Scene)
 		Unregister();
 	}
 
-	Owner = &Scene;
+	Owner = &World;
 	for (USceneComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
-			Component->Register(Scene);
+			Component->Register(World);
 		}
 	}
 }

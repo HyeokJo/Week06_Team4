@@ -2,7 +2,7 @@
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Asset/FAssetRegistry.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "UClass.h"
 
 IMPLEMENT_UCLASS(UInstancePrimitiveComponent, UPrimitiveComponent)

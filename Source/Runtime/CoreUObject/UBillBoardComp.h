@@ -4,7 +4,7 @@
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "UPrimitiveComponent.h"
 
-class UScene;
+class UWorld;
 class FArchive;
 
 class UBillBoardComp : public UPrimitiveComponent {

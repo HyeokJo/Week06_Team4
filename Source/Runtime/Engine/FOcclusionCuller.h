@@ -2,7 +2,7 @@
 #include "Core.h"
 
 class FMesh;
-class UScene;
+class UWorld;
 struct FSceneView;
 
 //메시에 내접한 박스. 메시마다 갖고 있어야 한다.
@@ -76,7 +76,7 @@ public:
 	//Frustum을 통과한 것중 가려질 것을 0으로 바꾼다.
 	//OutOccludedFlags[i] == 1 : 오클루전으로 지운 것. 나중에 오라클 검증.
 	//반환값 : 지운 개수
-	uint32 Cull(const FSceneView& View, const UScene& Scene, TArray<uint8>& InOutVisibleFlags,
+	uint32 Cull(const FSceneView& View, const UWorld& World, TArray<uint8>& InOutVisibleFlags,
 				TArray<uint8>& OutOccludedFlags);
 
 	

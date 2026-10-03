@@ -15,7 +15,6 @@
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Engine/FRenderData.h"
-#include "Runtime/Engine/UScene.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Core/Globals.h"
 #include <fstream>
@@ -95,11 +94,11 @@ namespace
     }
 }
 
-void FRenderView::CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor)
+void FRenderView::CollectScenePrimitives(const UWorld& World, const FSceneView& View, const AActor* SelectedActor)
 {
-    const TArray<UPrimitiveComponent*>& Primitives = Scene.GetRenderComponents();
+    const TArray<UPrimitiveComponent*>& Primitives = World.GetRenderComponents();
     // Primitives[i]의 SceneIndex는 i이므로 CullDataList[i]가 그 컴포넌트의 월드 바운드다 (VisibleFlags와 같은 규칙)
-    const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
+    const TArray<FAxisAlignedBoundingBox>& CullDataList = World.GetCullDataList();
     const UStaticMeshComponent::FLODView LODView = UStaticMeshComponent::MakeLODView(View.Camera);
     RenderQueue.Reserve(Primitives.size());
 
@@ -221,20 +220,20 @@ void FRenderView::PrepareRender()
     Renderer.UpdateFrameConstants(FrameConstants);
 }
 
-void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx)
+void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx)
 {
     // 뷰포트 시작
     BeginView(View);
 
     //컬링 측정
     {
-        CullScene(View, Scene);
+        CullScene(View, World);
     }
 
     // 씬 컴포넌트 수집 (LOD 선택 포함). 독립 카운터라 부모인 Draw 수치에는 영향이 없다.
     {
         SCOPE_CYCLE_COUNTER_IMPL(__COUNTER__, "Collect", true);
-        CollectScenePrimitives(Scene, View, EditorCtx.SelectedActor);
+        CollectScenePrimitives(World, View, EditorCtx.SelectedActor);
     }
 
     if (Globals::bEnableRenderSort)
@@ -526,9 +525,9 @@ void FRenderView::SetCullingEnabled(bool pCullingEnable)
     Globals::bEnableFrustumCulling = pCullingEnable;
 }
 
-void FRenderView::CullScene(const FSceneView& View, const UScene& Scene)
+void FRenderView::CullScene(const FSceneView& View, const UWorld& World)
 {
-    const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
+    const TArray<FAxisAlignedBoundingBox>& CullDataList = World.GetCullDataList();
     
     const bool bUseFrustum = Globals::bEnableFrustumCulling;
 
@@ -580,7 +579,7 @@ void FRenderView::CullScene(const FSceneView& View, const UScene& Scene)
         }
 
         SCOPE_CYCLE_COUNTER("Occlusion");
-        Globals::OccludedCount = OcclusionCuller.Cull(View, Scene, VisibleFlags, OccludedFlags);
+        Globals::OccludedCount = OcclusionCuller.Cull(View, World, VisibleFlags, OccludedFlags);
     }
 }
 

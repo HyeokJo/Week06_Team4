@@ -8,7 +8,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Engine/ShowFlags.h"
 #include "Runtime/Engine/FRayCastingManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/CoreUObject/FStatsManager.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include <algorithm>
@@ -35,7 +35,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
-        Editor.LoadScene("DefaultScene/Default.scene");
+        Editor.LoadWorld("DefaultScene/Default.scene");
     }
 
     //액터 스폰
@@ -188,9 +188,9 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-    UScene* Scene = Editor.GetCurrentScene();
+    UWorld* World = Editor.GetCurrentWorld();
     FEditorViewportClient* Viewport = Editor.GetActiveViewport();
-    const bool bUseBVH = Editor.bUseBVHPicking && Scene;
+    const bool bUseBVH = Editor.bUseBVHPicking && World;
     if (!bUseBVH && !Viewport) { return; }
 
     const FRay Ray = FRayCastingManager::LastPickRay;
@@ -206,7 +206,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         FScopeCycleCounter Counter;
         if (bUseBVH)
         {
-            Scene->GetSceneBVH().QueryRay(Ray, HitComponent, ImpactPoint);
+            World->GetSceneBVH().QueryRay(Ray, HitComponent, ImpactPoint);
         }
         else
         {

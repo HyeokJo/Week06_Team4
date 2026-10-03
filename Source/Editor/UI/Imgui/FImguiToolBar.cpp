@@ -72,12 +72,12 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
                 if (PickSceneFile(Path, true))
                 {
                     CurrentScenePath = Path;
-                    Editor.SaveScene(Path);
+                    Editor.SaveWorld(Path);
                 }
             }
             else
             {
-                Editor.SaveScene(CurrentScenePath);
+                Editor.SaveWorld(CurrentScenePath);
             }
         }
 
@@ -87,7 +87,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, true))
             {
                 CurrentScenePath = Path;
-                Editor.SaveScene(Path);
+                Editor.SaveWorld(Path);
             }
         }
 
@@ -97,7 +97,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, false))
             {
                 CurrentScenePath = Path;
-                Editor.LoadScene(Path);
+                Editor.LoadWorld(Path);
             }
         }
 

@@ -6,8 +6,8 @@
 #include "Runtime/Input/FInputManager.h"
 #include "Runtime/Engine/FEngineLoop.h"
 #include "Runtime/Engine/FTimeManager.h"
-#include "Runtime/Engine/USceneManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorldManager.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Resource/FResourceLoader.h"
 #include "Runtime/CoreUObject/UClass.h"
@@ -50,7 +50,7 @@ void FEngine::Init()
 
 #else
 	// 새씬 생성
-	SceneManager.SetScene(NewObject<UScene>());
+	WorldManager.SetWorld(NewObject<UWorld>());
 
 	TUniquePtr<FEditorApplication> EditorApp = MakeUnique<FEditorApplication>();
 	{
@@ -59,7 +59,7 @@ void FEngine::Init()
 		Renderer.GetDeviceAndContext_ImplDX11(Device, Context);
 		EditorApp->Initialize_ImguiWin32DX11(Window, Device, Context);
 	}
-	EditorApp->Initialize_Runtime(&SceneManager, &RenderView);
+	EditorApp->Initialize_Runtime(&WorldManager, &RenderView);
 	Application = std::move(EditorApp);
 #endif
 
@@ -103,7 +103,7 @@ void FEngine::Exit()
 	Application->Shutdown();
 
 #if !defined(_OBJVIEWER)
-	SceneManager.Release();
+	WorldManager.Release();
 #endif
 	Application.Reset();
 

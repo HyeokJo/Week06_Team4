@@ -1,7 +1,6 @@
 #pragma once
 
 #include "UPrimitiveComponent.h"
-#include "Runtime/Engine/UScene.h"
 
 
 // TODO: 언젠가는 USceneComponent로 옮길것..
