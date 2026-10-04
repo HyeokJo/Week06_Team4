@@ -1,33 +1,18 @@
 #pragma once
-
-#include "Runtime/Core/FString.h"
-#include "Runtime/Core/TArray.h"
-#include "Runtime/Core/TMap.h"
-#include "Runtime/Core/IntTypes.h"
-#include "Runtime/Math/FVector.h"
-#include "Runtime/Math/FVector2.h"
-#include "Runtime/Math/FVector4.h"
-#include "ThirdParty/Json/json.hpp"
-
 #include "Runtime/Utility/EngineUtil.h"
+#include "FArchive.h"
+#include "ThirdParty/Json/json.hpp"
+#include <array>
 
-/// <summary>
-/// UObject의 데이터를 직렬화/역직렬화 하는 클래스입니다.
-/// UObject의 데이터를 이 클래스에 담을 수도 있고, 이 데이터로 UObject를 만들 수도 있습니다.
-/// </summary>
-class FJsonArchive
+
+
+class FJsonArchive :public FArchive
 {
-	// 언젠가 JSON이 아니라 네트워크 패킷에서 직렬화/역직렬화 데이터를 가져올 일이 있을지도 모름 (ex. 멀티플레이)
-	// 그래서 JSON을 Serialize/Deserialize 함수에 때려박지 않고 이 클래스가 별도로 존재하는 것
-
-	// 따라서, 언젠가는 이 코드가 JSON에 강하게 커플링된 문제를 해소해야할지도 모름
-	// 지금입니다 2트 ㅋㅋㅋ
-private:
-	nlohmann::json Object;
-
 public:
 	FJsonArchive();
-	explicit FJsonArchive(const nlohmann::json& InObject);
+	explicit FJsonArchive(const nlohmann::json& InObject, const TMap<uint32, UObject*>* InObjects = nullptr);
+	FJsonArchive(const FJsonArchive& Other);
+	FJsonArchive& operator=(const FJsonArchive& Other);
 
 	nlohmann::json GetJSON() const { return Object; }
 
@@ -81,6 +66,84 @@ public:
 
 	template <typename T>
 	void SetEnum(const FString& Key, T Value, TMap<T, FString>& EnumMap);
+
+	bool BeginObject(const char* Name) override;
+	void EndObject() override;
+
+	bool BeginArray(const char* Name, uint32& Count) override;
+	void BeginArrayElement(uint32 Index) override;
+	void EndArrayElement() override;
+	void EndArray() override;
+
+	bool BeginMap(const char* Name, uint32& Count) override;
+	void BeginMapEntry(uint32 Index, FString& Key) override;
+	void EndMapEntry() override;
+	void EndMap() override;
+
+
+protected:
+	// 숫자와 문자열은 같은 JSON 변환 함수를 사용한다.
+	bool SerializeValue(const char* Name, int32& Value) override { return Transfer(Name, Value); }
+	bool SerializeValue(const char* Name, uint32& Value) override { return Transfer(Name, Value); }
+	bool SerializeValue(const char* Name, float& Value) override { return Transfer(Name, Value); }
+	bool SerializeValue(const char* Name, double& Value) override { return Transfer(Name, Value); }
+	bool SerializeValue(const char* Name, bool& Value) override { return Transfer(Name, Value); }
+	bool SerializeValue(const char* Name, FString& Value) override { return Transfer(Name, Value); }
+
+	bool SerializeValue(const char* Name, FVector& Value) override;
+	bool SerializeValue(const char* Name, FVector2& Value) override;
+	bool SerializeValue(const char* Name, FVector4& Value) override;
+	bool SerializeValue(const char* Name, UObject*& Value) override;
+
+private:
+	nlohmann::json Object;
+	TArray<nlohmann::json*> Scopes;
+	TArray<nlohmann::json::iterator> MapIterators;
+
+	// 객체 생성 코드가 제공하는 '저장 ID → 생성된 객체' 대응표.
+	const TMap<uint32, UObject*>* Objects = nullptr;
+
+	nlohmann::json& Current()
+	{
+		return Scopes.empty() ? Object : *Scopes.back();
+	}
+
+	nlohmann::json* FindNode(const char* Name);
+
+	template<typename T>
+	bool Transfer(const char* Name, T& Value)
+	{
+		// 읽기에서 없는 키는 생성하지 않는다.
+		nlohmann::json* Node = FindNode(Name);
+		if (!Node) return false;
+
+		if (IsLoading()) Value = Node->get<T>();
+		else *Node = Value;
+		return true;
+	}
+
+	template<size_t N>
+	bool TransferVector(const char* Name, std::array<float, N>& Parts)
+	{
+		// 기존 벡터의 JSON 배열 표현을 유지한다.
+		nlohmann::json* Node = FindNode(Name);
+		if (!Node) return false;
+
+		if (IsLoading())
+		{
+			if (!Node->is_array() || Node->size() != N)
+				throw std::runtime_error("Invalid archive vector.");
+
+			for (size_t Index = 0; Index < N; ++Index)
+				Parts[Index] = Node->at(Index).get<float>();
+		}
+		else
+		{
+			*Node = Parts;
+		}
+		return true;
+	}
+
 };
 
 template<typename T>
