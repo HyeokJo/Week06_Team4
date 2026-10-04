@@ -18,7 +18,8 @@ protected:
   virtual void Deserialize(const FArchive& Archive);
 
 public:
-  void Initialize() override;
+  //void Initialize() override;
+  void PostInitProperties() override;
 
   virtual void SetTexture(UTexture* Texture);
   UTexture* GetTexture() const;

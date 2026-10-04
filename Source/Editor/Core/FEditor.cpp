@@ -218,7 +218,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = EditorWorld->SpawnActor(Type);
+        AActor* NewActor = EditorWorld->SpawnActorDeferred(Type);
         if (!NewActor) { return; }
 
 
@@ -228,7 +228,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         NewActor->SetTransform(CurrentTransform);
 
         // 액터 시작 및 선택
-        NewActor->BeginPlay();
+        EditorWorld->FinishSpawningActor(NewActor);
         SelectActor(NewActor);
     }
 

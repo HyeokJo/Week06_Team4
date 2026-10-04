@@ -99,7 +99,7 @@ public:
 
 	virtual void Initialize();
 	virtual void Release();
-
+	virtual void PostInitProperties() {};
 	static void* operator new(std::size_t Size);
 
 	static void operator delete(void* Memory, std::size_t Size) noexcept;

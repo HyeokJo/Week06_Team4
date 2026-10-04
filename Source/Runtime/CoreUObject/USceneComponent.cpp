@@ -11,6 +11,8 @@ IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
 
 void USceneComponent::Initialize()
 {
+    if (IsInitialized()) return;
+
     Super::Initialize();
     bGlobalDirty = true;
 }

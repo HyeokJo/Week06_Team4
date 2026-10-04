@@ -16,6 +16,7 @@ protected:
   virtual void Deserialize(const FArchive& Archive) override;
 
 public:
+    void PostInitProperties() override;
   void Initialize() override;
 
   // 매 프레임 애니메이션 갱신

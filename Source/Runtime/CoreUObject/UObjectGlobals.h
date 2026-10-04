@@ -16,6 +16,17 @@ TObject* NewObject(TArgs&&... Args)
 		delete Object;
 		throw;
 	}
+	try
+	{
+		static_cast<UObject*>(Object)->PostInitProperties();
+	}
+	catch (...)
+	{
+		// 등록 이후 실패했다면 객체 배열에서도 제거해야 한다.
+		FUObjectArray::Get().DestroyObject(Object);
+		throw;
+	}
+
 	return Object;
 }
 

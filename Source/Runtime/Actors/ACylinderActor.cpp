@@ -12,8 +12,13 @@ ACylinderActor::ACylinderActor()
 	// 기본 실린더 컴포넌트 장착
 	UStaticMeshComponent* Object = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(Object);
+}
+void ACylinderActor::PostInitProperties()
+{
+	Super::PostInitProperties();
 
+	UStaticMeshComponent* Component = RootComponent->Cast<UStaticMeshComponent>();
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-	Object->SetMesh(Registry.Get<UStaticMesh>("#Cylinder"));
-	Object->SetMaterial(Registry.Get<UMaterial>("Material/Textured.json"));
+	Component->SetMesh(Registry.Get<UStaticMesh>("#Cylinder"));
+	Component->SetMaterial(Registry.Get<UMaterial>("Material/Textured.json"));
 }

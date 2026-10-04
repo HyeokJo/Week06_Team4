@@ -14,6 +14,7 @@ class UPrimitiveComponent : public USceneComponent {
   DECLARE_UCLASS(UPrimitiveComponent, USceneComponent)
 
 public:
+    void PostInitProperties() override;
     void Initialize() override;
     void Register(ULevel& InLevel) override;
     void Unregister() override;

@@ -12,15 +12,20 @@ IMPLEMENT_UCLASS(AActor, UObject)
 
 void AActor::Initialize()
 {
+	if (bInitialized) { return; }
 	Super::Initialize();
-	Owner = nullptr;
-	bHasBegunPlay = false;
-	bTickEnabled = false;
+	for (size_t Index = 0; Index < AttachedComp.size(); ++Index)
+	{
+		UActorComponent* Component = AttachedComp[Index];
+		if (Component)
+			Component->Initialize();
+	}
+	bInitialized = true;
 }
 
 void AActor::Release()
 {
-	ULevel* RegisteredLevel = Owner;
+	ULevel* RegisteredLevel = GetTypedOuter<ULevel>();
 	if (bHasBegunPlay)
 	{
 		EndPlay();
@@ -239,6 +244,7 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 	}
 	Addcomp->ActorOwner = this;
 	AttachedComp.push_back(Addcomp);
+	if (!bInitialized) { return; }
 	Addcomp->Initialize();
 
 	if (Owner)
@@ -254,7 +260,7 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 
 void AActor::Register(ULevel& InLevel)
 {
-	if (Owner == &InLevel)
+	if (!bInitialized||Owner == &InLevel)
 	{
 		return;
 	}

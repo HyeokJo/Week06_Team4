@@ -35,19 +35,26 @@ FMatrix GetRenderMatrix(const FTransform &Transform, const FCamera &Camera) {
 }
 } // namespace
 
-void UTextInstanceComponent::Initialize() {
-  Super::Initialize();
+void UTextInstanceComponent::PostInitProperties()
+{
+    Super::PostInitProperties();
 
-  FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-  SetMesh(Registry.Get<UStaticMesh>("#Rect"));
-  SetMaterial(Registry.Get<UMaterial>("Material/Text.json"));
-  SetFont(Registry.Get<UFont>("Font/BazziOTF.json"));
-
-  RenderData.Type = ERenderType::Text;
-
-  RebuildTextMesh();
+    // 기본 에셋은 복원 이전에만 지정한다.
+    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+    SetMesh(Registry.Get<UStaticMesh>("#Rect"));
+    SetMaterial(Registry.Get<UMaterial>("Material/Text.json"));
+    SetFont(Registry.Get<UFont>("Font/BazziOTF.json"));
+    RenderData.Type = ERenderType::Text;
 }
 
+void UTextInstanceComponent::Initialize()
+{
+    if (IsInitialized()) return;
+    Super::Initialize();
+
+    // 복원된 Text와 Font를 이용한다. 기본 폰트를 다시 지정하지 않는다.
+    RebuildTextMesh();
+}
 void UTextInstanceComponent::Update(float delta) {}
 
 void UTextInstanceComponent::SetText(const FWString &InText) {

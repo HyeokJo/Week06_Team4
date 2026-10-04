@@ -10,4 +10,5 @@ class ACylinderActor : public AActor
 
 public:
 	explicit ACylinderActor();
+	void PostInitProperties() override;
 };

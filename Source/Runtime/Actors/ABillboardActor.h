@@ -13,6 +13,6 @@ class ABillboardActor : public AActor
 
 public:
 	explicit ABillboardActor();
-
+	void PostInitProperties() override;
 	UBillBoardComp* GetBillboardComponent() const;
 };

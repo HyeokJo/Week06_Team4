@@ -5,6 +5,14 @@
 
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
+void UActorComponent::Initialize()
+{
+    if (bInitialized) return;
+
+    Super::Initialize();
+    bInitialized = true;
+}
+
 void UActorComponent::Release()
 {
     if (bHasBegunPlay) { EndPlay(); }

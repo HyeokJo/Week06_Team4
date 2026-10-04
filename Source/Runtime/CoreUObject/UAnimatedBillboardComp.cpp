@@ -7,10 +7,24 @@
 IMPLEMENT_UCLASS(UAnimatedBillboardComp, UBillBoardComp)
 UCLASS_META(UAnimatedBillboardComp, DisplayName, "AnimatedBillboard")
 
+
+void UAnimatedBillboardComp::PostInitProperties()
+{
+    Super::PostInitProperties();
+
+    PrimaryComponentTick.bCanEverTick = true;
+    SetComponentTickEnabled(true);
+}
+
 void UAnimatedBillboardComp::Initialize()
 {
-  Super::Initialize();
-  SetComponentTickEnabled(true);
+    if (IsInitialized()) return;
+    Super::Initialize();
+
+    // 새 실행에 사용할 상태를 준비하고 복원된 시트 설정으로 UV를 계산한다.
+    CurrentFrame = 0;
+    ElapsedTime = 0.0f;
+    RefreshUV();
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,

@@ -13,7 +13,7 @@ class UActorComponent : public UObject {
 	DECLARE_UCLASS(UActorComponent, UObject)
 	friend class AActor;
 public:
-	//virtual void Initialize() override;
+	virtual void Initialize() override;
 	virtual void Release() override;
 
 	AActor* GetActorOwner() const { return ActorOwner; };
@@ -28,6 +28,7 @@ public:
 	//[[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
 	[[nodiscard]] bool IsRegistered() const { return Level != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
+	[[nodiscard]] bool IsInitialized() const { return bInitialized; }
 
 	//virtual void Serialize(FArchive& Archive) const override;
 	//virtual void Deserialize(const FArchive& Archive) override;
@@ -50,6 +51,6 @@ protected:
 private:
 	//TODO : Outer 구조 도입시 구조 수정해야함.
 	void SetActorOwner(AActor* InOwner) { ActorOwner = InOwner; }
-
+	bool bInitialized = false;
 
 };

@@ -31,6 +31,7 @@ namespace EditorConstant
 	   AAnimatedBillboardActor::StaticClass(),
 	   ASpotlightActor::StaticClass(),
 	   ATextRenderActor::StaticClass(),
+	   ACatActor::StaticClass(),
 	};
 
 }

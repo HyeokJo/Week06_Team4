@@ -56,7 +56,8 @@ public:
 	 
 	[[nodiscard]] bool IsRegistered() const { return Owner != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
-
+	[[nodiscard]] bool IsInitialized() const { return bInitialized; }
+	[[nodiscard]] bool IsActorTickEnabled() const { return bTickEnabled; }
 	void Destroy();
 
 private:
@@ -64,4 +65,6 @@ private:
 	bool bHasBegunPlay = false;
 	//소유권만 삭제, 객체 삭제는 하지않음.
 	void RemoveOwnedComponentReference(UActorComponent* Component);
+
+	bool bInitialized = false;
 };

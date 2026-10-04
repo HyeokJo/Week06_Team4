@@ -9,17 +9,28 @@
 
 IMPLEMENT_UCLASS(UPrimitiveComponent, USceneComponent)
 
+void UPrimitiveComponent::PostInitProperties()
+{
+    Super::PostInitProperties();
+
+    // 생성 직후 기본 렌더 종류와 Material 슬롯을 준비한다.
+    RenderData.Type = ERenderType::Primitive;
+    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+    RenderData.Materials.emplace_back(Registry.Get<UMaterial>("Material/Simple.json"));
+}
+
 void UPrimitiveComponent::Initialize()
 {
+    if (IsInitialized()) return;
     Super::Initialize();
-    RenderData.Type = ERenderType::Primitive;
 
-    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-    FMaterialInstance DefaultMaterial{ Registry.Get<UMaterial>("Material/Simple.json") };
+    // 기본값 또는 복원된 최종 메시로 로컬 바운드를 다시 계산한다.
+    LocalBounds = RenderData.Mesh ? RenderData.Mesh->Get()->GetLocalBounds() : FAxisAlignedBoundingBox{};
 
-    RenderData.Materials.push_back(DefaultMaterial);
+    // Material을 새로 지정하지 않고 현재 데이터로 캐시를 만든다.
     UpdateMaterialCache();
     UpdateSortKey();
+    MarkBoundDirty();
 }
 
 void UPrimitiveComponent::SetMesh(UStaticMesh* Mesh)

@@ -14,16 +14,16 @@ ACatActor::ACatActor()
 	CatStaticMeshComp = NewObjectWithOuter<UStaticMeshComponent>(this);
 	SetRootComponent(CatStaticMeshComp);
 
+}
+void ACatActor::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// 기본 설정은 복원 전에 적용한다.
+	bTickEnabled = true;
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	CatStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/oiia/oiia.json"));
 }
-
-void ACatActor::Initialize()
-{
-	Super::Initialize();
-	bTickEnabled = true;
-}
-
 void ACatActor::Update(float DeltaTime)
 {
 	Super::Update(DeltaTime);

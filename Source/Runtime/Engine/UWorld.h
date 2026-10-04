@@ -44,24 +44,17 @@ public:
         requires std::derived_from<TActor, AActor>
     TActor* SpawnActor(const FVector& Location, const FVector& Scale, TArgs &&...Args) 
     {
-        TActor* Actor = NewObjectWithOuter<TActor>(Level, std::forward<TArgs>(Args)...);
-        Actor->Initialize();
+        TActor* Actor = SpawnActorDeferred<TActor>(std::forward<TArgs>(Args)...);
 
-        if (Actor->GetRootComponent()) {
+        if (USceneComponent* Root = Actor->GetRootComponent())
+        {
             FTransform Transform{};
             Transform.SetLocation(Location);
             Transform.SetScale3D(Scale);
-            Actor->GetRootComponent()->SetRelativeTransform(Transform);
+            Root->SetRelativeTransform(Transform);
         }
 
-        Level->Actors.push_back(Actor);
-
-        if (bActive) {
-            Actor->Register(*this);
-        }
-        if (bHasBegunPlay) {
-            Actor->BeginPlay();
-        }
+        FinishSpawningActor(Actor);
         return Actor;
     }
 
@@ -84,6 +77,25 @@ public:
             FVector(0.0f, 0.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f),
             std::forward<FirstArg>(First), std::forward<RestArgs>(Rest)...
         );
+    }
+    
+    //Actor 지연 생성/생성완료 관련 함수들.
+    // 클래스 타입으로 생성하되 Initialize·Register·BeginPlay는 미룬다.
+    AActor* SpawnActorDeferred(UClass* ClassType);
+
+    // Transform 설정이나 데이터 복원이 끝난 Actor를 실행 가능한 상태로 만든다.
+    void FinishSpawningActor(AActor* Actor);
+
+    template<typename TActor, typename... TArgs>
+        requires std::derived_from<TActor, AActor>
+    TActor* SpawnActorDeferred(TArgs&&... Args)
+    {
+        // 팩토리의 PostInitProperties까지만 실행된 상태다.
+        TActor* Actor = NewObjectWithOuter<TActor>(
+            Level, std::forward<TArgs>(Args)...);
+
+        Level->Actors.push_back(Actor);
+        return Actor;
     }
 
     virtual void Serialize(FArchive& Archive) const override;
@@ -111,7 +123,7 @@ private:
     FScene* Scene = nullptr;
     ULevel* Level = nullptr;// persistent level
 	// TODO: SubLevel 지원 필요
-    EWorldType WorldType;
+    EWorldType WorldType = EWorldType::Editor;
 
     bool bInitialized = false;
     bool bActive = false;
