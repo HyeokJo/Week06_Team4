@@ -1,5 +1,5 @@
 #include "UObject.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Core/FMemory.h"
@@ -15,13 +15,13 @@ void UObject::Release()
 {
 }
 
-void UObject::Serialize(FArchive& Archive) const
+void UObject::Serialize(FJsonArchive& Archive) const
 {
 	Archive.SetInt32("UUID", UUID);
 	Archive.SetString("Type", GetClass()->GetUClassName());
 }
 
-void UObject::Deserialize(const FArchive& Archive)
+void UObject::Deserialize(const FJsonArchive& Archive)
 {
 	UUID = Archive.GetInt32("UUID");
 }

@@ -3,7 +3,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Engine/UWorld.h"
 #include <algorithm>
 #include "Runtime/Engine/ULevel.h"
@@ -64,13 +64,13 @@ void AActor::Release()
 	Super::Release();
 }
 
-void AActor::Serialize(FArchive& Archive) const
+void AActor::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
 	if (RootComponent)
 	{
-		FArchive RootArchive{};
+		FJsonArchive RootArchive{};
 		RootComponent->Serialize(RootArchive);
 		Archive.SetArchive("RootComponent", RootArchive);
 	}
@@ -80,7 +80,7 @@ void AActor::Serialize(FArchive& Archive) const
 	}
 }
 
-void AActor::Deserialize(const FArchive& Archive)
+void AActor::Deserialize(const FJsonArchive& Archive)
 {
 	Super::Deserialize(Archive);
 
@@ -96,7 +96,7 @@ void AActor::Deserialize(const FArchive& Archive)
 		return;
 	}
 
-	FArchive RootComponentArchive = Archive.GetArchive("RootComponent");
+	FJsonArchive RootComponentArchive = Archive.GetArchive("RootComponent");
 	const FString& SavedTypeName = RootComponentArchive.GetString("Type");
 	UClass* SavedClass = UClass::FindByName(SavedTypeName);
 

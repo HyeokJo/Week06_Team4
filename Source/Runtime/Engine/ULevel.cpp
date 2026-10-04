@@ -1,6 +1,6 @@
 #include "ULevel.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 
 IMPLEMENT_UCLASS(ULevel, UObject)
 UCLASS_META(ULevel, SerializeName, "Level")

@@ -5,7 +5,7 @@
 #include "Runtime/Rendering/FRenderQueue.h"
 
 
-class FArchive;
+class FJsonArchive;
 class UFont;
 
 class UTextInstanceComponent : public UInstancePrimitiveComponent {
@@ -36,8 +36,8 @@ public:
       return EEngineShowFlags::SF_BillboardText;
     }
 
-    virtual void Serialize(FArchive &Archive) const override;
-    virtual void Deserialize(const FArchive &Archive) override;
+    virtual void Serialize(FJsonArchive &Archive) const override;
+    virtual void Deserialize(const FJsonArchive &Archive) override;
 
     float GetWidth() const { return Width; }
     float GetHeight() const { return Height; }

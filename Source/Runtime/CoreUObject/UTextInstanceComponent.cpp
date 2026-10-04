@@ -1,6 +1,6 @@
 #include "UTextInstanceComponent.h"
 #include "Runtime/Asset/UFont.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
@@ -225,7 +225,7 @@ const FRenderData& UTextInstanceComponent::GetRenderData(const FCamera &Camera) 
   return RenderData;
 }
 
-void UTextInstanceComponent::Serialize(FArchive &Archive) const {
+void UTextInstanceComponent::Serialize(FJsonArchive &Archive) const {
   Super::Serialize(Archive);
 
   Archive.SetWString("Text", Text);
@@ -235,7 +235,7 @@ void UTextInstanceComponent::Serialize(FArchive &Archive) const {
   }
 }
 
-void UTextInstanceComponent::Deserialize(const FArchive &Archive) {
+void UTextInstanceComponent::Deserialize(const FJsonArchive &Archive) {
   Super::Deserialize(Archive);
 
   Text = Archive.GetWString("Text");

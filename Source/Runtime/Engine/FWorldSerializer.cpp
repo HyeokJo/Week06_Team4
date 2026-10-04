@@ -4,7 +4,7 @@
 #include <string>
 #include <filesystem>
 #include "ThirdParty/Json/json.hpp"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/CoreUObject/FUObjectArray.h"
 #include "Runtime/Core/Log.h"
 
@@ -24,11 +24,11 @@ void FWorldSerializer::SaveWorld(const FString& InPath, UWorld* InWorld)
 	FUObjectArray& ObjectArray = FUObjectArray::Get();
 	int32 UUID = ObjectArray.GetNextUUID();
 
-	FArchive Archive;
+	FJsonArchive Archive;
 	Archive.SetInt32("Version", 2);
 	Archive.SetInt32("NextUUID", UUID);
 
-	FArchive SceneArchive;
+	FJsonArchive SceneArchive;
 	InWorld->Serialize(SceneArchive);
 	Archive.SetArchive("World", SceneArchive);
 
@@ -55,7 +55,7 @@ UWorld* FWorldSerializer::LoadWorld(const FString& InPath, FCamera* OutCamera)
 	buffer << file.rdbuf();
 
 	nlohmann::json JSON = nlohmann::json::parse(buffer.str());
-	FArchive Archive{ JSON };
+	FJsonArchive Archive{ JSON };
 
 	// TODO: TEMP: 경연 대회용 임시 컨버터 로직
 	if (Archive.IsNull("Version") || Archive.GetInt32("Version") == 1)
@@ -80,7 +80,7 @@ UWorld* FWorldSerializer::LoadWorld(const FString& InPath, FCamera* OutCamera)
 		return nullptr;
 	}
 
-	FArchive SceneArchive = Archive.GetArchive("World");
+	FJsonArchive SceneArchive = Archive.GetArchive("World");
 
 	UWorld* World = NewObject<UWorld>();
 	World->Initialize();

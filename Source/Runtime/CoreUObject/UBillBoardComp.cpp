@@ -1,10 +1,9 @@
 #include "UBillBoardComp.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Engine/UWorld.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Core/Log.h"
-#include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Engine/FSceneView.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UTexture.h"
@@ -36,7 +35,7 @@ void UBillBoardComp::PostInitProperties()
 //  RenderData.Type = ERenderType::Primitive;
 //}
 
-void UBillBoardComp::Serialize(FArchive& Archive) const
+void UBillBoardComp::Serialize(FJsonArchive& Archive) const
 {
     Super::Serialize(Archive);
 
@@ -47,7 +46,7 @@ void UBillBoardComp::Serialize(FArchive& Archive) const
     }
 }
 
-void UBillBoardComp::Deserialize(const FArchive& Archive)
+void UBillBoardComp::Deserialize(const FJsonArchive& Archive)
 {
     Super::Deserialize(Archive);
 

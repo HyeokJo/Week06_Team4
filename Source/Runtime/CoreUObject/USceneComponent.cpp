@@ -1,7 +1,7 @@
 #include "USceneComponent.h"
 #include "UObjectGlobals.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 
 #include <numbers>
 #include <algorithm>
@@ -73,7 +73,7 @@ void USceneComponent::SetupDetachment(bool bKeepWorldTransform)
     MarkActorTransformDirty();
 }
 
-void USceneComponent::Serialize(FArchive& Archive) const
+void USceneComponent::Serialize(FJsonArchive& Archive) const
 {
     Super::Serialize(Archive);
 
@@ -82,7 +82,7 @@ void USceneComponent::Serialize(FArchive& Archive) const
     Archive.SetVector("Scale", RelativeTransform.GetScale3D());
 }
 
-void USceneComponent::Deserialize(const FArchive& Archive)
+void USceneComponent::Deserialize(const FJsonArchive& Archive)
 {
     Super::Deserialize(Archive);
 

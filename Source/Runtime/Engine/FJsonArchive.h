@@ -15,7 +15,7 @@
 /// UObject의 데이터를 직렬화/역직렬화 하는 클래스입니다.
 /// UObject의 데이터를 이 클래스에 담을 수도 있고, 이 데이터로 UObject를 만들 수도 있습니다.
 /// </summary>
-class FArchive
+class FJsonArchive
 {
 	// 언젠가 JSON이 아니라 네트워크 패킷에서 직렬화/역직렬화 데이터를 가져올 일이 있을지도 모름 (ex. 멀티플레이)
 	// 그래서 JSON을 Serialize/Deserialize 함수에 때려박지 않고 이 클래스가 별도로 존재하는 것
@@ -26,8 +26,8 @@ private:
 	nlohmann::json Object;
 
 public:
-	FArchive();
-	explicit FArchive(const nlohmann::json& InObject);
+	FJsonArchive();
+	explicit FJsonArchive(const nlohmann::json& InObject);
 
 	nlohmann::json GetJSON() const { return Object; }
 
@@ -70,11 +70,11 @@ public:
 	template <typename T>
 	void SetArray(const FString& Key, const TArray<T>& Value);
 
-	TArray<FArchive> GetArchiveArray(const FString& Key) const;
-	void SetArchiveArray(const FString& Key, const TArray<FArchive>& Value);
+	TArray<FJsonArchive> GetArchiveArray(const FString& Key) const;
+	void SetArchiveArray(const FString& Key, const TArray<FJsonArchive>& Value);
 
-	FArchive GetArchive(const FString& Key) const;
-	void SetArchive(const FString& Key, const FArchive& Archive);
+	FJsonArchive GetArchive(const FString& Key) const;
+	void SetArchive(const FString& Key, const FJsonArchive& Archive);
 
 	template <typename T>
 	T GetEnum(const FString& Key, TMap<FString, T>& EnumMap);
@@ -84,7 +84,7 @@ public:
 };
 
 template<typename T>
-inline TArray<T> FArchive::GetArray(const FString& Key) const
+inline TArray<T> FJsonArchive::GetArray(const FString& Key) const
 {
 	TArray<T> Array;
 
@@ -98,7 +98,7 @@ inline TArray<T> FArchive::GetArray(const FString& Key) const
 }
 
 template<typename T>
-inline void FArchive::SetArray(const FString& Key, const TArray<T>& Value)
+inline void FJsonArchive::SetArray(const FString& Key, const TArray<T>& Value)
 {
 	Object[Key] = nlohmann::json::array();
 
@@ -109,7 +109,7 @@ inline void FArchive::SetArray(const FString& Key, const TArray<T>& Value)
 }
 
 template<typename T>
-inline T FArchive::GetEnum(const FString& Key, TMap<FString, T>& EnumMap)
+inline T FJsonArchive::GetEnum(const FString& Key, TMap<FString, T>& EnumMap)
 {
 	FString Value = GetString(Key);
 
@@ -123,7 +123,7 @@ inline T FArchive::GetEnum(const FString& Key, TMap<FString, T>& EnumMap)
 }
 
 template<typename T>
-inline void FArchive::SetEnum(const FString& Key, T Value, TMap<T, FString>& EnumMap)
+inline void FJsonArchive::SetEnum(const FString& Key, T Value, TMap<T, FString>& EnumMap)
 {
 	auto It = EnumMap.find(Value);
 

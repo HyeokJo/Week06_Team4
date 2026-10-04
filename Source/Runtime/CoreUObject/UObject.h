@@ -9,7 +9,7 @@
 
 class UObjectGlobals;
 class UClass;
-class FArchive;
+class FJsonArchive;
 
 /*
  * UObject를 상속받는 클래스는 반드시 GENERATED_BODY() 매크로를 사용해야 한다.
@@ -126,8 +126,8 @@ protected:
 	UObject() = default;
 	virtual ~UObject() = default;
 
-	virtual void Serialize(FArchive& Archive) const;
-	virtual void Deserialize(const FArchive& Archive);
+	virtual void Serialize(FJsonArchive& Archive) const;
+	virtual void Deserialize(const FJsonArchive& Archive);
 
 private:
 	uint32 UUID = 0u;

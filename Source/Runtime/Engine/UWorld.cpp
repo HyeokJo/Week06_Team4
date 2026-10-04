@@ -5,7 +5,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include <algorithm>
 
 #include "Runtime/CoreUObject/TObjectIterator.h"
@@ -131,18 +131,18 @@ void UWorld::EndPlay()
     bHasBegunPlay = false;
 }
 
-void UWorld::Serialize(FArchive& Archive) const
+void UWorld::Serialize(FJsonArchive& Archive) const
 {
     Super::Serialize(Archive);
 
-    TArray<FArchive> ActorArchives;
+    TArray<FJsonArchive> ActorArchives;
 
     for (const auto& Item : Level->Actors)
     {
         if (!Item)
             continue;
 
-        FArchive ItemArchive;
+        FJsonArchive ItemArchive;
         Item->Serialize(ItemArchive);
         ActorArchives.push_back(ItemArchive);
     }
@@ -150,7 +150,7 @@ void UWorld::Serialize(FArchive& Archive) const
     Archive.SetArchiveArray("Actors", ActorArchives);
 }
 
-void UWorld::Deserialize(const FArchive& Archive)
+void UWorld::Deserialize(const FJsonArchive& Archive)
 {
     Super::Deserialize(Archive);
 
@@ -160,7 +160,7 @@ void UWorld::Deserialize(const FArchive& Archive)
         return;
     }
     const size_t FirstNewActor = Level->Actors.size();
-    TArray<FArchive> ActorArchives = Archive.GetArchiveArray("Actors");
+    TArray<FJsonArchive> ActorArchives = Archive.GetArchiveArray("Actors");
 
     for (const auto& Item : ActorArchives)
     {

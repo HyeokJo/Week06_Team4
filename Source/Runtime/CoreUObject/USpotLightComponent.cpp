@@ -1,7 +1,7 @@
 #include "USpotLightComponent.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "UClass.h"
 
@@ -31,7 +31,7 @@ void USpotLightComponent::PostInitProperties()
 //	RenderData.Type = ERenderType::Spotlight;
 //}
 
-void USpotLightComponent::Serialize(FArchive& Archive) const
+void USpotLightComponent::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
@@ -41,7 +41,7 @@ void USpotLightComponent::Serialize(FArchive& Archive) const
 	Archive.SetVector("LightColor", LightColor);
 }
 
-void USpotLightComponent::Deserialize(const FArchive & Archive)
+void USpotLightComponent::Deserialize(const FJsonArchive & Archive)
 {
 	Super::Deserialize(Archive);
 

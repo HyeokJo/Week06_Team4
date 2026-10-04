@@ -3,7 +3,7 @@
 #include "Runtime/Core/TMap.h"
 #include "Runtime/Core/FString.h"
 #include "Runtime/Core/IntTypes.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Engine/FCamera.h"
 #include "Runtime/Resource/FResourceLoader.h"
 
@@ -16,14 +16,14 @@ namespace Converter
 {
 	inline TMap<FString, FString> LoadedObjs;
 
-	inline void ApplyPerspectiveCamera(const FArchive& Archive, FCamera* OutCamera)
+	inline void ApplyPerspectiveCamera(const FJsonArchive& Archive, FCamera* OutCamera)
 	{
 		if (!OutCamera || Archive.IsNull("PerspectiveCamera"))
 		{
 			return;
 		}
 
-		const FArchive CameraArchive = Archive.GetArchive("PerspectiveCamera");
+		const FJsonArchive CameraArchive = Archive.GetArchive("PerspectiveCamera");
 		const TArray<float> FOV = CameraArchive.GetArray<float>("FOV");
 		const TArray<float> NearClip = CameraArchive.GetArray<float>("NearClip");
 		const TArray<float> FarClip = CameraArchive.GetArray<float>("FarClip");
@@ -42,8 +42,8 @@ namespace Converter
 		OutCamera->SetPitch(-25.0f);
 	}
 
-	inline FArchive GetStandardArchive(
-		const FArchive& Archive,
+	inline FJsonArchive GetStandardArchive(
+		const FJsonArchive& Archive,
 		const std::filesystem::path& SceneFilePath,
 		FCamera* OutCamera = nullptr)
 	{
@@ -51,16 +51,16 @@ namespace Converter
 
 		int32 NextUUID = Archive.GetInt32("NextUUID");
 
-		FArchive SceneArchive;
+		FJsonArchive SceneArchive;
 		SceneArchive.SetInt32("UUID", NextUUID++);
 		SceneArchive.SetString("Type", "UScene");
 
-		TArray<FArchive> Actors;
+		TArray<FJsonArchive> Actors;
 		const nlohmann::json Primitives = Archive.GetArchive("Primitives").GetJSON();
 
 		for (const auto& [PrimitiveKey, PrimitiveJson] : Primitives.items())
 		{
-			const FArchive Primitive{ PrimitiveJson };
+			const FJsonArchive Primitive{ PrimitiveJson };
 			const FString Type = Primitive.GetString("Type");
 
 			if (Type != "StaticMeshComp")
@@ -98,7 +98,7 @@ namespace Converter
 				LoadedObjs.emplace(ObjKey, AssetId);
 			}
 
-			FArchive RootComponent;
+			FJsonArchive RootComponent;
 			RootComponent.SetString("Type", "UStaticMeshComponent");
 			RootComponent.SetInt32("UUID", NextUUID++);
 			RootComponent.SetVector("Location", Primitive.GetVector("Location"));
@@ -106,7 +106,7 @@ namespace Converter
 			RootComponent.SetVector("Scale", Primitive.GetVector("Scale"));
 			RootComponent.SetString("MeshAsset", AssetId);
 
-			FArchive Actor;
+			FJsonArchive Actor;
 			Actor.SetString("Type", "AActor");
 			Actor.SetInt32("UUID", ActorUUID);
 			Actor.SetArchive("RootComponent", RootComponent);
@@ -115,7 +115,7 @@ namespace Converter
 
 		SceneArchive.SetArchiveArray("Actors", Actors);
 
-		FArchive NewArchive;
+		FJsonArchive NewArchive;
 		NewArchive.SetInt32("Version", 2);
 		NewArchive.SetInt32("NextUUID", NextUUID);
 		NewArchive.SetArchive("Scene", SceneArchive);

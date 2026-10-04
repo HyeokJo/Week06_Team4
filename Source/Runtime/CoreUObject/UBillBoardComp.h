@@ -5,7 +5,7 @@
 #include "UPrimitiveComponent.h"
 
 class UWorld;
-class FArchive;
+class FJsonArchive;
 
 class UBillBoardComp : public UPrimitiveComponent {
   DECLARE_UCLASS(UBillBoardComp, UPrimitiveComponent)
@@ -14,8 +14,8 @@ class UBillBoardComp : public UPrimitiveComponent {
 protected:
   explicit UBillBoardComp() = default;
 
-  virtual void Serialize(FArchive& Archive) const;
-  virtual void Deserialize(const FArchive& Archive);
+  virtual void Serialize(FJsonArchive& Archive) const;
+  virtual void Deserialize(const FJsonArchive& Archive);
 
 public:
   //void Initialize() override;

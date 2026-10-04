@@ -24,8 +24,8 @@ protected:
 
 	explicit AActor() = default;
 
-	virtual void Serialize(FArchive& Archive) const override;
-	virtual void Deserialize(const FArchive& Archive) override;
+	virtual void Serialize(FJsonArchive& Archive) const override;
+	virtual void Deserialize(const FJsonArchive& Archive) override;
 
 	// 파생 Actor가 별도로 보관하는 컴포넌트 포인터를 정리한다.
 	virtual void OnComponentRemoved(UActorComponent* Component) {}

@@ -7,7 +7,7 @@
 
 class UWorld;
 //class AActor;
-class FArchive;
+class FJsonArchive;
 
 class USceneComponent : public UActorComponent
 {
@@ -22,8 +22,8 @@ public:
 
     bool SetupAttachment(USceneComponent* InParent);
     void SetupDetachment(bool bKeepWorldTransform = true);
-	virtual void Serialize(FArchive& Archive) const override;
-	virtual void Deserialize(const FArchive& Archive) override;
+	virtual void Serialize(FJsonArchive& Archive) const override;
+	virtual void Deserialize(const FJsonArchive& Archive) override;
     void SetInheritRotation(bool bInherit);
     //Transform이 바뀔 때 본인 및 자식 컴포넌트에 알림.
     void MarkActorTransformDirty();

@@ -98,8 +98,8 @@ public:
         return Actor;
     }
 
-    virtual void Serialize(FArchive& Archive) const override;
-    virtual void Deserialize(const FArchive& Archive) override;
+    virtual void Serialize(FJsonArchive& Archive) const override;
+    virtual void Deserialize(const FJsonArchive& Archive) override;
 
     void SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary) { return Scene->SetRenderResourceLibrary(InRenderResourceLibrary); }
     [[nodiscard]] const TArray<UPrimitiveComponent*>& GetRenderComponents() const { return Scene->GetRenderComponents(); }

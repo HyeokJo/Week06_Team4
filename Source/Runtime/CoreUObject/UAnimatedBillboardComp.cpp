@@ -1,6 +1,6 @@
 #include "UAnimatedBillboardComp.h"
 #include "Runtime/Engine/UWorld.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "UClass.h"
 #include <algorithm>
 
@@ -59,7 +59,7 @@ void UAnimatedBillboardComp::SetCurrentFrame(int InFrame) {
   }
 }
 
-void UAnimatedBillboardComp::Serialize(FArchive& Archive) const
+void UAnimatedBillboardComp::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
@@ -75,7 +75,7 @@ void UAnimatedBillboardComp::Serialize(FArchive& Archive) const
 	Archive.SetVector2("CurrentUVOffset", CurrentUVOffset);
 }
 
-void UAnimatedBillboardComp::Deserialize(const FArchive& Archive)
+void UAnimatedBillboardComp::Deserialize(const FJsonArchive& Archive)
 {
 	Super::Deserialize(Archive);
 

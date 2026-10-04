@@ -1,14 +1,14 @@
 #include "FFont.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Core/IntTypes.h"
 
-FFont::FFont(const FArchive& Archive)
+FFont::FFont(const FJsonArchive& Archive)
 {
-	const FArchive AtlasArchive = Archive.GetArchive("atlas");
+	const FJsonArchive AtlasArchive = Archive.GetArchive("atlas");
 	const float AtlasWidth = static_cast<float>(AtlasArchive.GetUInt32("width"));
 	const float AtlasHeight = static_cast<float>(AtlasArchive.GetUInt32("height"));
 
-	for (const FArchive& GlyphArchive : Archive.GetArchiveArray("glyphs"))
+	for (const FJsonArchive& GlyphArchive : Archive.GetArchiveArray("glyphs"))
 	{
 		FCharacterInfo Info{};
 		const uint32 Unicode = GlyphArchive.GetUInt32("unicode");
@@ -16,7 +16,7 @@ FFont::FFont(const FArchive& Archive)
 
 		if (!GlyphArchive.IsNull("planeBounds"))
 		{
-			const FArchive Bounds = GlyphArchive.GetArchive("planeBounds");
+			const FJsonArchive Bounds = GlyphArchive.GetArchive("planeBounds");
 			Info.planeLeft = Bounds.GetFloat("left");
 			Info.planeTop = Bounds.GetFloat("top");
 			Info.planeRight = Bounds.GetFloat("right");
@@ -25,7 +25,7 @@ FFont::FFont(const FArchive& Archive)
 
 		if (!GlyphArchive.IsNull("atlasBounds"))
 		{
-			const FArchive Bounds = GlyphArchive.GetArchive("atlasBounds");
+			const FJsonArchive Bounds = GlyphArchive.GetArchive("atlasBounds");
 			const float Left = Bounds.GetFloat("left");
 			const float Top = Bounds.GetFloat("top");
 			const float Right = Bounds.GetFloat("right");
