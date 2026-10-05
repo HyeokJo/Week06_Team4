@@ -44,7 +44,7 @@ void FImguiManager::NewFrame()
 	ImGuiID DockSpaceID = ImGui::DockSpaceOverViewport(0, Viewport, ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::PopStyleColor();
 
-	static bool Initialized = false;
+	static bool Initialized = true;
 	if (!Initialized)
 	{
 		ImGui::DockBuilderRemoveNode(DockSpaceID);

@@ -92,3 +92,19 @@ struct FLightConstants {
 };
 
 static_assert(sizeof(FLightConstants) % 16 == 0);
+
+
+// PostProcess에서 쓸 Constant Buffer
+// Register = b5
+struct FSceneDepthConstants
+{
+	//Scene Depth를 계산하기 위해 필요한 값들
+	float FarZ;
+
+	//Scene Depth View에서 0 ~ 1의 표현 Clamp 거리
+	float ClampZ = 10.f;
+
+	FVector2 padding;
+};
+
+static_assert(sizeof(FSceneDepthConstants) % 16 == 0);

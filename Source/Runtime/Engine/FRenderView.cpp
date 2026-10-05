@@ -254,6 +254,13 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
+
+    //Scene Depth View Mode 그리기
+    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+    {
+        SceneDepthViewMode(View.Camera);
+    }
+
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
         DrawGrid(View.Camera, *EditorCtx.Grid);
@@ -281,7 +288,7 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
-    // 후처리 외곽선 패스
+    // 후처리 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
 
     Renderer.ClearLastRenderState();
@@ -294,6 +301,9 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
     Renderer.SetRenderMode(View.ViewMode);
     Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
+
+    SceneDepthConstants.FarZ = View.Camera.GetFarZ();
+    Renderer.UpdateSceneDepthConstants(SceneDepthConstants);
 
     // ViewConstants 갱신
     FViewConstants ViewConstants
@@ -330,6 +340,11 @@ void FRenderView::FlushBasePass(const FCamera& Camera)
 void FRenderView::FlushLinePass(const FCamera& Camera)
 {
     FlushLineBatch(Camera.GetViewProjectionMatrix());
+}
+
+void FRenderView::SceneDepthViewMode(const FCamera& Camera)
+{
+    Renderer.RenderSceneDepthView(Camera.GetViewProjectionMatrix());
 }
 
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)

@@ -24,6 +24,8 @@ class FCamera
 	mutable FMatrix ProjectionMatrix;
 	mutable FMatrix ViewProjectionMatrix;
 
+	//TODO ViewMode 관련
+
 	void UpdateRotationMatrixIfDirty() const;
 	void UpdateDirectionVectors();
 	void UpdateViewMatrixIfDirty() const;
@@ -41,6 +43,7 @@ public:
 	const FVector& GetForwardVector() const { return ForwardVector; }
 	//FVector GetForwardVector() const;
 	const FVector& GetRightVector() const { return RightVector; }
+	const float GetFarZ() const { return Projection.GetFarPlane(); }
 
 	void SetPosition(const FVector& Value);
 	void SetYaw(float Value);

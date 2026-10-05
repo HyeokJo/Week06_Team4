@@ -450,11 +450,12 @@ void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID
 	Material->Load(MaterialDesc);
 	Registry.Register(ID, Material);
 
+
 	TSharedPtr<FMaterial> RenderMaterial = MakeShared<FMaterial>();
 	RenderMaterial->SetPipeLine(MaterialDesc.Pipeline->Get());
 	if (MaterialDesc.Texture) { RenderMaterial->SetTexture(MaterialDesc.Texture->Get()); }
 	RenderMaterial->SetSamplerDesc(MaterialDesc.TextureSamplerDesc);
-	FRenderResourceLibrary::Get().RegisterMaterial(MaterialDesc.Name, RenderMaterial);
+	FRenderResourceLibrary::Get().RegisterMaterial(MaterialDesc.Name, RenderMaterial);	
 }
 
 void FResourceLoader::LoadStaticMeshAsset(const FArchive& Archive, const FName& ID)
