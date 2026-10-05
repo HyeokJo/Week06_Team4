@@ -1,8 +1,8 @@
 #include "FEditorViewportClient.h"
 #include "Runtime/Engine/FSceneView.h"
-#include "Runtime/Engine/UWorld.h"
 #include "Editor/Core/FEditor.h"
 #include "Runtime/Engine/FRenderView.h"
+#include "Runtime/Engine/FEngine.h"
 
 void FEditorViewportClient::UpdateFocusedAndHovered(bool bFocused, bool bHovered)
 {
@@ -47,7 +47,7 @@ void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogon
 	}
 }
 
-void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEditor& Editor)
+void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 {
 	// 뷰포트 렌더링 명세 구성
 	FSceneView SceneView{
@@ -80,8 +80,14 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEdit
 		}
 	}
 
+	if (!GEngine) return;
+
+	UWorld* CurrentWorld = GEngine->GetWorld(WorldType);
+
+	if (!CurrentWorld) return;
+
 	// 뷰포트 렌더링 일괄 수행
-	RenderView.RenderView(SceneView, InWorld, EditorCtx);
+	RenderView.RenderView(SceneView, *CurrentWorld, EditorCtx);
 }
 
 void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
