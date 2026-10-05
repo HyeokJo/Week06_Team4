@@ -55,6 +55,7 @@ public:
 
 	[[nodiscard]] bool IsFocused() const { return bFocused; }
 	[[nodiscard]] bool IsHovered() const { return bHovered; }
+	[[nodiscard]] EWorldType GetWorldType() const { return WorldType; }
 
 	void Update();
 	void Draw(FRenderView& RenderView, FEditor& Editor);
