@@ -7,7 +7,6 @@
 #include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Engine/UWorld.h"
 #include <algorithm>
-#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -399,4 +398,17 @@ void AActor::Destroy() {
 		return;
 	}
 	DestroyObject(this);
+}
+
+[[nodiscard]] bool AActor::IsEditorActor() const
+{
+	ULevel* Level = GetOwner();
+
+	if (!Level) return false;
+
+	UWorld* World = Level->GetWorld();
+
+	if (!World) return false;
+
+	return World->GetWorldType() == EWorldType::Editor; 
 }
