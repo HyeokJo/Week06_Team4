@@ -64,16 +64,17 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 	FEditorRenderContext EditorCtx;
 
 	//Editor 모드일때만 렌더링.
-	if (!Editor.IsPlaying())
+	if (WorldType == EWorldType::Editor)
 	{
-		EditorCtx.SelectedActor = Editor.GetSelectedActor();
+		bool bIsEditorActor = Editor.GetSelectedActor() && Editor.GetSelectedActor()->IsEditorActor();
+		EditorCtx.SelectedActor = bIsEditorActor ? Editor.GetSelectedActor() : nullptr;
 		EditorCtx.SelectedTransform = Editor.SelectedTransform;
-		EditorCtx.Gizmo = Editor.ObjectSelected() ? &Editor.GetGizmo() : nullptr;
-		EditorCtx.TextComp = Editor.ObjectSelected() ? Editor.GetTextcomp() : nullptr;
+		EditorCtx.Gizmo = (Editor.ObjectSelected() && bIsEditorActor) ? &Editor.GetGizmo() : nullptr;
+		EditorCtx.TextComp = (Editor.ObjectSelected() && bIsEditorActor) ? Editor.GetTextcomp() : nullptr;
 		EditorCtx.Grid = &Grid;
 		EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
 
-		if (EditorCtx.SelectedActor) {
+		if (EditorCtx.SelectedActor && bIsEditorActor) {
 			if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
 				EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
 			}
@@ -92,6 +93,9 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 
 void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 {
+	// Editor 만 Gizmo 렌더링
+	if (WorldType != EWorldType::Editor || !Editor.GetSelectedActor() || !Editor.GetSelectedActor()->IsEditorActor()) return;
+
 	FSceneView SceneView{
 		.Camera = ViewportCamera,
 		.ViewProj = ViewportCamera.GetViewProjectionMatrix(),

@@ -81,15 +81,12 @@ void FEditor::Process() {
     }
 
     // 씬의 액터 업데이트
-    if(!IsPlaying())
-    {
-        if (SelectedActor) {
-            SelectedActor->SetTransform(SelectedTransform);
-        }
+    if (SelectedActor && SelectedActor->IsEditorActor()) {
+        SelectedActor->SetTransform(SelectedTransform);
         SaveState();
     }
 
-  State.Tick(FTimeManager::GetDeltaTime());
+    State.Tick(FTimeManager::GetDeltaTime());
 }
 
 void FEditor::SaveState() {
@@ -401,7 +398,6 @@ void FEditor::RenderViewports(FRenderView& RenderView)
 
 void FEditor::RenderGizmo(FRenderView& RenderView)
 {
-    if (IsPlaying()) return;
     if (ObjectSelected())
     {
         for (const SWindow& Lf : Leaf)
