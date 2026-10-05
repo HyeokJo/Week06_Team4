@@ -62,16 +62,21 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEdit
 
 	// 에디터 렌더링 컨텍스트 구성
 	FEditorRenderContext EditorCtx;
-	EditorCtx.SelectedActor = Editor.GetSelectedActor();
-	EditorCtx.SelectedTransform = Editor.SelectedTransform;
-	EditorCtx.Gizmo = Editor.ObjectSelected() ? &Editor.GetGizmo() : nullptr;
-	EditorCtx.TextComp = Editor.ObjectSelected() ? Editor.GetTextcomp() : nullptr;
-	EditorCtx.Grid = &Grid;
-	EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
 
-	if (EditorCtx.SelectedActor) {
-		if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
-			EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
+	//Editor 모드일때만 렌더링.
+	if (!Editor.IsPlaying())
+	{
+		EditorCtx.SelectedActor = Editor.GetSelectedActor();
+		EditorCtx.SelectedTransform = Editor.SelectedTransform;
+		EditorCtx.Gizmo = Editor.ObjectSelected() ? &Editor.GetGizmo() : nullptr;
+		EditorCtx.TextComp = Editor.ObjectSelected() ? Editor.GetTextcomp() : nullptr;
+		EditorCtx.Grid = &Grid;
+		EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
+
+		if (EditorCtx.SelectedActor) {
+			if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
+				EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
+			}
 		}
 	}
 

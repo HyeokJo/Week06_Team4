@@ -44,6 +44,8 @@ public:
 
     [[nodiscard]] bool IsActive() const { return bActive; }
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
+    void SetPaused(bool bInPaused) { bPaused = bInPaused; }
+    [[nodiscard]] bool IsPaused() const { return bPaused; }
 
     // 액터 목록 반환
     [[nodiscard]] const TArray<AActor*>& GetActors() const { return Level->Actors; }
@@ -138,4 +140,5 @@ private:
     bool bInitialized = false;
     bool bActive = false;
     bool bHasBegunPlay = false;
+    bool bPaused = false;
 };

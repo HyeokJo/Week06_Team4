@@ -57,7 +57,20 @@ public:
     void Shutdown();
 
     void Process();
+    bool StartPIE();
+    [[nodiscard]] bool IsPlaying() const
+    {
+        return GEngine && GEngine->GetWorld(EWorldType::PIE) != nullptr;
+    }    
+    // Pause와 Stop은 현재 PIE World를 대상으로 한다.
+    void TogglePIEPause();
+    void EndPIE();
 
+    [[nodiscard]] bool IsPIEPaused() const
+    {
+        UWorld* World = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
+        return World && World->IsPaused();
+    }
     void NewScene();
     void SaveWorld(const FString &Path);
     void LoadWorld(const FString &Path);
@@ -81,7 +94,11 @@ public:
     }
     [[nodiscard]] UWorld* GetCurrentWorld() const
     {
-        return GEngine ? GEngine->GetWorld(EWorldType::Editor) : nullptr;
+        if (!GEngine) return nullptr;
+
+        // PIE 실행 중에는 화면과 아웃라이너가 복제 World를 사용한다.
+        UWorld* PIEWorld = GEngine->GetWorld(EWorldType::PIE);
+        return PIEWorld ? PIEWorld : GEngine->GetWorld(EWorldType::Editor);
     }
     void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
     // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
@@ -115,4 +132,10 @@ private:
     FGizmo Gizmo;
     TWeakObjectPtr<AActor> SelectedActor;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
+
+    FEditorState StateBeforePIE;
+    TArray<FEditorViewportClient> ViewportsBeforePIE;
+    int32 ActiveViewportBeforePIE = 0;
+    // 임시 최대화된 현재 뷰포트 번호
+    int32 MaximizedViewportBeforePIE = -1;
 };

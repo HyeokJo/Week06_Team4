@@ -112,7 +112,7 @@ void UWorld::BeginPlay()
 
 void UWorld::Update(float DeltaTime) 
 {
-    if (!bHasBegunPlay) { return; }
+    if (!bHasBegunPlay || bPaused) { return; }
     
     for (AActor* Actor : Level->Actors) 
     {
@@ -132,6 +132,7 @@ void UWorld::EndPlay()
             (*It)->EndPlay();
     }
     bHasBegunPlay = false;
+    bPaused = false;
 }
 
 void UWorld::Serialize(FJsonArchive& Archive) const
