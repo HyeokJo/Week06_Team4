@@ -13,18 +13,18 @@ class UFogComponent : public USceneComponent {
   GENERATED_BODY()
   DECLARE_UCLASS(UFogComponent, USceneComponent)
 
-public:
-    void Initialize() override;
-    void Register(UScene& InScene) override;
-    void Unregister() override;
-
-    void SetColor(const FVector4& Color, int32 Index = 0);
-
-protected:
-    UFogComponent() = default;
-
-    FVector Color{1.0f, 1.0f, 1.0f};
-    float ColorAmount = 0.0f;
+//public:
+//    void Initialize() override;
+//    void Register(UScene& InScene) override;
+//    void Unregister() override;
+//
+//    void SetColor(const FVector4& Color, int32 Index = 0);
+//
+//protected:
+//    UFogComponent() = default;
+//
+//    FVector Color{1.0f, 1.0f, 1.0f};
+//    float ColorAmount = 0.0f;
 
 private:
 };
