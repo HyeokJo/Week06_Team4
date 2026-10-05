@@ -1,4 +1,5 @@
 #include "USpotLightComponent.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Engine/FJsonArchive.h"
@@ -30,6 +31,17 @@ void USpotLightComponent::PostInitProperties()
 //	SetMaterial(Registry.Get<UMaterial>("Material/Spotlight.json"));
 //	RenderData.Type = ERenderType::Spotlight;
 //}
+
+void USpotLightComponent::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// 현재 편집 가능한 광원 설정을 저장한다.
+	Archive.OptionalField("SpotAngle", SpotAngle);
+	Archive.OptionalField("Range", Range);
+	Archive.OptionalField("Intensity", Intensity);
+	Archive.OptionalField("LightColor", LightColor);
+}
 
 void USpotLightComponent::Serialize(FJsonArchive& Archive) const
 {

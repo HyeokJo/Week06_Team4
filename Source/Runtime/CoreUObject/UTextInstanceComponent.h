@@ -14,6 +14,7 @@ class UTextInstanceComponent : public UInstancePrimitiveComponent {
 
 public:
     void PostInitProperties() override;
+    void Serialize(FArchive& Archive) override;
     void Initialize() override;
     void Update(float delta) override;
 

@@ -15,7 +15,7 @@ protected:
 public:
 	//void Initialize() override;
 	void PostInitProperties() override;
-
+	void Serialize(FArchive& Archive) override;
 	float GetSpotAngle() const { return SpotAngle; }
 	void SetSpotAngle(float InAngle) { SpotAngle = InAngle; }
 

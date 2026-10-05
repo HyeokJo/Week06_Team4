@@ -18,6 +18,12 @@ enum EWorldType
 	Editor, EditorPreview, PIE, Game
 };
 
+// 복제 대응표
+enum class EDuplicateFlags :uint32 {
+    None = 0,
+    ShareExternalReferences = 1u << 0 // 월드 밖의 일반 객체 참조도 유지한다.
+};
+
 class UWorld : public UObject
 {
 	DECLARE_UCLASS(UWorld, UObject)
@@ -27,6 +33,9 @@ public:
     void Initialize() override;
     void Initialize(EWorldType InWorldType);
     void Release() override;
+    void Serialize(FArchive& Archive) override;
+    static UWorld* DuplicateWorld(UWorld* SourceWorld, EWorldType TargetWorldType,
+        EDuplicateFlags Flags = EDuplicateFlags::None, TMap<const UObject*, UObject*>* OutDuplicates = nullptr);
     void Activate();
     void Deactivate();
     void BeginPlay();
@@ -38,7 +47,8 @@ public:
 
     // 액터 목록 반환
     [[nodiscard]] const TArray<AActor*>& GetActors() const { return Level->Actors; }
-
+    // Persistent Level 반환
+    [[nodiscard]] ULevel* GetLevel() const { return Level; }
     // 위치와 크기를 지정하여 액터 생성
     template <typename TActor, typename... TArgs>
         requires std::derived_from<TActor, AActor>

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ACatActor.h"
+#include "Runtime/Engine/FArchive.h"
 
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
@@ -61,4 +62,14 @@ void ACatActor::OnComponentRemoved(UActorComponent* Component)
 	// 소유 목록 밖에 보관한 별도 참조도 정리한다.
 	Super::OnComponentRemoved(Component);
 	if (Component == CatStaticMeshComp) CatStaticMeshComp = nullptr;
+}
+
+void ACatActor::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// 파생 Actor가 별도로 보관한 포인터도 새 컴포넌트로 연결한다.
+	Archive.Field("CatComponent", CatStaticMeshComp);
+	Archive.OptionalField("SpinSpeed", SpinSpeed);
+	Archive.OptionalField("SpinRate", SpinRate);
 }

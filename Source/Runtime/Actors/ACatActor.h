@@ -13,6 +13,7 @@ class ACatActor : public AActor
 public:
 	explicit ACatActor();
 	void PostInitProperties() override;
+	void Serialize(FArchive& Archive) override;
 	//void Initialize() override;
 	virtual void Update(float DeltaTime) override;
 protected:

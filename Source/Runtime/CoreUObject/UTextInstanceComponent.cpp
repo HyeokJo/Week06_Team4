@@ -1,4 +1,5 @@
 #include "UTextInstanceComponent.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Asset/UFont.h"
 #include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
@@ -50,6 +51,10 @@ void UTextInstanceComponent::PostInitProperties()
 void UTextInstanceComponent::Initialize()
 {
     if (IsInitialized()) return;
+    Font = FontAsset 
+        ? FRenderResourceLibrary::Get().GetFont(std::filesystem::path(FontAsset->GetID().ToString()).stem().string())
+        : nullptr;
+
     Super::Initialize();
 
     // 복원된 Text와 Font를 이용한다. 기본 폰트를 다시 지정하지 않는다.
@@ -223,6 +228,15 @@ const FRenderData& UTextInstanceComponent::GetRenderData(const FCamera &Camera) 
   RenderData.Instances = std::move(Built);
 
   return RenderData;
+}
+
+void UTextInstanceComponent::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 데이터만 복원하고 Font 캐시와 글자 인스턴스는 Initialize()에서 만든다.
+    Archive.OptionalField("Text", Text);
+    Archive.OptionalField("Font", FontAsset);
 }
 
 void UTextInstanceComponent::Serialize(FJsonArchive &Archive) const {

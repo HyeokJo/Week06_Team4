@@ -17,6 +17,15 @@
 #include "Runtime/Engine/FRenderView.h"
 
 
+// 임시 검증에 필요한 객체 목록과 Primitive 접근 함수다.
+#include "Runtime/Engine/UWorld.h"
+#include "Runtime/CoreUObject/FUObjectArray.h"
+#include "Runtime/CoreUObject/UPrimitiveComponent.h"
+#include "Runtime/Core/Log.h"
+#include <algorithm>
+#include <cassert>
+
+
 void FEditor::Initialize() {
   State.ReadFromFile();
   Gizmo.Initialize();
@@ -32,6 +41,135 @@ void FEditor::Initialize() {
   }
 }
 
+#if defined(_DEBUG)
+static void VerifyWorldDuplication(UWorld* SourceWorld)
+{
+    assert(SourceWorld && SourceWorld->GetLevel());
+
+    FUObjectArray& Objects = FUObjectArray::Get();
+    const uint32 BeforeCount = Objects.GetNumObjects();
+    const bool bSourceWasActive = SourceWorld->IsActive();
+
+    TMap<const UObject*, UObject*> Duplicates;
+    UWorld* CopyWorld = UWorld::DuplicateWorld(
+        SourceWorld, EWorldType::PIE, EDuplicateFlags::None, &Duplicates);
+
+    // 복제 직후에는 데이터와 초기화만 준비되어 있어야 한다.
+    assert(CopyWorld && CopyWorld != SourceWorld);
+    assert(CopyWorld->GetWorldType() == EWorldType::PIE);
+    assert(!CopyWorld->IsActive() && !CopyWorld->HasBegunPlay());
+    assert(CopyWorld->GetLevel() != SourceWorld->GetLevel());
+    assert(CopyWorld->GetLevel()->GetWorld() == CopyWorld);
+    assert(CopyWorld->GetActors().size() == SourceWorld->GetActors().size());
+    assert(Duplicates.at(SourceWorld) == CopyWorld);
+    assert(Duplicates.at(SourceWorld->GetLevel()) == CopyWorld->GetLevel());
+
+    // 현재 복제 대상은 World, Level, 모든 Actor와 소유 Component다.
+    size_t ExpectedCount = 2 + SourceWorld->GetActors().size();
+    for (AActor* Actor : SourceWorld->GetActors())
+        ExpectedCount += Actor->GetAttachedComponents().size();
+    assert(Duplicates.size() == ExpectedCount);
+
+    // 폐기 후 원본의 생존 여부를 안전하게 검사하기 위해 UUID를 기록한다.
+    TMap<const UObject*, uint32> SourceUUIDs;
+    USceneComponent* SourceForEdit = nullptr;
+    USceneComponent* CopyForEdit = nullptr;
+
+    for (const auto& [Source, Copy] : Duplicates)
+    {
+        SourceUUIDs.emplace(Source, Source->GetUUID());
+
+        assert(Source != Copy);
+        assert(Source->GetClass() == Copy->GetClass());
+        assert(Source->GetUUID() != Copy->GetUUID());
+
+        // 최상위 World를 제외한 모든 Outer는 복제본을 가리켜야 한다.
+        if (Source != SourceWorld)
+            assert(Copy->GetOuter() == Duplicates.at(Source->GetOuter()));
+
+        if (const AActor* Actor = Source->Cast<AActor>())
+        {
+            AActor* CopyActor = Copy->Cast<AActor>();
+            assert(CopyActor->IsInitialized());
+            assert(!CopyActor->IsRegistered() && !CopyActor->HasBegunPlay());
+
+            const auto& Owned = Actor->GetAttachedComponents();
+            const auto& CopyOwned = CopyActor->GetAttachedComponents();
+            assert(Owned.size() == CopyOwned.size());
+
+            // 전체 소유 목록의 순서와 Root의 참조 대응을 확인한다.
+            for (size_t Index = 0; Index < Owned.size(); ++Index)
+                assert(CopyOwned[Index] == Duplicates.at(Owned[Index]));
+            assert(CopyActor->GetRootComponent() ==
+                (Actor->GetRootComponent() ? Duplicates.at(Actor->GetRootComponent()) : nullptr));
+        }
+
+        if (const UActorComponent* Component = Source->Cast<UActorComponent>())
+        {
+            UActorComponent* CopyComponent = Copy->Cast<UActorComponent>();
+            assert(CopyComponent->GetActorOwner() == Duplicates.at(Component->GetActorOwner()));
+            assert(CopyComponent->IsInitialized());
+            assert(!CopyComponent->IsRegistered() && !CopyComponent->HasBegunPlay());
+        }
+
+        if (const USceneComponent* Scene = Source->Cast<USceneComponent>())
+        {
+            USceneComponent* CopyScene = Copy->Cast<USceneComponent>();
+            assert(CopyScene->GetRelativeTransform() == Scene->GetRelativeTransform());
+
+            // None 정책에서는 월드 밖의 일반 객체 참조가 nullptr이 된다.
+            const auto ParentIt = Duplicates.find(Scene->GetAttachParent());
+            USceneComponent* ExpectedParent = ParentIt != Duplicates.end()
+                ? ParentIt->second->Cast<USceneComponent>() : nullptr;
+            assert(CopyScene->GetAttachParent() == ExpectedParent);
+
+            // 부모의 자식 목록에도 복제된 자식이 정확히 한 번 들어가야 한다.
+            if (ExpectedParent)
+            {
+                const auto& Children = ExpectedParent->GetAttachedComponents();
+                assert(std::count(Children.begin(), Children.end(), CopyScene) == 1);
+            }
+
+            if (!SourceForEdit)
+            {
+                SourceForEdit = const_cast<USceneComponent*>(Scene);
+                CopyForEdit = CopyScene;
+            }
+        }
+
+        // Mesh 에셋은 복제하지 않고 공유한다.
+        if (const UPrimitiveComponent* Primitive = Source->Cast<UPrimitiveComponent>())
+            assert(Copy->Cast<UPrimitiveComponent>()->GetMeshAsset() == Primitive->GetMeshAsset());
+    }
+
+    // 복제본의 값을 변경해도 원본 Transform은 유지되어야 한다.
+    FTransform BeforeTransform;
+    if (SourceForEdit)
+    {
+        BeforeTransform = SourceForEdit->GetRelativeTransform();
+        CopyForEdit->SetRelativeLocation(
+            CopyForEdit->GetRelativeLocation() + FVector(100.0f, 0.0f, 0.0f));
+        assert(SourceForEdit->GetRelativeTransform() == BeforeTransform);
+    }
+
+    // 등록하지 않은 복제 World도 기존 Release 경로로 모두 폐기되어야 한다.
+    DestroyObject(CopyWorld);
+    Duplicates.clear();
+
+    for (const auto& [Source, UUID] : SourceUUIDs)
+        assert(Objects.IsValid(Source, UUID));
+
+    assert(Objects.GetNumObjects() == BeforeCount);
+    assert(SourceWorld->IsActive() == bSourceWasActive);
+    if (SourceForEdit)
+        assert(SourceForEdit->GetRelativeTransform() == BeforeTransform);
+
+    UE_LOG("[WorldDuplicateTest] Passed");
+}
+#endif
+
+
+
 void FEditor::Shutdown() {
   SaveState();
   State.FlushToFile();
@@ -42,6 +180,11 @@ FRenderResourceLibrary *FEditor::GetRendererLibrary() {
 }
 
 void FEditor::Process() {
+#if defined(_DEBUG)
+    // F8을 누를 때 현재 Editor World를 복제하고 즉시 검증·폐기한다.
+    if (FInputManager::Get().IsKeyDown(VK_F8))
+        VerifyWorldDuplication(GEngine->GetWorld(EWorldType::Editor));
+#endif
     if (FInputManager::Get().IsKeyDown(VK_F11))
     {
         bZenMode = !bZenMode;

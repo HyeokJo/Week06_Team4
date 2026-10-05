@@ -1,4 +1,5 @@
 #include "UAnimatedBillboardComp.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FJsonArchive.h"
 #include "UClass.h"
@@ -57,6 +58,18 @@ void UAnimatedBillboardComp::SetCurrentFrame(int InFrame) {
     CurrentFrame = std::clamp(InFrame, 0, TotalFrames - 1);
     RefreshUV();
   }
+}
+
+void UAnimatedBillboardComp::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 시트 설정을 저장한다. 현재 프레임과 경과 시간은 Initialize()에서 초기화한다.
+    Archive.OptionalField("GridX", GridX);
+    Archive.OptionalField("GridY", GridY);
+    Archive.OptionalField("TotalFrames", TotalFrames);
+    Archive.OptionalField("FrameRate", FrameRate);
+    Archive.OptionalField("Loop", bLoop);
 }
 
 void UAnimatedBillboardComp::Serialize(FJsonArchive& Archive) const

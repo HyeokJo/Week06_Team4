@@ -1,4 +1,5 @@
 #include "UObject.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
@@ -25,7 +26,11 @@ void UObject::Deserialize(const FJsonArchive& Archive)
 {
 	UUID = Archive.GetInt32("UUID");
 }
-
+void UObject::Serialize(FArchive& Archive)
+{
+	// UUID는 팩토리가 새로 부여한다. Class와 Outer는 객체 목록에서 처리한다.
+	// 공통 저장 데이터가 추가되면 이곳에 Field를 추가한다.
+}
 void* UObject::operator new(std::size_t Size)
 {
 	// void* Memory = ::operator new(Size);

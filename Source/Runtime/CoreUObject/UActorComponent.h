@@ -13,8 +13,10 @@ class UActorComponent : public UObject {
 	DECLARE_UCLASS(UActorComponent, UObject)
 	friend class AActor;
 public:
+	using Super::Serialize;
 	virtual void Initialize() override;
 	virtual void Release() override;
+	void Serialize(FArchive& Archive) override;
 
 	AActor* GetActorOwner() const { return ActorOwner; };
 

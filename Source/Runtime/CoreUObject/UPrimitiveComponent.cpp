@@ -1,4 +1,5 @@
 #include "UPrimitiveComponent.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/ShaderConstants.h"
@@ -17,6 +18,55 @@ void UPrimitiveComponent::PostInitProperties()
     RenderData.Type = ERenderType::Primitive;
     FAssetRegistry& Registry = FAssetRegistry::GetInstance();
     RenderData.Materials.emplace_back(Registry.Get<UMaterial>("Material/Simple.json"));
+}
+
+void UPrimitiveComponent::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 에셋 참조의 표현은 Archive가 결정한다. JSON에서는 에셋 ID 문자열이다.
+    Archive.OptionalField("Mesh", RenderData.Mesh);
+    Archive.OptionalField("RenderType", RenderData.Type);
+
+    uint32 Count = static_cast<uint32>(RenderData.Materials.size());
+    if (!Archive.BeginArray("Materials", Count)) return;
+
+    if (Archive.IsLoading())
+    {
+        // FMaterialInstance에는 기본 생성자가 없으므로 기존 기본 Material로 슬롯을 만든다.
+        UMaterial* DefaultMaterial =
+            FAssetRegistry::GetInstance().Get<UMaterial>("Material/Simple.json");
+
+        RenderData.Materials.clear();
+        RenderData.Materials.reserve(Count);
+        for (uint32 Index = 0; Index < Count; ++Index)
+            RenderData.Materials.emplace_back(DefaultMaterial);
+    }
+
+    for (uint32 Index = 0; Index < Count; ++Index)
+    {
+        Archive.BeginArrayElement(Index);
+        FMaterialInstance& Material = RenderData.Materials[Index];
+
+        // 슬롯의 값은 복사하고 Material·Pipeline·Texture 에셋은 공유한다.
+        Archive.Field("Material", Material.Material);
+        Archive.Field("Pipeline", Material.Pipeline);
+        Archive.Field("Texture", Material.Texture);
+        Archive.OptionalField("Color", Material.Color);
+        Archive.OptionalField("UVOffset", Material.UVOffset);
+        Archive.OptionalField("UVScale", Material.UVScale);
+        Archive.OptionalField("DisableShading", Material.bDisableShading);
+        Archive.OptionalField("Albedo", Material.Albedo);
+        Archive.OptionalField("Diffuse", Material.Diffuse);
+        Archive.OptionalField("Specular", Material.Specular);
+        Archive.OptionalField("FilterMode", Material.SamplerDesc.FilterMode);
+        Archive.OptionalField("WrapMode", Material.SamplerDesc.WrapMode);
+        Archive.EndArrayElement();
+    }
+    Archive.EndArray();
+
+    // SetMesh()는 Material 슬롯을 덮어쓸 수 있으므로 복원 중 호출하지 않는다.
+    // 바운드, Material 캐시와 SortKey는 기존 Initialize()에서 재구성한다.
 }
 
 void UPrimitiveComponent::Initialize()

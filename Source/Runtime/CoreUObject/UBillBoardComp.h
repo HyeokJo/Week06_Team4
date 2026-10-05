@@ -18,6 +18,7 @@ protected:
   virtual void Deserialize(const FJsonArchive& Archive);
 
 public:
+	using Super::Serialize;
   //void Initialize() override;
   void PostInitProperties() override;
 

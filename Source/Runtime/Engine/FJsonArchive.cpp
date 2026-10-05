@@ -14,6 +14,11 @@ FJsonArchive::FJsonArchive()
 {
 }
 
+FJsonArchive::FJsonArchive(const TMap<const UObject*, uint32>* InObjectIndices)
+    : FArchive(false), Object(nlohmann::json::object()), ObjectIndices(InObjectIndices)
+{
+    // 기존 기본 생성자는 유지하고 새 씬 저장 경로만 참조 번호를 사용한다.
+}
 
 FJsonArchive::FJsonArchive(const nlohmann::json& InObject, const TMap<uint32, UObject*>* InObjects)
 	: FArchive(true), Object(InObject), Objects(InObjects)
@@ -22,7 +27,7 @@ FJsonArchive::FJsonArchive(const nlohmann::json& InObject, const TMap<uint32, UO
 
 FJsonArchive::FJsonArchive(const FJsonArchive& Other)
 	: FArchive(Other.IsLoading(), Other.IsDuplicating()),
-	Object(Other.Object), Objects(Other.Objects)
+    Object(Other.Object), Objects(Other.Objects), ObjectIndices(Other.ObjectIndices)
 {
 	// 다른 인스턴스의 스코프 주소와 반복자는 복사하지 않는다.
 }
@@ -35,6 +40,7 @@ FJsonArchive& FJsonArchive::operator=(const FJsonArchive& Other)
 	// 데이터만 복사하고, 대상 Archive의 읽기·쓰기 모드는 유지한다.
 	Object = Other.Object;
 	Objects = Other.Objects;
+    ObjectIndices = Other.ObjectIndices;
 	Scopes.clear();
 	MapIterators.clear();
 	return *this;
@@ -289,8 +295,10 @@ bool FJsonArchive::SerializeValue(const char* Name, UObject*& Value)
             *Node = nullptr;
         else if (UAsset* Asset = Value->Cast<UAsset>())
             *Node = Asset->GetID().ToString();
+        else if (ObjectIndices)
+            *Node = ObjectIndices->at(Value);
         else
-            *Node = Value->GetUUID();
+            *Node = Value->GetUUID(); // 기존 Archive 사용 경로의 동작 유지.
         return true;
     }
 

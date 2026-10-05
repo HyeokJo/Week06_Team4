@@ -19,7 +19,7 @@ public:
 	void Release() override;
 
 	UWorld* GetWorld() const { return OwningWorld; }
-
+	void Serialize(FArchive& Archive) override;
 private:
 	TArray<AActor*> Actors;
 	UWorld* OwningWorld = nullptr;

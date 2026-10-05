@@ -1,4 +1,5 @@
 #include "AAppleNormalActor.h"
+#include "Runtime/Engine/FArchive.h"
 
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
@@ -31,4 +32,12 @@ void AAppleNormalActor::PostInitProperties()
 	// 생성자가 보관한 기본 컴포넌트에 메시를 지정한다.
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Normal.json"));
+}
+
+void AAppleNormalActor::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// 생성자가 보관한 포인터를 저장된 컴포넌트 참조로 교체한다.
+	Archive.Field("AppleComponent", AppleStaticMeshComp);
 }

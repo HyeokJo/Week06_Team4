@@ -10,6 +10,7 @@
 class UObjectGlobals;
 class UClass;
 class FJsonArchive;
+class FArchive;
 
 /*
  * UObject를 상속받는 클래스는 반드시 GENERATED_BODY() 매크로를 사용해야 한다.
@@ -100,6 +101,10 @@ public:
 	virtual void Initialize();
 	virtual void Release();
 	virtual void PostInitProperties() {};
+
+	// FArchive 공통 직렬화/역직렬화 함수. FArchive의 정책으로 데이터 및 참조를 처리함.
+	virtual void Serialize(FArchive& Archive);
+
 	static void* operator new(std::size_t Size);
 
 	static void operator delete(void* Memory, std::size_t Size) noexcept;
@@ -128,6 +133,8 @@ protected:
 
 	virtual void Serialize(FJsonArchive& Archive) const;
 	virtual void Deserialize(const FJsonArchive& Archive);
+
+
 
 private:
 	uint32 UUID = 0u;

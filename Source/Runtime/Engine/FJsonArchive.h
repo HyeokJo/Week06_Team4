@@ -10,6 +10,7 @@ class FJsonArchive :public FArchive
 {
 public:
 	FJsonArchive();
+	explicit FJsonArchive(const TMap<const UObject*, uint32>* InObjectIndices);
 	explicit FJsonArchive(const nlohmann::json& InObject, const TMap<uint32, UObject*>* InObjects = nullptr);
 	FJsonArchive(const FJsonArchive& Other);
 	FJsonArchive& operator=(const FJsonArchive& Other);
@@ -102,7 +103,7 @@ private:
 
 	// 객체 생성 코드가 제공하는 '저장 ID → 생성된 객체' 대응표.
 	const TMap<uint32, UObject*>* Objects = nullptr;
-
+	const TMap<const UObject*, uint32>* ObjectIndices = nullptr;
 	nlohmann::json& Current()
 	{
 		return Scopes.empty() ? Object : *Scopes.back();

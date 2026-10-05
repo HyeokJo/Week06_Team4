@@ -17,7 +17,7 @@ class USceneComponent : public UActorComponent
 public:
     virtual void Initialize() override;
     virtual void Release() override;
-    
+    void Serialize(FArchive& Archive) override;
     USceneComponent* GetAttachParent() const { return AttachParent; }
 
     bool SetupAttachment(USceneComponent* InParent);

@@ -16,7 +16,8 @@ protected:
   virtual void Deserialize(const FJsonArchive& Archive) override;
 
 public:
-    void PostInitProperties() override;
+  void PostInitProperties() override;
+  void Serialize(FArchive& Archive) override;
   void Initialize() override;
 
   // 매 프레임 애니메이션 갱신

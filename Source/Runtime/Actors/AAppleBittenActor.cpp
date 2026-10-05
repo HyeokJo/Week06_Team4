@@ -1,4 +1,5 @@
 #include "AAppleBittenActor.h"
+#include "Runtime/Engine/FArchive.h"
 
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
@@ -32,4 +33,12 @@ void AAppleBittenActor::PostInitProperties()
 	// 기본 컴포넌트의 소유·부착 관계는 생성자가 이미 설정했다.
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Bitten.json"));
+}
+
+void AAppleBittenActor::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// Bitten Actor가 별도로 보관하는 컴포넌트 참조를 복원한다.
+	Archive.Field("AppleComponent", AppleStaticMeshComp);
 }

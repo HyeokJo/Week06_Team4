@@ -1,4 +1,5 @@
 #include "AActor.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Core/Log.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
@@ -71,7 +72,7 @@ void AActor::Serialize(FJsonArchive& Archive) const
 	if (RootComponent)
 	{
 		FJsonArchive RootArchive{};
-		RootComponent->Serialize(RootArchive);
+		static_cast<const USceneComponent*>(RootComponent)->Serialize(RootArchive);
 		Archive.SetArchive("RootComponent", RootArchive);
 	}
 	else
@@ -129,6 +130,49 @@ void AActor::Deserialize(const FJsonArchive& Archive)
 	}
 
 	RootComponent->Deserialize(RootComponentArchive);
+}
+
+void AActor::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// 전체 소유 목록과 Root 참조를 저장한다.
+	TArray<UActorComponent*> Components = Archive.IsSaving() ? AttachedComp : TArray<UActorComponent*>{};
+	USceneComponent* StoredRoot = RootComponent;
+
+	Archive.Field("OwnedComponents", Components);
+	Archive.Field("RootComponent", StoredRoot);
+	Archive.OptionalField("TickEnabled", bTickEnabled);
+
+	if (Archive.IsLoading())
+	{
+		// Outer로 생성한 소유 관계와 저장 데이터의 소유 목록을 대조한다.
+		if (!std::is_permutation(Components.begin(), Components.end(), AttachedComp.begin(), AttachedComp.end()))
+			throw std::runtime_error("Actor component ownership mismatch.");
+
+		if (StoredRoot && std::find(Components.begin(), Components.end(), StoredRoot) == Components.end())
+			throw std::runtime_error("RootComponent must be an owned component.");
+
+		AttachedComp = std::move(Components);
+		RootComponent = StoredRoot;
+	}
+
+	// Initialize, Register, BeginPlay는 여기서 호출하지 않는다.
+}
+
+void AActor::DestroyOwnedComponents()
+{
+	// 기본 컴포넌트를 제거하면서 파생 Actor가 보관한 별도 참조도 비운다.
+	while (!AttachedComp.empty())
+	{
+		UActorComponent* Component = AttachedComp.back();
+		AttachedComp.pop_back();
+
+		if (RootComponent == Component) RootComponent = nullptr;
+		OnComponentRemoved(Component);
+		DestroyObject(Component);
+	}
+	RootComponent = nullptr;
 }
 
 void AActor::CreateRootComponent(UClass* ClassType)
@@ -212,7 +256,7 @@ void AActor::MarkComponentsTransformDirty()
 	}
 }
 
-void AActor::AddComponent(UActorComponent* Addcomp)
+void AActor::AddComponent(UActorComponent* Addcomp, bool bAutoAttach)
 {
 	if (Addcomp == nullptr)
 	{
@@ -228,7 +272,7 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 
 	USceneComponent* SceneComp = Addcomp->Cast<USceneComponent>();
 
-	if (SceneComp) {
+	if (SceneComp && bAutoAttach) {
 		if (!RootComponent) {
 			SceneComp->SetupDetachment(false);
 			RootComponent = SceneComp;

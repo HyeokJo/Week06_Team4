@@ -32,6 +32,7 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
+	void Serialize(FArchive& Archive) override;
 	ULevel* GetOwner() const { return Owner; }
 
 	void CreateRootComponent(UClass* ClassType);
@@ -46,7 +47,10 @@ public:
 
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
-	void AddComponent(UActorComponent* Addcomp);
+	// 로딩시 복원 전까지 부착을 막기 위함.
+	void AddComponent(UActorComponent* Addcomp, bool bAutoAttach = true);	
+
+	void DestroyOwnedComponents();
 
 	virtual void Register(ULevel& InLevel);
 	virtual void BeginPlay();
