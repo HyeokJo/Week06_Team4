@@ -15,6 +15,7 @@
 #include <Runtime/Engine/FSceneBVH.h>
 #include "Runtime/Engine/FWorldSerializer.h"
 #include "Runtime/Engine/FRenderView.h"
+#include "Runtime/Engine/ULevel.h"
 
 
 void FEditor::Initialize() {
@@ -74,15 +75,14 @@ void FEditor::Process() {
         bZenMode = !bZenMode;
     }
 
+    if (FInputManager::Get().IsKeyPressed(VK_DELETE))
+    {
+        DeleteSelectedActor();
+    }
+
     // 씬의 액터 업데이트
     if(!IsPlaying())
     {
-        if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
-        {
-            AActor* Target = SelectedActor;
-            UnSelectActor();
-            Target->Destroy();
-        }
         if (SelectedActor) {
             SelectedActor->SetTransform(SelectedTransform);
         }
@@ -129,6 +129,7 @@ void FEditor::LoadState()
 }
 
 void FEditor::NewScene() {
+    if (!CanEditSceneStructure()) return;
     UnSelectActor();
     GEngine->AddWorld(NewObject<UWorld>());
     State.ResetToDefaults();
@@ -138,13 +139,15 @@ void FEditor::NewScene() {
 void FEditor::SaveWorld(const FString& Path)
 {
     UWorld* CurrentWorld = GEngine->GetWorld(EWorldType::Editor);
-
+    //TODO: Editor World일때만 저장이라 이러한 정책을 쓰지만, 다른 월드 타입 저장일때는 처리를 다르게 해줘야 할거임.
+    if (!CanSaveScene()) return;
     if (CurrentWorld)
         FWorldSerializer::SaveWorld(Path, CurrentWorld);
 }
 
 void FEditor::LoadWorld(const FString& Path)
 {
+    if (!CanEditSceneStructure()) return;
     // 씬 로드
     FEditorViewportClient* Viewport = GetActiveViewport();
     UWorld* LoadedWorld = FWorldSerializer::LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
@@ -174,19 +177,20 @@ FEditorViewportClient* FEditor::GetActiveViewport() {
 }
 
 bool FEditor::SelectActor(AActor *Actor) {
-  if (SelectedActor) {
-    UnSelectActor();
-  }
+    if (Actor && !CanEditActorProperties(Actor)) return false;
+    if (SelectedActor) {
+      UnSelectActor();
+    }
 
-  SelectedActor = Actor;
-  if (SelectedActor) {
+    SelectedActor = Actor;
+    if (SelectedActor) {
     SelectedTransform = SelectedActor->GetTransform();
     SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
     if (Gizmo.Mode == EGizmoMode::None) {
       Gizmo.Mode = EGizmoMode::Translate;
     }
 
-    if (SelectedActorTextComp)
+    if (SelectedActorTextComp && !IsPlaying())
     {
         SelectedActorTextComp->SetupAttachment(SelectedActor->GetRootComponent());
         SelectedActorTextComp->SetInheritRotation(false);
@@ -201,8 +205,8 @@ bool FEditor::SelectActor(AActor *Actor) {
 }
 
 void FEditor::UnSelectActor() {
-    if (SelectedActor) SelectedActor->SetTransform(SelectedTransform);
-
+    if (!IsPlaying() && SelectedActor)
+        SelectedActor->SetTransform(SelectedTransform);
     // 선택 Actor의 소유 컴포넌트가 아니므로 삭제하지 않고 분리한다.
     if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
     SelectedActor = nullptr;
@@ -225,6 +229,7 @@ void FEditor::ClearSelectionForGC() {
 }
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
+    if (!CanEditSceneStructure()) return;
     UWorld* EditorWorld = GEngine->GetWorld(EWorldType::Editor);
 
     if (!EditorWorld) { return; }
@@ -456,4 +461,19 @@ void FEditor::EndPIE()
 
     // 선택 과정에서 바뀔 수 있는 기즈모 모드와 기존 설정을 적용한다.
     LoadState();
+}
+
+bool FEditor::CanEditActorProperties(const AActor* Actor) const
+{
+    UWorld* World = GetCurrentWorld();
+    return World && Actor && Actor->GetOwner() && Actor->GetOwner()->GetWorld() == World;
+}
+
+bool FEditor::DeleteSelectedActor()
+{
+    AActor* Actor = GetSelectedActor();
+    if (!CanEditActorProperties(Actor)) return false;
+    ClearSelectionForGC();
+    Actor->Destroy();
+    return true;
 }
