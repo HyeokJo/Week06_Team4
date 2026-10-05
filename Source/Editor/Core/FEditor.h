@@ -71,6 +71,17 @@ public:
         UWorld* World = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
         return World && World->IsPaused();
     }
+    // 프로퍼티는 현재 화면에 표시하는 World의 Actor만 편집한다.
+    [[nodiscard]] bool CanEditActorProperties(const AActor* Actor) const;
+
+    // PIE 중에는 에디터 UI를 통한 액터·컴포넌트 구조 변경을 제한한다.
+    [[nodiscard]] bool CanEditSceneStructure() const { return !IsPlaying(); }
+
+    // 씬 저장 정책은 구조 변경 정책과 별도로 관리한다.
+    [[nodiscard]] bool CanSaveScene() const { return !IsPlaying(); }
+
+    // 아웃라이너 버튼과 Delete 키가 같은 삭제 경로를 사용한다.
+    bool DeleteSelectedActor();
     void NewScene();
     void SaveWorld(const FString &Path);
     void LoadWorld(const FString &Path);

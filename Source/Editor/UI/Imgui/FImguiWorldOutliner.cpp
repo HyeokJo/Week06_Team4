@@ -98,13 +98,10 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	// 하단 컨트롤 영역
 	if (SelectedActor)
 	{
-		if (ImGui::Button("Delete"))
-		{
-			AActor* ActorToDelete = SelectedActor;
-			Editor.UnSelectActor();
-			ActorToDelete->Destroy();
+		ImGui::BeginDisabled(!Editor.CanEditActorProperties(SelectedActor));
+		if (ImGui::Button("Delete") && Editor.DeleteSelectedActor())
 			bCacheDirty = true;
-		}
+		ImGui::EndDisabled();
 	}
 	else
 	{

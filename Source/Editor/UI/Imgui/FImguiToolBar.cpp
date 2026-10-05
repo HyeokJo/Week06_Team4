@@ -19,19 +19,11 @@ void FImguiToolbar::Process(FEditor& Editor, FImguiConsoleWindow& ConsoleWindow,
 
 	if (ImGui::BeginMainMenuBar()) 
     {
-        // PIE 중에는 씬 교체와 편집 도구 변경을 막는다.
-        ImGui::BeginDisabled(Editor.IsPlaying());
-
         //씬 저장,로드 기능
         ShowFileBar(CurrentScenePath, Editor);
-
         //Imgui Window들 소환
         ShowViewBar(Editor, ConsoleWindow);
-
-        ImGui::EndDisabled();
-
         ShowPlayBar(Editor);
-
         ImGui::EndMainMenuBar();
 	}
 }
@@ -66,12 +58,12 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
 
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("New Scene"))
+        if (ImGui::MenuItem("New Scene", nullptr, false, Editor.CanEditSceneStructure()))
         {
             Editor.NewScene();
             CurrentScenePath.clear();
         }
-        if (ImGui::MenuItem("Save Scene"))
+        if (ImGui::MenuItem("Save Scene", nullptr, false, Editor.CanSaveScene()))
         {
             // 경로가 있으면 그대로 덮어쓰고, 없으면 다른 이름으로 저장과 같게 동작
             if (CurrentScenePath.empty())
@@ -89,7 +81,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             }
         }
 
-        if (ImGui::MenuItem("Save scene as..."))
+        if (ImGui::MenuItem("Save scene as...", nullptr, false, Editor.CanSaveScene()))
         {
             FString Path;
             if (PickSceneFile(Path, true))
@@ -99,7 +91,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             }
         }
 
-        if (ImGui::MenuItem("Load Scene"))
+        if (ImGui::MenuItem("Load Scene", nullptr, false, Editor.CanEditSceneStructure()))
         {
             FString Path;
             if (PickSceneFile(Path, false))
@@ -109,7 +101,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             }
         }
 
-        if (ImGui::MenuItem("Import Import"))
+        if (ImGui::MenuItem("Import Import", nullptr, false, Editor.CanEditSceneStructure()))
         {
             FString Path;
             if (PickObjFile(Path))
@@ -163,10 +155,12 @@ void FImguiToolbar::ShowViewBar(FEditor& Editor, FImguiConsoleWindow& ConsoleWin
 
     static const char* GizmoModes[4] = { "None", "Translation", "Rotation", "Scale" };
     const int SelectedItem = static_cast<int>(Editor.GetGizmo().Mode);
+    ImGui::BeginDisabled(Editor.IsPlaying());
     if (ImGui::Button(GizmoModes[SelectedItem], { 150.0f, 0.0f }))
     {
         Gizmo.Mode = static_cast<EGizmoMode>((SelectedItem + 1) % 4);
     }
+    ImGui::EndDisabled();
 }
 
 bool FImguiToolbar::PickObjFile(FString& OutPath)
