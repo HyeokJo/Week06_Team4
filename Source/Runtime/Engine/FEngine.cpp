@@ -144,12 +144,13 @@ void FEngine::AddWorld(UWorld* World, EWorldType WorldType)
 
 	World->Initialize(WorldType);
 	World->SetRenderResourceLibrary(&FRenderResourceLibrary::Get());
+	// 등록, 활성화, 비긴플레이 내에서도 새 월드를 조회가능하도록 하는 순서 개편
+	WorldList.push_back(World);
 	World->Activate();
 
 	if (WorldType == EWorldType::PIE || WorldType == EWorldType::Game)
 		World->BeginPlay();
 
-	WorldList.push_back(World);
 
 	// 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
 	World->GetSceneBVH().Build(World->GetRenderComponents());

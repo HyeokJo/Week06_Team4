@@ -17,7 +17,8 @@ struct FOutlinerItem
 	FString LowerLabel;
 	int32 Depth = 0;
 	AActor* Actor = nullptr;
-	USceneComponent* Component = nullptr;
+	UActorComponent* Component = nullptr;
+	bool bHasChildren = false;
 };
 
 // 월드 아웃라이너 창 클래스
@@ -31,9 +32,7 @@ public:
 
 private:
 	//액터 한 개의 트리노드, 펼쳐지면 컴포넌트까지
-	void ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor);
 	void ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor);
-	void ShowComponentNode(USceneComponent& Component) const;
 
 
 	// 검색 입력 칸을 그리고, 입력된 문자열을 소문자로 정규화해 돌려준다.
@@ -51,6 +50,7 @@ private:
 	TArray<FOutlinerItem> DisplayList;
 	// 펼쳐진 액터들의 UUID를 저장하는 집합
 	TSet<uint64> ExpandedActorUUIDs;
+	TSet<uint64> ExpandedComponentUUIDs;
 
 	size_t LastActorCount = 0;
 	FString LastFilterStr = "";

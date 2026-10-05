@@ -12,6 +12,7 @@ class UStaticMeshComponent : public UMeshComponent {
     DECLARE_UCLASS(UStaticMeshComponent, UMeshComponent)
 
 public:
+    using Super::Serialize;
     virtual void SetMesh(UStaticMesh* Mesh) override;
 
     virtual const UStaticMesh* GetMesh() override { return RenderData.Mesh; }
@@ -58,6 +59,6 @@ public:
 protected:
     UStaticMeshComponent() = default;
 
-    virtual void Serialize(FArchive& Archive) const override;
-    virtual void Deserialize(const FArchive& Archive) override;
+    virtual void Serialize(FJsonArchive& Archive) const override;
+    virtual void Deserialize(const FJsonArchive& Archive) override;
 };

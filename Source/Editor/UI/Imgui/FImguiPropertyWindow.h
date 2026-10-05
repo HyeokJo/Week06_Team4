@@ -2,6 +2,7 @@
 #include "Editor/Core/FEditor.h"
 
 class AActor;
+class UActorComponent;
 class USceneComponent;
 class UStaticMeshComponent;
 class USpotLightComponent;
@@ -26,12 +27,12 @@ private:
 	// 액터 클래스명과 UUID.
 	void ShowActorHeader(const AActor& Actor) const;
 
-	// 루트/서브 컴포넌트를 불릿으로 나열하는 요약 트리.
+	// 소유 컴포넌트를 나열하고 루트를 표시한다. 부착 트리와는 구분한다.
 	void ShowComponentHierarchy(const AActor& Actor) const;
 
 	// 컴포넌트마다 접이식 헤더를 만들고 그 안에 상세 속성을 그린다.
 	void ShowComponentSections(FEditor& Editor, AActor& Actor);
-	void ShowComponentDetails(FEditor& Editor, AActor& Actor, USceneComponent& Comp, bool bIsRoot);
+	void ShowComponentDetails(FEditor& Editor, AActor& Actor, UActorComponent& Comp, bool bIsRoot);
 
 	// 루트는 에디터 기즈모와 동기화되고, 서브는 상대 트랜스폼을 편집한다.
 	void ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const;

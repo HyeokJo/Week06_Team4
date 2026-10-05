@@ -1,17 +1,41 @@
 #include "UActorComponent.h"
+#include "Runtime/Engine/FArchive.h"
 #include "UObjectGlobals.h"
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
+void UActorComponent::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 설정만 저장한다. ActorOwner는 AddComponent(), Level은 Register()에서 연결한다.
+    Archive.OptionalField("CanEverTick", PrimaryComponentTick.bCanEverTick);
+    Archive.OptionalField("TickEnabled", PrimaryComponentTick.bTickEnabled);
+    Archive.OptionalField("TickGroup", PrimaryComponentTick.TickGroup);
+
+    // RegisteredGroup, 초기화·등록·BeginPlay 상태는 저장하지 않는다.
+}
+
+void UActorComponent::Initialize()
+{
+    if (bInitialized) return;
+
+    Super::Initialize();
+    bInitialized = true;
+}
+
 void UActorComponent::Release()
 {
     if (bHasBegunPlay) { EndPlay(); }
     if (Level) { Unregister(); }
 
+	AActor* PreviousOwner = ActorOwner;
     ActorOwner = nullptr;
     Level = nullptr;
+
+    if (PreviousOwner) PreviousOwner->RemoveOwnedComponentReference(this);
     Super::Release();
 }
 

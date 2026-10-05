@@ -10,4 +10,6 @@ class FWorldSerializer final
 public:
 	static void SaveWorld(const FString& InPath, UWorld* InWorld);
 	static UWorld* LoadWorld(const FString& InPath, FCamera* OutCamera);
+private:
+	static UWorld* LoadWorld(const nlohmann::json& JSON);
 };

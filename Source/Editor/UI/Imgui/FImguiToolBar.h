@@ -25,7 +25,7 @@ public:
 	bool PickSceneFile(FString& OutPath, bool bSave);
 	void ShowFileBar(FString CurrentScenePath, FEditor& Editor);
 	void ShowViewBar(FEditor& Editor, FImguiConsoleWindow& ConsoleWindow);
-
+	void ShowPlayBar(FEditor& Editor);
 	bool PickObjFile(FString& OutPath);
 
 };

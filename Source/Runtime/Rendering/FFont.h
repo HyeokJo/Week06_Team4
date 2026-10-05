@@ -5,7 +5,7 @@
 #include "Runtime/Core/PointerTypes.h"
 #include "FTexture.h"
 
-class FArchive;
+class FJsonArchive;
 
 struct FCharacterInfo
 {
@@ -25,7 +25,7 @@ struct FCharacterInfo
 class FFont
 {
 public:
-	explicit FFont(const FArchive& Archive);
+	explicit FFont(const FJsonArchive& Archive);
 
 	void InitializeForASCII(float InNumberOfLine);
 	const FCharacterInfo& GetCharInfo(char32_t InCharacter) const;

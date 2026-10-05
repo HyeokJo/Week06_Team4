@@ -1,16 +1,31 @@
 #include "UAnimatedBillboardComp.h"
-#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "UClass.h"
 #include <algorithm>
 
 IMPLEMENT_UCLASS(UAnimatedBillboardComp, UBillBoardComp)
 UCLASS_META(UAnimatedBillboardComp, DisplayName, "AnimatedBillboard")
 
+
+void UAnimatedBillboardComp::PostInitProperties()
+{
+    Super::PostInitProperties();
+
+    PrimaryComponentTick.bCanEverTick = true;
+    SetComponentTickEnabled(true);
+}
+
 void UAnimatedBillboardComp::Initialize()
 {
-  Super::Initialize();
-  SetComponentTickEnabled(true);
+    if (IsInitialized()) return;
+    Super::Initialize();
+
+    // 새 실행에 사용할 상태를 준비하고 복원된 시트 설정으로 UV를 계산한다.
+    CurrentFrame = 0;
+    ElapsedTime = 0.0f;
+    RefreshUV();
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,
@@ -45,7 +60,19 @@ void UAnimatedBillboardComp::SetCurrentFrame(int InFrame) {
   }
 }
 
-void UAnimatedBillboardComp::Serialize(FArchive& Archive) const
+void UAnimatedBillboardComp::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 시트 설정을 저장한다. 현재 프레임과 경과 시간은 Initialize()에서 초기화한다.
+    Archive.OptionalField("GridX", GridX);
+    Archive.OptionalField("GridY", GridY);
+    Archive.OptionalField("TotalFrames", TotalFrames);
+    Archive.OptionalField("FrameRate", FrameRate);
+    Archive.OptionalField("Loop", bLoop);
+}
+
+void UAnimatedBillboardComp::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
@@ -61,7 +88,7 @@ void UAnimatedBillboardComp::Serialize(FArchive& Archive) const
 	Archive.SetVector2("CurrentUVOffset", CurrentUVOffset);
 }
 
-void UAnimatedBillboardComp::Deserialize(const FArchive& Archive)
+void UAnimatedBillboardComp::Deserialize(const FJsonArchive& Archive)
 {
 	Super::Deserialize(Archive);
 

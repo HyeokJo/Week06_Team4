@@ -76,6 +76,9 @@ uint32 FSceneBVH::Split4Way(uint32 Start, uint32 Count, FSubRange OutRanges[4])
 
 void FSceneBVH::Build(const TArray<UPrimitiveComponent*>& Components)
 {
+    DirtyNodes.clear();
+    DirtyNodeFlags.clear();
+
     for (UPrimitiveComponent* C : Objects) { if (C) { C->SetBVHIndex(-1); } }
     for (UPrimitiveComponent* C : PendingObjects) { if (C) { C->SetBVHIndex(-1); } }
 
@@ -616,4 +619,95 @@ void FSceneBVH::RemoveObject(UPrimitiveComponent* C)
     ++RemovedCount;
 
     RefitFromLeaf(LeafOfObject[ObjectIndex]);                  // 박스가 자연스럽게 줄어듦
+}
+
+void FSceneBVH::RefitObjects(const TArray<UPrimitiveComponent*>& ChangedComponents)
+{
+    if (ChangedComponents.empty()) return;
+
+    // 기존 크기에서는 할당과 전체 초기화 없이 버퍼를 재사용한다.
+    DirtyNodes.clear();
+    DirtyNodeFlags.resize(Nodes.size(), 0);
+
+    for (UPrimitiveComponent* Component : ChangedComponents)
+    {
+        if (!Component) continue;
+
+        const FAxisAlignedBoundingBox& Bounds = Component->GetWorldBounds();
+
+        // 메시가 사라지는 등 바운드가 무효화된 경우에는 트리에서 제거한다.
+        if (!Bounds.IsValid())
+        {
+            RemoveObject(Component);
+            continue;
+        }
+
+        const int32 ObjectIndex = Component->GetBVHIndex();
+        if (ObjectIndex < 0)
+        {
+            // 아직 트리에 없는 객체는 기존 PendingObjects 경로를 사용한다.
+            AddObject(Component);
+            continue;
+        }
+
+        if (static_cast<size_t>(ObjectIndex) >= Objects.size() || Objects[ObjectIndex] != Component)
+            continue;
+
+        // 회전했어도 최종 AABB가 같으면 BVH 갱신은 필요 없다.
+        if (ObjectBounds[ObjectIndex] == Bounds) continue;
+        ObjectBounds[ObjectIndex] = Bounds;
+
+        // 같은 리프와 조상은 한 번만 등록한다.
+        uint32 NodeIndex = LeafOfObject[ObjectIndex];
+        while (NodeIndex != UINT32_MAX && !DirtyNodeFlags[NodeIndex])
+        {
+            DirtyNodeFlags[NodeIndex] = 1;
+            DirtyNodes.push_back(NodeIndex);
+            NodeIndex = Nodes[NodeIndex].Parent;
+        }
+    }
+
+    // 현재 BuildRecursive는 부모보다 자식을 큰 인덱스에 생성한다.
+    // 따라서 내림차순이면 모든 자식을 처리한 뒤 부모를 처리하게 된다.
+    std::sort(DirtyNodes.begin(), DirtyNodes.end(), [](uint32 A, uint32 B) { return A > B; });
+
+    for (uint32 NodeIndex : DirtyNodes)
+    {
+        FSceneBVHNode& Node = Nodes[NodeIndex];
+        FAxisAlignedBoundingBox Bounds;
+
+        if (Node.bLeafNode)
+        {
+            // 이 리프에 속한 모든 객체의 최종 바운드를 합친다.
+            for (uint32 i = Node.ObjStart; i < Node.ObjStart + Node.ObjCount; ++i)
+            {
+                if (Objects[i] && ObjectBounds[i].IsValid())
+                    Bounds = FAxisAlignedBoundingBox::Union(Bounds, ObjectBounds[i]);
+            }
+        }
+        else
+        {
+            for (uint8 i = 0; i < Node.ChildCount; ++i)
+            {
+                const FAxisAlignedBoundingBox& ChildBounds = Nodes[Node.Children[i]].Bounds;
+                const bool bValid = ChildBounds.IsValid();
+
+                if (bValid)
+                    Bounds = FAxisAlignedBoundingBox::Union(Bounds, ChildBounds);
+
+                // 부모 전체 Bounds가 같아도 SIMD용 자식 바운드는 갱신해야 한다.
+                Node.ChildCenterX[i] = bValid ? ChildBounds.Center.X : 0.0f;
+                Node.ChildCenterY[i] = bValid ? ChildBounds.Center.Y : 0.0f;
+                Node.ChildCenterZ[i] = bValid ? ChildBounds.Center.Z : 0.0f;
+                Node.ChildExtentX[i] = bValid ? ChildBounds.Extent.X : -1.0f;
+                Node.ChildExtentY[i] = bValid ? ChildBounds.Extent.Y : -1.0f;
+                Node.ChildExtentZ[i] = bValid ? ChildBounds.Extent.Z : -1.0f;
+            }
+        }
+
+        Node.Bounds = Bounds;
+        DirtyNodeFlags[NodeIndex] = 0;
+    }
+
+    DirtyNodes.clear();
 }

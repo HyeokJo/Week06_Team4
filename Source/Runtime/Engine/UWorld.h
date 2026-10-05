@@ -18,6 +18,12 @@ enum EWorldType
 	Editor, EditorPreview, PIE, Game
 };
 
+// 복제 대응표
+enum class EDuplicateFlags :uint32 {
+    None = 0,
+    ShareExternalReferences = 1u << 0 // 월드 밖의 일반 객체 참조도 유지한다.
+};
+
 class UWorld : public UObject
 {
 	DECLARE_UCLASS(UWorld, UObject)
@@ -27,6 +33,9 @@ public:
     void Initialize() override;
     void Initialize(EWorldType InWorldType);
     void Release() override;
+    void Serialize(FArchive& Archive) override;
+    static UWorld* DuplicateWorld(UWorld* SourceWorld, EWorldType TargetWorldType,
+        EDuplicateFlags Flags = EDuplicateFlags::None, TMap<const UObject*, UObject*>* OutDuplicates = nullptr);
     void Activate();
     void Deactivate();
     void BeginPlay();
@@ -35,33 +44,29 @@ public:
 
     [[nodiscard]] bool IsActive() const { return bActive; }
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
+    void SetPaused(bool bInPaused) { bPaused = bInPaused; }
+    [[nodiscard]] bool IsPaused() const { return bPaused; }
 
     // 액터 목록 반환
     [[nodiscard]] const TArray<AActor*>& GetActors() const { return Level->Actors; }
-
+    // Persistent Level 반환
+    [[nodiscard]] ULevel* GetLevel() const { return Level; }
     // 위치와 크기를 지정하여 액터 생성
     template <typename TActor, typename... TArgs>
         requires std::derived_from<TActor, AActor>
     TActor* SpawnActor(const FVector& Location, const FVector& Scale, TArgs &&...Args) 
     {
-        TActor* Actor = NewObject<TActor>(std::forward<TArgs>(Args)...);
-        Actor->Initialize();
+        TActor* Actor = SpawnActorDeferred<TActor>(std::forward<TArgs>(Args)...);
 
-        if (Actor->GetRootComponent()) {
+        if (USceneComponent* Root = Actor->GetRootComponent())
+        {
             FTransform Transform{};
             Transform.SetLocation(Location);
             Transform.SetScale3D(Scale);
-            Actor->GetRootComponent()->SetRelativeTransform(Transform);
+            Root->SetRelativeTransform(Transform);
         }
 
-        Level->Actors.push_back(Actor);
-
-        if (bActive) {
-            Actor->Register(*this);
-        }
-        if (bHasBegunPlay) {
-            Actor->BeginPlay();
-        }
+        FinishSpawningActor(Actor);
         return Actor;
     }
 
@@ -85,9 +90,28 @@ public:
             std::forward<FirstArg>(First), std::forward<RestArgs>(Rest)...
         );
     }
+    
+    //Actor 지연 생성/생성완료 관련 함수들.
+    // 클래스 타입으로 생성하되 Initialize·Register·BeginPlay는 미룬다.
+    AActor* SpawnActorDeferred(UClass* ClassType);
 
-    virtual void Serialize(FArchive& Archive) const override;
-    virtual void Deserialize(const FArchive& Archive) override;
+    // Transform 설정이나 데이터 복원이 끝난 Actor를 실행 가능한 상태로 만든다.
+    void FinishSpawningActor(AActor* Actor);
+
+    template<typename TActor, typename... TArgs>
+        requires std::derived_from<TActor, AActor>
+    TActor* SpawnActorDeferred(TArgs&&... Args)
+    {
+        // 팩토리의 PostInitProperties까지만 실행된 상태다.
+        TActor* Actor = NewObjectWithOuter<TActor>(
+            Level, std::forward<TArgs>(Args)...);
+
+        Level->Actors.push_back(Actor);
+        return Actor;
+    }
+
+    virtual void Serialize(FJsonArchive& Archive) const override;
+    virtual void Deserialize(const FJsonArchive& Archive) override;
 
     void SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary) { return Scene->SetRenderResourceLibrary(InRenderResourceLibrary); }
     [[nodiscard]] const TArray<UPrimitiveComponent*>& GetRenderComponents() const { return Scene->GetRenderComponents(); }
@@ -108,11 +132,13 @@ public:
     const EWorldType GetWorldType() const { return WorldType; }
 
 private:
-    FScene* Scene;
-    ULevel* Level;
-    EWorldType WorldType;
+    FScene* Scene = nullptr;
+    ULevel* Level = nullptr;// persistent level
+	// TODO: SubLevel 지원 필요
+    EWorldType WorldType = EWorldType::Editor;
 
     bool bInitialized = false;
     bool bActive = false;
     bool bHasBegunPlay = false;
+    bool bPaused = false;
 };

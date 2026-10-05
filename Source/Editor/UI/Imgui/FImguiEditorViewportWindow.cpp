@@ -130,7 +130,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
                 }
 
                 // 클릭 전에도 마우스가 올라간 뷰포트에서 매 프레임 검사한다.
-                if (Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
+                if (!Editor.IsPlaying() && Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
                 {
                     UpdateGizmoHover(Editor, CurrentViewport, Input.LocalMouse, Input.SizePixels);
                 }
@@ -157,8 +157,11 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     if (Viewport && Viewport == Editor.GetActiveViewport() && bHasActiveInput)
     {
         Viewport->UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
-        UpdateSelection(Editor, *Viewport, ActiveInput);
-        UpdateGizmo(Editor, *Viewport, ActiveInput);
+        if (!Editor.IsPlaying())
+        {
+            UpdateSelection(Editor, *Viewport, ActiveInput);
+            UpdateGizmo(Editor, *Viewport, ActiveInput);
+        }
         UpdateCamera(Editor, *Viewport, ActiveInput, DeltaTime);
     }
     // 현재 ImGui 창은 다시 부모 창
@@ -306,7 +309,7 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
 
 
     // 기즈모를 드래그하는 중에는 모드가 바뀌면 안 된다.
-    if (!Editor.GetGizmo().IsInteracting())
+    if (!Editor.IsPlaying() && !Editor.GetGizmo().IsInteracting())
     {
         UpdateShortcuts(Editor);
     }
@@ -399,6 +402,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     // 5) 모든 오브젝트(프리미티브)에 대해 충돌 판정
     if (Editor.bUseBVHPicking && PickWorld)
     {
+        PickWorld->UpdateDirtyBounds();
         bHit = PickWorld->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
     }
     else

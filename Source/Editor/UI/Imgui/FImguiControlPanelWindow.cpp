@@ -193,6 +193,9 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
     const bool bUseBVH = Editor.bUseBVHPicking && World;
     if (!bUseBVH && !Viewport) { return; }
 
+    // 추가: 측정 시작 전에 대기 중인 바운드·BVH 갱신을 처리한다.
+    if (bUseBVH) World->UpdateDirtyBounds();
+
     const FRay Ray = FRayCastingManager::LastPickRay;
     TArray<double> Times;
     Times.reserve(Iterations);
