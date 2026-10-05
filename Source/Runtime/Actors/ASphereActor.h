@@ -10,4 +10,5 @@ class ASphereActor : public AActor
 
 public:
 	explicit ASphereActor();
+	void PostInitProperties() override;
 };

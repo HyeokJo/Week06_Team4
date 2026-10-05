@@ -11,25 +11,20 @@ AAnimatedBillboardActor::AAnimatedBillboardActor()
 {
 	// 루트 컴포넌트 생성 및 장착
 	CreateRootComponent(UAnimatedBillboardComp::StaticClass());
-	UAnimatedBillboardComp* Comp = GetAnimatedBillboardComponent();
-	if (Comp)
-	{
-		FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-		UTexture* ExplosionTexture = Registry.Get<UTexture>("Texture/Explosion.json");
-
-		// 폭발 스프라이트 텍스처 지정
-		Comp->SetTexture(ExplosionTexture);
-		// 시트 분할 및 루프 재생 설정
-		Comp->SetSpriteSheet(6, 6, 20.0f, 36);
-		Comp->SetLooping(true);
-		Comp->Play();
-	}
 }
-
-void AAnimatedBillboardActor::Initialize()
+void AAnimatedBillboardActor::PostInitProperties()
 {
-	Super::Initialize();
+	Super::PostInitProperties();
+
+	// 기본 재생 설정은 복원 전에 적용한다.
 	bTickEnabled = true;
+	UAnimatedBillboardComp* Component = GetAnimatedBillboardComponent();
+	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+
+	Component->SetTexture(Registry.Get<UTexture>("Texture/Explosion.json"));
+	Component->SetSpriteSheet(6, 6, 20.0f, 36);
+	Component->SetLooping(true);
+	Component->Play();
 }
 
 UAnimatedBillboardComp* AAnimatedBillboardActor::GetAnimatedBillboardComponent() const

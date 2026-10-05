@@ -1,24 +1,32 @@
 #include "AActor.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Core/Log.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
-#include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FJsonArchive.h"
+#include "Runtime/Engine/UWorld.h"
+#include <algorithm>
+#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
 void AActor::Initialize()
 {
+	if (bInitialized) { return; }
 	Super::Initialize();
-	Owner = nullptr;
-	bHasBegunPlay = false;
-	bTickEnabled = false;
+	for (size_t Index = 0; Index < AttachedComp.size(); ++Index)
+	{
+		UActorComponent* Component = AttachedComp[Index];
+		if (Component)
+			Component->Initialize();
+	}
+	bInitialized = true;
 }
 
 void AActor::Release()
 {
-	UScene* RegisteredScene = Owner;
+	ULevel* RegisteredLevel = GetTypedOuter<ULevel>();
 	if (bHasBegunPlay)
 	{
 		EndPlay();
@@ -29,14 +37,14 @@ void AActor::Release()
 		Unregister();
 	}
 
-	if (RegisteredScene)
+	if (RegisteredLevel)
 	{
-		RegisteredScene->RemoveActor(this);
+		RegisteredLevel->GetWorld()->RemoveActor(this);
 	}
 
 	while (!AttachedComp.empty())
 	{
-		USceneComponent* Component = AttachedComp.back();
+		UActorComponent* Component = AttachedComp.back();
 		std::erase(AttachedComp, Component);
 
 		if (RootComponent == Component)
@@ -57,14 +65,14 @@ void AActor::Release()
 	Super::Release();
 }
 
-void AActor::Serialize(FArchive& Archive) const
+void AActor::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
 	if (RootComponent)
 	{
-		FArchive RootArchive{};
-		RootComponent->Serialize(RootArchive);
+		FJsonArchive RootArchive{};
+		static_cast<const USceneComponent*>(RootComponent)->Serialize(RootArchive);
 		Archive.SetArchive("RootComponent", RootArchive);
 	}
 	else
@@ -73,7 +81,7 @@ void AActor::Serialize(FArchive& Archive) const
 	}
 }
 
-void AActor::Deserialize(const FArchive& Archive)
+void AActor::Deserialize(const FJsonArchive& Archive)
 {
 	Super::Deserialize(Archive);
 
@@ -89,7 +97,7 @@ void AActor::Deserialize(const FArchive& Archive)
 		return;
 	}
 
-	FArchive RootComponentArchive = Archive.GetArchive("RootComponent");
+	FJsonArchive RootComponentArchive = Archive.GetArchive("RootComponent");
 	const FString& SavedTypeName = RootComponentArchive.GetString("Type");
 	UClass* SavedClass = UClass::FindByName(SavedTypeName);
 
@@ -124,11 +132,58 @@ void AActor::Deserialize(const FArchive& Archive)
 	RootComponent->Deserialize(RootComponentArchive);
 }
 
+void AActor::Serialize(FArchive& Archive)
+{
+	Super::Serialize(Archive);
+
+	// 전체 소유 목록과 Root 참조를 저장한다.
+	TArray<UActorComponent*> Components = Archive.IsSaving() ? AttachedComp : TArray<UActorComponent*>{};
+	USceneComponent* StoredRoot = RootComponent;
+
+	Archive.Field("OwnedComponents", Components);
+	Archive.Field("RootComponent", StoredRoot);
+	Archive.OptionalField("TickEnabled", bTickEnabled);
+
+	if (Archive.IsLoading())
+	{
+		// Outer로 생성한 소유 관계와 저장 데이터의 소유 목록을 대조한다.
+		if (!std::is_permutation(Components.begin(), Components.end(), AttachedComp.begin(), AttachedComp.end()))
+			throw std::runtime_error("Actor component ownership mismatch.");
+
+		if (StoredRoot && std::find(Components.begin(), Components.end(), StoredRoot) == Components.end())
+			throw std::runtime_error("RootComponent must be an owned component.");
+
+		AttachedComp = std::move(Components);
+		RootComponent = StoredRoot;
+	}
+
+	// Initialize, Register, BeginPlay는 여기서 호출하지 않는다.
+}
+
+void AActor::DestroyOwnedComponents()
+{
+	// 기본 컴포넌트를 제거하면서 파생 Actor가 보관한 별도 참조도 비운다.
+	while (!AttachedComp.empty())
+	{
+		UActorComponent* Component = AttachedComp.back();
+		AttachedComp.pop_back();
+
+		if (RootComponent == Component) RootComponent = nullptr;
+		OnComponentRemoved(Component);
+		DestroyObject(Component);
+	}
+	RootComponent = nullptr;
+}
+
 void AActor::CreateRootComponent(UClass* ClassType)
 {
 	if (RootComponent) { return; }
 
-	UObject* Object = NewObject(ClassType);
+	UObject* Object = NewObjectWithOuter(this, ClassType);
+	if(!Object)
+	{
+		return;
+	}
 	USceneComponent* Component = Object->Cast<USceneComponent>();
 
 	if (!Component)
@@ -142,61 +197,98 @@ void AActor::CreateRootComponent(UClass* ClassType)
 
 void AActor::SetRootComponent(USceneComponent* Component)
 {
+	if (!Component)
+	{
+		throw EngineUtil::CreateError("RootComponent가 nullptr입니다.");
+	}
+	if (RootComponent == Component) { return; }
 	if (RootComponent)
 	{
 		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
 	}
+	if (Component->GetActorOwner() && Component->GetActorOwner() != this)
+	{
+		throw EngineUtil::CreateError("다른 Actor가 소유한 컴포넌트입니다.");
+	}
 
+	Component->SetupDetachment(false);
 	RootComponent = Component;
 
-	// TODO ActorOwner를 이렇게 지정하면 안됨
-	RootComponent->ActorOwner = this;
-	RootComponent->SetupAttachment(nullptr);
-	RootComponent->Initialize();
-	AttachedComp.push_back(RootComponent);
+	AddComponent(Component);
+}
 
-	if (Owner)
+void AActor::RemoveOwnedComponentReference(UActorComponent* Component)
+{
+	if (!Component)
 	{
-		RootComponent->Register(*Owner);
+		return;
 	}
+	const bool bWasRoot = RootComponent == Component;
+	const auto RemovedCount = std::erase(AttachedComp, Component);
 
-	if (bHasBegunPlay)
-	{
-		RootComponent->BeginPlay();
-	}
+	// 자동승격 구현 안됨
+	// TODO: 정책에따라 구현안된상태를 유지할지/아니면 자동승격을 구현할지 결정해야함.
+	if (bWasRoot) RootComponent = nullptr;
+	if (RemovedCount > 0 || bWasRoot) OnComponentRemoved(Component);
+
 }
 
 void AActor::MarkComponentsTransformDirty()
 {
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
-		if (Component)
+		USceneComponent* SceneComponent = Component ? Component->Cast<USceneComponent>() : nullptr;
+		if (!SceneComponent) continue;
+
+		// 같은 Actor가 소유한 조상이 있으면 그 조상의 순회에서 처리된다.
+		bool bHasOwnedAncestor = false;
+		for (USceneComponent* Parent = SceneComponent->GetAttachParent(); Parent; Parent = Parent->GetAttachParent())
 		{
-			Component->OnTransformChanged();
+			if (Parent->GetActorOwner() == this)
+			{
+				bHasOwnedAncestor = true;
+				break;
+			}
 		}
+
+		if (!bHasOwnedAncestor)
+			SceneComponent->MarkActorTransformDirty();
 	}
 }
 
-void AActor::AddComponent(USceneComponent* Addcomp)
+void AActor::AddComponent(UActorComponent* Addcomp, bool bAutoAttach)
 {
 	if (Addcomp == nullptr)
 	{
 		return;
 	}
+	// 이미 ActorOwner가 있는 컴포넌트 예외처리
+	if (Addcomp->ActorOwner && Addcomp->ActorOwner != this)
+		throw EngineUtil::CreateError("다른 Actor가 소유한 컴포넌트입니다.");
 
-	if (RootComponent == nullptr)
-	{
-		RootComponent = Addcomp;
-		Addcomp->SetupAttachment(nullptr);
+	// 중복 추가와 중복 Initialize를 방지한다.
+	if (std::find(AttachedComp.begin(), AttachedComp.end(), Addcomp) != AttachedComp.end())
+		return;
+
+	USceneComponent* SceneComp = Addcomp->Cast<USceneComponent>();
+
+	if (SceneComp && bAutoAttach) {
+		if (!RootComponent) {
+			SceneComp->SetupDetachment(false);
+			RootComponent = SceneComp;
+
+		}
+		else if (SceneComp != RootComponent && !SceneComp->GetAttachParent())
+		{
+			// 부모를 지정하지 않은 추가 SceneComponent는 Root에 부착한다.
+			if (!SceneComp->SetupAttachment(RootComponent))
+				throw EngineUtil::CreateError("컴포넌트 부착 관계에 순환이 발생합니다.");
+		}
+
 	}
-
-	else if (Addcomp->GetSceneOwner() == nullptr)
-	{
-		Addcomp->SetupAttachment(RootComponent);
-	}
-
 	Addcomp->ActorOwner = this;
 	AttachedComp.push_back(Addcomp);
+	if (!bInitialized) { return; }
 	Addcomp->Initialize();
 
 	if (Owner)
@@ -210,9 +302,9 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 	}
 }
 
-void AActor::Register(UScene& Scene)
+void AActor::Register(ULevel& InLevel)
 {
-	if (Owner == &Scene)
+	if (!bInitialized||Owner == &InLevel)
 	{
 		return;
 	}
@@ -222,12 +314,12 @@ void AActor::Register(UScene& Scene)
 		Unregister();
 	}
 
-	Owner = &Scene;
-	for (USceneComponent* Component : AttachedComp)
+	Owner = &InLevel;
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
-			Component->Register(Scene);
+			Component->Register(InLevel);
 		}
 	}
 }
@@ -239,7 +331,7 @@ void AActor::BeginPlay() {
 	}
 
 	bHasBegunPlay = true;
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
@@ -254,7 +346,7 @@ void AActor::Update(float DeltaTime) {
 		return;
 	}
 
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component && Component->IsTickEnabled())
 		{
@@ -303,7 +395,7 @@ void AActor::Unregister() {
 void AActor::Destroy() {
 	if (Owner)
 	{
-		Owner->DestroyActor(this);
+		Owner->GetWorld()->DestroyActor(this);
 		return;
 	}
 	DestroyObject(this);

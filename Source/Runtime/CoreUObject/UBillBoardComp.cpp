@@ -1,10 +1,9 @@
 #include "UBillBoardComp.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
-#include "Runtime/Engine/UScene.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Core/Log.h"
-#include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Engine/FSceneView.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UTexture.h"
@@ -16,17 +15,27 @@ IMPLEMENT_UCLASS(UBillBoardComp, UPrimitiveComponent)
 UCLASS_META(UBillBoardComp, DisplayName, "BillBoard")
 UCLASS_META(UBillBoardComp, MeshName, "BillBoard")
 
-void UBillBoardComp::Initialize() {
-  Super::Initialize();
+void UBillBoardComp::PostInitProperties()
+{
+    Super::PostInitProperties();
 
-  FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-  SetMesh(Registry.Get<UStaticMesh>("#Rect"));
-  SetMaterial(Registry.Get<UMaterial>("Material/Billboard.json"));
-
-  RenderData.Type = ERenderType::Primitive;
+    // 부모가 준비한 Material 슬롯에 Billboard 기본 에셋을 지정한다.
+    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+    SetMesh(Registry.Get<UStaticMesh>("#Rect"));
+    SetMaterial(Registry.Get<UMaterial>("Material/Billboard.json"));
 }
 
-void UBillBoardComp::Serialize(FArchive& Archive) const
+//void UBillBoardComp::Initialize() {
+//  Super::Initialize();
+//
+//  FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+//  SetMesh(Registry.Get<UStaticMesh>("#Rect"));
+//  SetMaterial(Registry.Get<UMaterial>("Material/Billboard.json"));
+//
+//  RenderData.Type = ERenderType::Primitive;
+//}
+
+void UBillBoardComp::Serialize(FJsonArchive& Archive) const
 {
     Super::Serialize(Archive);
 
@@ -37,7 +46,7 @@ void UBillBoardComp::Serialize(FArchive& Archive) const
     }
 }
 
-void UBillBoardComp::Deserialize(const FArchive& Archive)
+void UBillBoardComp::Deserialize(const FJsonArchive& Archive)
 {
     Super::Deserialize(Archive);
 

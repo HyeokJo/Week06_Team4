@@ -4,8 +4,8 @@
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "UPrimitiveComponent.h"
 
-class UScene;
-class FArchive;
+class UWorld;
+class FJsonArchive;
 
 class UBillBoardComp : public UPrimitiveComponent {
   DECLARE_UCLASS(UBillBoardComp, UPrimitiveComponent)
@@ -14,11 +14,13 @@ class UBillBoardComp : public UPrimitiveComponent {
 protected:
   explicit UBillBoardComp() = default;
 
-  virtual void Serialize(FArchive& Archive) const;
-  virtual void Deserialize(const FArchive& Archive);
+  virtual void Serialize(FJsonArchive& Archive) const;
+  virtual void Deserialize(const FJsonArchive& Archive);
 
 public:
-  void Initialize() override;
+	using Super::Serialize;
+  //void Initialize() override;
+  void PostInitProperties() override;
 
   virtual void SetTexture(UTexture* Texture);
   UTexture* GetTexture() const;

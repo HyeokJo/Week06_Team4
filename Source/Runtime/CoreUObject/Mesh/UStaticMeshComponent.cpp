@@ -1,6 +1,6 @@
 #include "UStaticMeshComponent.h"
 #include "Runtime/Asset/FAssetRegistry.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Core/Globals.h"
 #include <numbers>
 
@@ -182,7 +182,7 @@ EEngineShowFlags UStaticMeshComponent::GetShowFlag() const
 	return EEngineShowFlags::SF_Primitives;
 }
 
-void UStaticMeshComponent::Serialize(FArchive& Archive) const
+void UStaticMeshComponent::Serialize(FJsonArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
@@ -192,11 +192,11 @@ void UStaticMeshComponent::Serialize(FArchive& Archive) const
 	}
 
 	FString MeshAssetID = RenderData.Mesh->GetID().ToString();
-	TArray<FArchive> MaterialAsset = {};
+	TArray<FJsonArchive> MaterialAsset = {};
 
 	for (const auto& Item : *GetAllMaterialInstance())
 	{
-		FArchive ItemArchive{};
+		FJsonArchive ItemArchive{};
 		ItemArchive.SetFloat("Albedo", Item.Albedo);
 		ItemArchive.SetFloat("Diffuse", Item.Diffuse);
 		ItemArchive.SetFloat("Specular", Item.Specular);
@@ -235,7 +235,7 @@ void UStaticMeshComponent::Serialize(FArchive& Archive) const
 	Archive.SetArchiveArray("Materials", MaterialAsset);
 }
 
-void UStaticMeshComponent::Deserialize(const FArchive& Archive)
+void UStaticMeshComponent::Deserialize(const FJsonArchive& Archive)
 {
 	Super::Deserialize(Archive);
 
@@ -261,11 +261,11 @@ void UStaticMeshComponent::Deserialize(const FArchive& Archive)
 		return;
 	}
 
-	TArray<FArchive> MaterialArchives = Archive.GetArchiveArray("Materials");
+	TArray<FJsonArchive> MaterialArchives = Archive.GetArchiveArray("Materials");
 
 	for (int i = 0; i < MaterialArchives.size(); ++i)
 	{
-		FArchive& Item = MaterialArchives[i];
+		FJsonArchive& Item = MaterialArchives[i];
 
 		FName MaterialID = Item.GetString("MaterialAsset");
 		UMaterial* Material = Registry.Get<UMaterial>(MaterialID);

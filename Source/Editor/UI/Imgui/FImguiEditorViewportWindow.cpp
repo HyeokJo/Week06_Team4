@@ -3,7 +3,7 @@
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Engine/FRayCastingManager.h"
 #include "Runtime/Engine/FSceneBVH.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Input/FInputManager.h"
 #include "Runtime/Math/FVector.h"
 #include "Runtime/Core/Log.h"
@@ -130,7 +130,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
                 }
 
                 // 클릭 전에도 마우스가 올라간 뷰포트에서 매 프레임 검사한다.
-                if (Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
+                if (!Editor.IsPlaying() && Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
                 {
                     UpdateGizmoHover(Editor, CurrentViewport, Input.LocalMouse, Input.SizePixels);
                 }
@@ -157,8 +157,11 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     if (Viewport && Viewport == Editor.GetActiveViewport() && bHasActiveInput)
     {
         Viewport->UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
-        UpdateSelection(Editor, *Viewport, ActiveInput);
-        UpdateGizmo(Editor, *Viewport, ActiveInput);
+        if (!Editor.IsPlaying())
+        {
+            UpdateSelection(Editor, *Viewport, ActiveInput);
+            UpdateGizmo(Editor, *Viewport, ActiveInput);
+        }
         UpdateCamera(Editor, *Viewport, ActiveInput, DeltaTime);
     }
     // 현재 ImGui 창은 다시 부모 창
@@ -306,7 +309,7 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
 
 
     // 기즈모를 드래그하는 중에는 모드가 바뀌면 안 된다.
-    if (!Editor.GetGizmo().IsInteracting())
+    if (!Editor.IsPlaying() && !Editor.GetGizmo().IsInteracting())
     {
         UpdateShortcuts(Editor);
     }
@@ -379,7 +382,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     FVector ImpactPoint;
     bool bHit = false;
 
-    UScene *PickScene = Editor.GetCurrentScene();
+    UWorld *PickWorld = Editor.GetCurrentWorld();
 
     // 1) 마우스 화면 좌표 획득
     // 2) 화면 좌표 -> 월드 좌표로의 픽 레이(Pick Ray) 계산
@@ -397,9 +400,10 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     ++Editor.PickingAttempts;
 
     // 5) 모든 오브젝트(프리미티브)에 대해 충돌 판정
-    if (Editor.bUseBVHPicking && PickScene)
+    if (Editor.bUseBVHPicking && PickWorld)
     {
-        bHit = PickScene->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
+        PickWorld->UpdateDirtyBounds();
+        bHit = PickWorld->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
     }
     else
     {

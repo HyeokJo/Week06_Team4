@@ -1,0 +1,1039 @@
+{
+    "NextUUID": 127,
+    "Version": 2,
+    "World": {
+        "Actors": [
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.2899999618530273,
+                        -2.0,
+                        2.7699999809265137
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 85
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 86
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.2699999809265137,
+                        1.1299999952316284,
+                        2.940000057220459
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 87
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 88
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.5,
+                        3.1600000858306885,
+                        0.5400000214576721
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 89
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 90
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.0399999618530273,
+                        2.0199999809265137,
+                        -1.0399999618530273
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 91
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 92
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.2100000381469727,
+                        2.799999952316284,
+                        -0.1599999964237213
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 93
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 94
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.5099999904632568,
+                        2.5799999237060547,
+                        -2.9000000953674316
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 95
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 96
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.019999999552965164,
+                        3.7100000381469727,
+                        -0.3199999928474426
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 97
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 98
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.75,
+                        -0.8999999761581421,
+                        0.5
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 99
+                },
+                "Type": "ACubeActor",
+                "UUID": 100
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.440000057220459,
+                        0.8199999928474426,
+                        -1.1799999475479126
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 101
+                },
+                "Type": "ACubeActor",
+                "UUID": 102
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.340000033378601,
+                        0.6600000262260437,
+                        -2.109999895095825
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 103
+                },
+                "Type": "ACubeActor",
+                "UUID": 104
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.5899999737739563,
+                        0.8700000047683716,
+                        0.47999998927116394
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 105
+                },
+                "Type": "ACubeActor",
+                "UUID": 106
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.8700000047683716,
+                        1.840000033378601,
+                        1.8600000143051147
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 107
+                },
+                "Type": "ACubeActor",
+                "UUID": 108
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.2699999809265137,
+                        0.4399999976158142,
+                        -2.119999885559082
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 109
+                },
+                "Type": "ACubeActor",
+                "UUID": 110
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.180000066757202,
+                        3.5199999809265137,
+                        -2.630000114440918
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 111
+                },
+                "Type": "ACubeActor",
+                "UUID": 112
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.2599999904632568,
+                        2.700000047683716,
+                        0.12999999523162842
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 113
+                },
+                "Type": "ASphereActor",
+                "UUID": 114
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.3600000143051147,
+                        0.6899999976158142,
+                        2.2699999809265137
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 115
+                },
+                "Type": "ASphereActor",
+                "UUID": 116
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.7100000381469727,
+                        3.1600000858306885,
+                        -0.9200000166893005
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 117
+                },
+                "Type": "ASphereActor",
+                "UUID": 118
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.6299999952316284,
+                        0.05999999865889549,
+                        1.5099999904632568
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 119
+                },
+                "Type": "ASphereActor",
+                "UUID": 120
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.09000000357627869,
+                        0.18000000715255737,
+                        1.2000000476837158
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 121
+                },
+                "Type": "ASphereActor",
+                "UUID": 122
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.25999999046325684,
+                        -1.2799999713897705,
+                        -0.75
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 123
+                },
+                "Type": "ASphereActor",
+                "UUID": 124
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.019999999552965164,
+                        2.4000000953674316,
+                        -2.5299999713897705
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 125
+                },
+                "Type": "ASphereActor",
+                "UUID": 126
+            }
+        ],
+        "Type": "UWorld",
+        "UUID": 80
+    }
+}

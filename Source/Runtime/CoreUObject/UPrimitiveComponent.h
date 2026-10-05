@@ -14,8 +14,11 @@ class UPrimitiveComponent : public USceneComponent {
   DECLARE_UCLASS(UPrimitiveComponent, USceneComponent)
 
 public:
+    using Super::Serialize;
+    void PostInitProperties() override;
+    void Serialize(FArchive& Archive) override;
     void Initialize() override;
-    void Register(UScene& InScene) override;
+    void Register(ULevel& InLevel) override;
     void Unregister() override;
 
     virtual void SetMesh(UStaticMesh* Mesh);

@@ -2,7 +2,7 @@
 
 #include "UBillBoardComp.h"
 
-class FArchive;
+class FJsonArchive;
 
 // 애니메이션 빌보드 컴포넌트
 class UAnimatedBillboardComp : public UBillBoardComp {
@@ -12,10 +12,12 @@ class UAnimatedBillboardComp : public UBillBoardComp {
 protected:
   explicit UAnimatedBillboardComp() = default;
 
-  virtual void Serialize(FArchive& Archive) const override;
-  virtual void Deserialize(const FArchive& Archive) override;
+  virtual void Serialize(FJsonArchive& Archive) const override;
+  virtual void Deserialize(const FJsonArchive& Archive) override;
 
 public:
+  void PostInitProperties() override;
+  void Serialize(FArchive& Archive) override;
   void Initialize() override;
 
   // 매 프레임 애니메이션 갱신

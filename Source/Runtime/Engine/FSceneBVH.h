@@ -7,19 +7,10 @@
 #include "Runtime/Geometry/FFrustum.h"
 #include <cstdint>
 
-//임시 FPlane, FFrustum, 조훈님이 만들면 그 자료구조로 교체
-//struct FPlane { FVector Normal; float D; };
-
-//struct FFrustum
-//{
-//    FPlane Planes[6];
-//    static FFrustum FromViewProj(const FMatrix& ViewProj);
-//};
 
 // ★ bool이 아니라 3-상태여야 함
 enum class EIntersection : uint8 { Outside, Intersect, Inside };
 
-//EIntersection TestAABB(const FFrustum& Frustum, const FAxisAlignedBoundingBox& Box);
 
 class FSceneBVH
 {
@@ -67,6 +58,9 @@ public:
     void AddObject(UPrimitiveComponent* C);
     void RemoveObject(UPrimitiveComponent* C);
 
+    //BVH Refit On All Objects.
+    void RefitObjects(const TArray<UPrimitiveComponent*>& ChangedComponents);
+
 private:
     struct FSubRange
     {
@@ -104,20 +98,28 @@ private:
 
 private:
     TArray<FPrimRef> Prims;     // 빌드 중 작업 버퍼
+    TArray<uint32> DirtyNodes;  // Refit용작업 버퍼
+    TArray<uint8> DirtyNodeFlags;
 };
+
+// Transform 부착 계층을 순회한다. 일반 SceneComponent 아래의 Primitive도 포함한다.
+inline static void RefitComponentTreeInBVH(FSceneBVH& BVH, USceneComponent* Component)
+{
+    if (!Component) { return; }
+
+    if (UPrimitiveComponent* Primitive = Component->Cast<UPrimitiveComponent>())
+    {
+        BVH.RefitObject(Primitive);
+    }
+
+    for (USceneComponent* Child : Component->GetAttachedComponents())
+    {
+        RefitComponentTreeInBVH(BVH, Child);
+    }
+}
 
 inline static void RefitActorInBVH(FSceneBVH& BVH, AActor* Actor)
 {
     if (!Actor) { return; }
-
-    if (USceneComponent* Root = Actor->GetRootComponent())
-    {
-        if (UPrimitiveComponent* P = Root->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
-    }
-
-    for (USceneComponent* S : Actor->GetAttachedComponents())
-    {
-        if (!S) { continue; }
-        if (UPrimitiveComponent* P = S->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
-    }
+    RefitComponentTreeInBVH(BVH, Actor->GetRootComponent());
 }

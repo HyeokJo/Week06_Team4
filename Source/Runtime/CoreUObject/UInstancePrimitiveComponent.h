@@ -13,8 +13,8 @@ class UInstancePrimitiveComponent : public UPrimitiveComponent {
   DECLARE_UCLASS(UInstancePrimitiveComponent, UPrimitiveComponent)
 
 public:
-    void Initialize() override;
-
+    //void Initialize() override;
+    void PostInitProperties() override;
     // 큐 방식: FRenderData에 Instances까지 채워서 반환
     virtual void BuildRenderData() const;
     virtual const FRenderData& GetRenderData(const FCamera& Camera) const override;

@@ -2,7 +2,7 @@
 #include "Runtime/Utility/EngineUtil.h"
 #include "Runtime/Core/TArray.h"
 #include "Runtime/Core/Log.h"
-#include "Runtime/Engine/FArchive.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UPipeline.h"
 #include "Runtime/Asset/UMaterial.h"
@@ -189,11 +189,11 @@ void FResourceLoader::LoadAssets()
 
 	const auto& Iterator = fs::recursive_directory_iterator(AssetPath);
 
-	TArray<std::pair<FName, FArchive>> PipelineAssets;
-	TArray<std::pair<FName, FArchive>> TextureAssets;
-	TArray<std::pair<FName, FArchive>> MaterialAssets;
-	TArray<std::pair<FName, FArchive>> FontAssets;
-	TArray<std::pair<FName, FArchive>> StaticMeshAssets;
+	TArray<std::pair<FName, FJsonArchive>> PipelineAssets;
+	TArray<std::pair<FName, FJsonArchive>> TextureAssets;
+	TArray<std::pair<FName, FJsonArchive>> MaterialAssets;
+	TArray<std::pair<FName, FJsonArchive>> FontAssets;
+	TArray<std::pair<FName, FJsonArchive>> StaticMeshAssets;
 
 	for (const auto& Entry : Iterator)
 	{
@@ -219,7 +219,7 @@ void FResourceLoader::LoadAssets()
 			continue;
 		}
 
-		FArchive Archive{ data };
+		FJsonArchive Archive{ data };
 		const FString AssetID = Entry.path().lexically_relative(AssetPath).generic_string();
 		Archive.SetString("AssetID", AssetID);
 
@@ -241,7 +241,7 @@ void FResourceLoader::LoadAssets()
 		else { UE_LOG("[FResourceLoader::LoadAssets] 알 수 없는 AssetType %s", AssetID.c_str()); }
 	}
 
-	const TArray<TArray<std::pair<FName, FArchive>>*> LoadOrder = {
+	const TArray<TArray<std::pair<FName, FJsonArchive>>*> LoadOrder = {
 		&PipelineAssets, &TextureAssets, &MaterialAssets, &FontAssets, &StaticMeshAssets
 	};
 	for (const auto* Assets : LoadOrder)
@@ -249,7 +249,7 @@ void FResourceLoader::LoadAssets()
 		for (const auto& Item : *Assets)
 		{
 			const FName& Type = Item.first;
-			const FArchive& Archive = Item.second;
+			const FJsonArchive& Archive = Item.second;
 			const FName AssetID = Archive.GetString("AssetID");
 			if (Type == "Pipeline") { LoadPipelineAsset(Archive, AssetID); }
 			else if (Type == "Texture") { LoadTextureAsset(Archive, AssetID); }
@@ -317,7 +317,7 @@ bool FResourceLoader::ImportObj(const std::filesystem::path& ObjFilePath, FStrin
 		return true;
 	}
 
-	FArchive Archive;
+	FJsonArchive Archive;
 	Archive.SetString("Name", ModelName);
 	Archive.SetString("MeshFilePath", RelativeMeshPath.generic_string());
 	Archive.SetBool("ZUp", bZUp);
@@ -327,7 +327,7 @@ bool FResourceLoader::ImportObj(const std::filesystem::path& ObjFilePath, FStrin
 	return true;
 }
 
-void FResourceLoader::LoadPipelineAsset(const FArchive& Archive, const FName& ID)
+void FResourceLoader::LoadPipelineAsset(const FJsonArchive& Archive, const FName& ID)
 {
 	namespace fs = std::filesystem;
 
@@ -355,7 +355,7 @@ void FResourceLoader::LoadPipelineAsset(const FArchive& Archive, const FName& ID
 		throw EngineUtil::CreateError("[FResourceLoader::LoadPipelineAsset] 'Rasterizer' 필드가 없습니다. {}", ID.ToString());
 	}
 
-	FArchive RasterizerArchive = Archive.GetArchive("Rasterizer");
+	FJsonArchive RasterizerArchive = Archive.GetArchive("Rasterizer");
 	RenderPipelineDesc.Rasterizer.FillMode = RasterizerArchive.GetEnum("FillMode", RasterizerFillModeMap);
 	RenderPipelineDesc.Rasterizer.CullMode = RasterizerArchive.GetEnum("CullMode", RasterizerCullModeMap);
 	RenderPipelineDesc.Rasterizer.FrontFace = RasterizerArchive.GetEnum("FrontFaceMode", RasterizerFrontFaceModeMap);
@@ -367,7 +367,7 @@ void FResourceLoader::LoadPipelineAsset(const FArchive& Archive, const FName& ID
 		throw EngineUtil::CreateError("[FResourceLoader::LoadPipelineAsset] 'DepthStencil' 필드가 없습니다. {}", ID.ToString());
 	}
 
-	FArchive DepthStencilArchive = Archive.GetArchive("DepthStencil");
+	FJsonArchive DepthStencilArchive = Archive.GetArchive("DepthStencil");
 	RenderPipelineDesc.DepthStencil.bDepthEnable = DepthStencilArchive.GetBool("DepthEnable");
 	RenderPipelineDesc.DepthStencil.bStencilEnable = DepthStencilArchive.GetBool("StencilEnable");
 	RenderPipelineDesc.DepthStencil.DepthWrite = DepthStencilArchive.GetEnum("DepthWriteMode", DepthWriteModeMap);
@@ -377,7 +377,7 @@ void FResourceLoader::LoadPipelineAsset(const FArchive& Archive, const FName& ID
 		throw EngineUtil::CreateError("[FResourceLoader::LoadPipelineAsset] 'Blend' 필드가 없습니다. {}", ID.ToString());
 	}
 
-	FArchive BlendArchive = Archive.GetArchive("Blend");
+	FJsonArchive BlendArchive = Archive.GetArchive("Blend");
 	RenderPipelineDesc.Blend.BlendMode = BlendArchive.GetEnum("BlendMode", BlendModeMap);
 
 	FRenderResourceLibrary& ResourceLibrary = FRenderResourceLibrary::Get();
@@ -404,7 +404,7 @@ void FResourceLoader::LoadPipelineAsset(const FArchive& Archive, const FName& ID
 	Registry.Register(ID, PipelineAsset);
 }
 
-void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID)
+void FResourceLoader::LoadMaterialAsset(const FJsonArchive& Archive, const FName& ID)
 {
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 
@@ -420,7 +420,7 @@ void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID
 		throw EngineUtil::CreateError("[FResourceLoader::LoadMaterialAsset] 'TextureSampler' 필드가 없습니다. {}", ID.ToString());
 	}
 
-	FArchive TextureSamplerArchive = Archive.GetArchive("TextureSampler");
+	FJsonArchive TextureSamplerArchive = Archive.GetArchive("TextureSampler");
 	MaterialDesc.TextureSamplerDesc.FilterMode = TextureSamplerArchive.GetEnum("FilterMode", TextureSamplerFilterModeMap);
 	MaterialDesc.TextureSamplerDesc.WrapMode = TextureSamplerArchive.GetEnum("WrapMode", TextureSamplerWrapModeMap);
 
@@ -458,7 +458,7 @@ void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID
 	FRenderResourceLibrary::Get().RegisterMaterial(MaterialDesc.Name, RenderMaterial);	
 }
 
-void FResourceLoader::LoadStaticMeshAsset(const FArchive& Archive, const FName& ID)
+void FResourceLoader::LoadStaticMeshAsset(const FJsonArchive& Archive, const FName& ID)
 {
 	namespace fs = std::filesystem;
 
@@ -627,7 +627,7 @@ void FResourceLoader::LoadStaticMeshAsset(const FArchive& Archive, const FName& 
 	}	
 }
 
-void FResourceLoader::LoadFontAsset(const FArchive& Archive, const FName& ID)
+void FResourceLoader::LoadFontAsset(const FJsonArchive& Archive, const FName& ID)
 {
 	namespace fs = std::filesystem;
 
@@ -637,7 +637,7 @@ void FResourceLoader::LoadFontAsset(const FArchive& Archive, const FName& ID)
 
 	const FName UTextureID = Archive.GetString("UTextureID");
 
-	const FArchive GlyphDataArchive = Archive.GetArchive("GlyphData");
+	const FJsonArchive GlyphDataArchive = Archive.GetArchive("GlyphData");
 	TSharedPtr<FFont> Font = MakeShared<FFont>(GlyphDataArchive);
 
 	UFontDesc FontDesc{};
@@ -659,7 +659,7 @@ void FResourceLoader::LoadFontAsset(const FArchive& Archive, const FName& ID)
 	Registry.Register(ID, FontAsset);
 }
 
-void FResourceLoader::LoadTextureAsset(const FArchive& Archive, const FName& ID)
+void FResourceLoader::LoadTextureAsset(const FJsonArchive& Archive, const FName& ID)
 {
 	namespace fs = std::filesystem;
 
@@ -721,7 +721,7 @@ void FResourceLoader::LoadMtlMaterial(const std::filesystem::path& MtlFilePath, 
 		FName TextureId = "None";
 		if (!Mtl.map_Kd.empty())
 		{
-			FArchive TextureArchive;
+			FJsonArchive TextureArchive;
 			const fs::path TextureAssetPath = RootPath / fs::path(Mtl.map_Kd);
 			TextureArchive.SetString("Name", TextureAssetPath.generic_string());
 
@@ -763,11 +763,11 @@ void FResourceLoader::LoadMtlMaterial(const std::filesystem::path& MtlFilePath, 
 		FName MaterialId = FName(MaterialAssetPath.generic_string());
 		if (!Registry.Get<UMaterial>(MaterialId))
 		{
-			FArchive SamplerArchive;
+			FJsonArchive SamplerArchive;
 			SamplerArchive.SetString("FilterMode", "Bilinear");
 			SamplerArchive.SetString("WrapMode", "Wrap");
 
-			FArchive MaterialArchive;
+			FJsonArchive MaterialArchive;
 			MaterialArchive.SetString("Name", MaterialAssetPath.generic_string());
 			  
 			// TODO: TEMP: 다음에 바꿀것

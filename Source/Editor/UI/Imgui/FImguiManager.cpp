@@ -4,6 +4,7 @@
 #include "ThirdParty/Imgui/imgui_impl_dx11.h"
 #include "ThirdParty/Imgui/imgui_impl_win32.h"
 #include "ThirdParty/Imgui/implot.h"
+#include <fstream>
 
 
 bool FImguiManager::Initialize_ImplWin32DX11(HWND& Window, ID3D11Device* Device, ID3D11DeviceContext* Context)
@@ -44,7 +45,11 @@ void FImguiManager::NewFrame()
 	ImGuiID DockSpaceID = ImGui::DockSpaceOverViewport(0, Viewport, ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::PopStyleColor();
 
-	static bool Initialized = true;
+	static bool Initialized = []
+		{
+			const char* Path = ImGui::GetIO().IniFilename;
+			return Path && std::ifstream(Path).is_open();
+		}();
 	if (!Initialized)
 	{
 		ImGui::DockBuilderRemoveNode(DockSpaceID);

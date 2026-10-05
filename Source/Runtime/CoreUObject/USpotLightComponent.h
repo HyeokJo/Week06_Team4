@@ -1,7 +1,6 @@
 #pragma once
 
 #include "UPrimitiveComponent.h"
-#include "Runtime/Engine/UScene.h"
 
 
 // TODO: 언젠가는 USceneComponent로 옮길것..
@@ -14,8 +13,9 @@ protected:
 	explicit USpotLightComponent() = default;
 
 public:
-	void Initialize() override;
-
+	//void Initialize() override;
+	void PostInitProperties() override;
+	void Serialize(FArchive& Archive) override;
 	float GetSpotAngle() const { return SpotAngle; }
 	void SetSpotAngle(float InAngle) { SpotAngle = InAngle; }
 
@@ -28,8 +28,8 @@ public:
 	const FVector& GetLightColor() const { return LightColor; }
 	void SetLightColor(const FVector& InColor) { LightColor = InColor; }
 
-	void Serialize(FArchive& Archive) const override;
-	void Deserialize(const FArchive& Archive) override;
+	void Serialize(FJsonArchive& Archive) const override;
+	void Deserialize(const FJsonArchive& Archive) override;
 
 	virtual bool IsOcclusionTarget() const override { return false; }
 

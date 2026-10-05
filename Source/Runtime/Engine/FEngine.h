@@ -3,7 +3,7 @@
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Engine/FRenderView.h"
-#include "Runtime/Engine/USceneManager.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Editor/Application/IApplication.h"
 
 class FEngineLoop;
@@ -18,7 +18,7 @@ private:
 	FRenderView RenderView{ Renderer };
 	FEngineLoop& EngineLoop;
 	TUniquePtr<IApplication> Application;
-	USceneManager SceneManager;
+	TArray<UWorld*> WorldList; // TODO: World 기능이 더 믾아질 시 FWorldContext 구현 (멀티플레이, 네트워킹, Travel)
 
 public:
 	FEngine(FEngineLoop& InEngineLoop)
@@ -27,8 +27,13 @@ public:
 	}
 
 	void Init();
-
 	void Tick(float DeltaTime);
-
 	void Exit();
+
+	void AddWorld(UWorld* World, EWorldType WorldType = EWorldType::Editor);
+	void RemoveWorld(UWorld* World);
+	UWorld* GetWorld(EWorldType Type) const;
+	void UpdateWorldBounds() const;
 };
+
+extern FEngine* GEngine;

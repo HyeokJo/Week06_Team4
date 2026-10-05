@@ -9,6 +9,7 @@
 
 class UObjectGlobals;
 class UClass;
+class FJsonArchive;
 class FArchive;
 
 /*
@@ -99,6 +100,10 @@ public:
 
 	virtual void Initialize();
 	virtual void Release();
+	virtual void PostInitProperties() {};
+
+	// FArchive 공통 직렬화/역직렬화 함수. FArchive의 정책으로 데이터 및 참조를 처리함.
+	virtual void Serialize(FArchive& Archive);
 
 	static void* operator new(std::size_t Size);
 
@@ -126,8 +131,10 @@ protected:
 	UObject() = default;
 	virtual ~UObject() = default;
 
-	virtual void Serialize(FArchive& Archive) const;
-	virtual void Deserialize(const FArchive& Archive);
+	virtual void Serialize(FJsonArchive& Archive) const;
+	virtual void Deserialize(const FJsonArchive& Archive);
+
+
 
 private:
 	uint32 UUID = 0u;
@@ -155,4 +162,56 @@ public:
 	const T* Cast() const {
 		return IsA<T>() ? static_cast<const T*>(this) : nullptr;
 	}
+
+	//Outer 관련 함수,변수들
+public:
+	UObject* GetOuter() const{ return Outer; }
+
+	//부모중 가장 가까운 해당 타입의 객체를 리턴하는 함수
+	template<typename T>
+	T* GetTypedOuter()
+	{
+		for (UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (T* Result = Current->Cast<T>()){ return Result; }
+		}
+		return nullptr;
+	}
+	//부모중 가장 가까운 해당 타입의 객체를 리턴하는 함수
+	template<typename T>
+	const T* GetTypedOuter() const
+	{
+		for (const UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (const T* Result = Current->Cast<T>())
+			{
+				return Result;
+			}
+		}
+		return nullptr;
+	}
+
+	bool IsIn(const UObject* Ancestor) const
+	{
+		if (!Ancestor){	return false; }
+		for (const UObject* Current = Outer; Current != nullptr; Current = Current->GetOuter())
+		{
+			if (Current == Ancestor) { return true; }
+		}
+		return false;
+	}
+
+private:
+	UObject* Outer = nullptr;
+
+	// Outer 추가용 생성 헬퍼. 현재 구조를 바꾸고싶지않아서 이런형태임
+	// TODO? : Outer가 필수가 되면 NewObject를 이 로직으로 바꾼다?
+	template<typename TObject, typename... TArgs>
+		requires std::derived_from<TObject, UObject>
+	friend TObject* NewObjectWithOuter(UObject* InOuter,TArgs&&... Args);
+	friend UObject* NewObjectWithOuter(UObject* InOuter, UClass* ClassType);
+
+
+	//복사 정책 관련 함수
+	UObject* Duplicate(UObject* Source) const;
 };

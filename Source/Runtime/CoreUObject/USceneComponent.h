@@ -3,42 +3,30 @@
 #include "Runtime/Geometry/FTransform.h"
 #include "ThirdParty/Json/json.hpp"
 #include "UObject.h"
+#include "UActorComponent.h"
 
+class UWorld;
+//class AActor;
+class FJsonArchive;
 
-class UScene;
-class AActor;
-class FArchive;
-
-class USceneComponent : public UObject
+class USceneComponent : public UActorComponent
 {
 	GENERATED_BODY()
-	DECLARE_UCLASS(USceneComponent, UObject)
-	friend class AActor;
-
+	DECLARE_UCLASS(USceneComponent, UActorComponent)
+    friend class AActor;
 public:
     virtual void Initialize() override;
     virtual void Release() override;
-    
-    AActor* GetActorOwner() const { return ActorOwner; }
-    USceneComponent* GetSceneOwner() const { return SceneOwner; }
-    void SetActorOwner(AActor* Owner) { ActorOwner = Owner; } //selectedacotor 한테 textcomponent 바로 붙여야해서 만듦
+    void Serialize(FArchive& Archive) override;
+    USceneComponent* GetAttachParent() const { return AttachParent; }
 
-    virtual void Register(UScene& InScene);
-    virtual void BeginPlay();
-    virtual void Update(float DeltaTime) {}
-    virtual void EndPlay();
-    virtual void Unregister();
-
-    void SetupAttachment(USceneComponent* InParent);
-
-    [[nodiscard]] bool IsRegistered() const { return Scene != nullptr; }
-    [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
-    [[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
-
-	virtual void Serialize(FArchive& Archive) const override;
-	virtual void Deserialize(const FArchive& Archive) override;
-    
-    void SetInheritRotation(bool bInherit) { bInheritRotation = bInherit; bGlobalDirty = true; }
+    bool SetupAttachment(USceneComponent* InParent);
+    void SetupDetachment(bool bKeepWorldTransform = true);
+	virtual void Serialize(FJsonArchive& Archive) const override;
+	virtual void Deserialize(const FJsonArchive& Archive) override;
+    void SetInheritRotation(bool bInherit);
+    //Transform이 바뀔 때 본인 및 자식 컴포넌트에 알림.
+    void MarkActorTransformDirty();
 protected:
 	USceneComponent() = default;
 
@@ -56,9 +44,6 @@ public:
 	const FMatrix* GetGlobalInverseMatrix() const;
 	//void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
 
-    //Transform이 바뀔 때 알림. 액터 전체 컴포넌트에 전파
-    void MarkActorTransformDirty();
-
     virtual void SetRelativeLocation(const FVector& RelativeLocation);
     virtual void SetRelativeRotation(const FVector& RelativeRotation);
     virtual void SetRelativeRotation(const FQuaternion& RelativeRotation);
@@ -71,12 +56,10 @@ public:
     void SetBatchIndex(int32 Index) { BatchIndex = Index; }
     int32 GetBatchIndex() const { return BatchIndex; }
 
+	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComponents; }
 protected:
-    AActor* ActorOwner = nullptr;
-    USceneComponent* SceneOwner = nullptr;
-    UScene* Scene = nullptr;
-    bool bHasBegunPlay = false;
-    bool bTickEnabled = false;
+    USceneComponent* AttachParent = nullptr;
+    TArray<USceneComponent*> AttachedComponents;
     bool bInheritRotation = true;
 
     int32 BatchIndex = -1;

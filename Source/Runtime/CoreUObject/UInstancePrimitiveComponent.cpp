@@ -2,21 +2,30 @@
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Asset/FAssetRegistry.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "UClass.h"
 
 IMPLEMENT_UCLASS(UInstancePrimitiveComponent, UPrimitiveComponent)
 
-void UInstancePrimitiveComponent::Initialize()
+
+void UInstancePrimitiveComponent::PostInitProperties()
 {
-    Super::Initialize();
+    Super::PostInitProperties();
 
-    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-    //SetMaterial(Registry.Get<UMaterial>("Material/Instance_Textured.json"));
-    
+    // Initialize에서 설정하면 파생 클래스의 렌더 종류를 덮어쓸 수 있다.
     RenderData.Type = ERenderType::Instancing;
-
 }
+
+//void UInstancePrimitiveComponent::Initialize()
+//{
+//    Super::Initialize();
+//
+//    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+//    //SetMaterial(Registry.Get<UMaterial>("Material/Instance_Textured.json"));
+//    
+//    RenderData.Type = ERenderType::Instancing;
+//
+//}
 
 void UInstancePrimitiveComponent::AddInstance(const FVector& WorldPosition, const FVector4& Color)
 {

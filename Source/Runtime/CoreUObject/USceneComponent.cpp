@@ -1,72 +1,80 @@
-#include "UClass.h"
 #include "USceneComponent.h"
-#include "ThirdParty/Json/json.hpp"
-#include "UObjectGlobals.h" 
-#include "UPrimitiveComponent.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "UObjectGlobals.h"
+#include "Runtime/Actors/AActor.h"
+#include "Runtime/Engine/FJsonArchive.h"
+
+#include <numbers>
+#include <algorithm>
 
 
-IMPLEMENT_UCLASS(USceneComponent, UObject)
+IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
 
 void USceneComponent::Initialize()
 {
+    if (IsInitialized()) return;
+
     Super::Initialize();
-    Scene = nullptr;
-    bHasBegunPlay = false;
-    bTickEnabled = false;
+    bGlobalDirty = true;
 }
 void USceneComponent::Release()
 {
-    if (bHasBegunPlay) { EndPlay(); }
-    if (Scene) { Unregister(); }
+    if (bHasBegunPlay) EndPlay();
+    if (Level) Unregister();
 
-    ActorOwner = nullptr;
-    SceneOwner = nullptr;
-    Scene = nullptr;
+    while (!AttachedComponents.empty())
+    {
+        USceneComponent* Child = AttachedComponents.back();
+        if (Child && Child->AttachParent == this)
+            Child->SetupDetachment(true);
+        else
+            AttachedComponents.pop_back();
+    }
+
+    // 자식의 World Transform을 보존한 다음 자신의 부모 연결을 끊는다.
+    if (AttachParent) std::erase(AttachParent->AttachedComponents, this);
+    AttachParent = nullptr;
+    CachedParent = nullptr;
+    bGlobalDirty = true;
 
     Super::Release();
 }
 
-void USceneComponent::Register(UScene& InScene)
+bool USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
-    if (Scene == &InScene) { return; }
-    if (Scene) { Unregister(); }
+    if (InParent == AttachParent) { return true; }
 
-    Scene = &InScene;
-}
-
-void USceneComponent::BeginPlay()
-{
-    if (!Scene || bHasBegunPlay) { return; }
-    bHasBegunPlay = true;
-}
-
-void USceneComponent::EndPlay()
-{
-    if (!bHasBegunPlay) { return; }
-    bHasBegunPlay = false;
-}
-
-void USceneComponent::Unregister()
-{
-    if (bHasBegunPlay) { EndPlay(); }
-    Scene = nullptr;
-}
-
-void USceneComponent::SetupAttachment(USceneComponent* InParent)
-{
-    if (InParent == this) { return; }
-
-    SceneOwner = InParent;
-    bGlobalDirty = true;
-    if (InParent)
+    // 자기 자신이나 자손에 부착하면 Transform 계산과 트리 순회가 순환한다.
+    for (USceneComponent* Parent = InParent; Parent; Parent = Parent->GetTransformParent())
     {
-        ActorOwner = InParent->GetActorOwner();
+        if (Parent == this) { return false; }
     }
+
+    if (InParent) InParent->AttachedComponents.push_back(this);
+    if (AttachParent)
+    {
+        std::erase(AttachParent->AttachedComponents, this);
+    }
+    AttachParent = InParent;
+    // 부착 관계는 Transform에만 영향을 주며 Actor 소유권은 변경하지 않는다.
+    MarkActorTransformDirty();
+    return true;
 }
 
-void USceneComponent::Serialize(FArchive& Archive) const
+void USceneComponent::SetupDetachment(bool bKeepWorldTransform)
+{
+    if (!AttachParent) return;
+
+    // 부모를 끊기 전에 World Transform을 확보한다.
+    const FTransform NewRelative = bKeepWorldTransform ? GetGlobalTransform() : RelativeTransform;
+
+    std::erase(AttachParent->AttachedComponents, this);
+    AttachParent = nullptr;
+    RelativeTransform = NewRelative;
+    MarkActorTransformDirty();
+}
+
+void USceneComponent::Serialize(FJsonArchive& Archive) const
 {
     Super::Serialize(Archive);
 
@@ -75,7 +83,7 @@ void USceneComponent::Serialize(FArchive& Archive) const
     Archive.SetVector("Scale", RelativeTransform.GetScale3D());
 }
 
-void USceneComponent::Deserialize(const FArchive& Archive)
+void USceneComponent::Deserialize(const FJsonArchive& Archive)
 {
     Super::Deserialize(Archive);
 
@@ -96,6 +104,71 @@ void USceneComponent::Deserialize(const FArchive& Archive)
     MarkActorTransformDirty();
 }
 
+void USceneComponent::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 부착 관계는 Outer와 별도로 저장한다. 자식 목록은 부모 연결에서 재구성한다.
+    USceneComponent* Parent = AttachParent;
+    Archive.Field("AttachParent", Parent);
+    Archive.OptionalField("InheritRotation", bInheritRotation);
+
+    FVector Location = RelativeTransform.GetLocation();
+    FVector Scale = RelativeTransform.GetScale3D();
+    // 내부 회전은 Quaternion으로 유지한다.
+    FQuaternion Rotation = RelativeTransform.GetRotation();
+    Archive.OptionalField("Location", Location);
+
+    if (Archive.IsDuplicating())
+    {
+        // PIE 복제에서는 Euler 변환 없이 원본의 네 값을 전달한다.
+        FVector4 StoredRotation{ Rotation.X, Rotation.Y, Rotation.Z, Rotation.W };
+        if (Archive.OptionalField("Rotation", StoredRotation) && Archive.IsLoading())
+        {
+            Rotation = FQuaternion(
+                StoredRotation.X, StoredRotation.Y, StoredRotation.Z, StoredRotation.W);
+        }
+    }
+    else
+    {
+        // 씬 파일은 XYZ Euler 각도를 라디안으로 저장한다.
+        FVector EulerRotation = Rotation.GetEulerXYZ();
+        if (Archive.OptionalField("Rotation", EulerRotation) && Archive.IsLoading())
+        {
+            // FromEulerXYZDeg()는 도 단위를 받으므로 읽은 라디안을 변환한다.
+            constexpr float RadToDeg = 180.0f / std::numbers::pi_v<float>;
+            Rotation = FQuaternion::FromEulerXYZDeg(EulerRotation * RadToDeg);
+        }
+    }
+
+    Archive.OptionalField("Scale", Scale);
+
+    if (Archive.IsLoading())
+    {
+        // 기존 함수가 순환 검사와 양쪽 부착 목록 갱신을 담당한다.
+        if (!SetupAttachment(Parent))
+            throw std::runtime_error("Scene component attachment cycle.");
+
+        FTransform Transform;
+        Transform.SetLocation(Location);
+        // Archive에서 복원한 Quaternion을 적용한다.
+        Transform.SetRotation(Rotation);
+        Transform.SetScale3D(Scale);
+        SetRelativeTransform(Transform);
+    }
+
+    // AttachedComponents, 월드 Transform 캐시, BatchIndex는 저장하지 않는다.
+}
+
+void USceneComponent::SetInheritRotation(bool bInherit)
+{
+    if (bInheritRotation == bInherit) return;
+
+    // 부모를 해석하는 방법이 달라지므로 자손까지 갱신한다.
+    bInheritRotation = bInherit;
+    MarkActorTransformDirty();
+}
+
 void USceneComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 {
     if (this->RelativeTransform == RelativeTransform) { return; }
@@ -105,21 +178,10 @@ void USceneComponent::SetRelativeTransform(const FTransform& RelativeTransform)
 
 USceneComponent* USceneComponent::GetTransformParent() const
 {
-    if (SceneOwner)
-    {
-        return SceneOwner;
-    }
-
-    if (!ActorOwner)
-    {
-        return nullptr;
-    }
-
-    USceneComponent* Root = ActorOwner->GetRootComponent();
-    return Root == this ? nullptr : Root;
+    // 부착 부모가 없으면 독립된 Transform이다.
+    return AttachParent;
 }
-
-const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모 rootcomponent world좌표 써야됨
+const FTransform& USceneComponent::GetGlobalTransform() const
 {
     const USceneComponent* Parent = GetTransformParent();
     uint32 ParentVersion = 0;
@@ -138,18 +200,15 @@ const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모
     {
         CachedGlobal = RelativeTransform;
     }
-    else if (SceneOwner || bInheritRotation)
+    else if (bInheritRotation)
     {
         CachedGlobal = Parent->CachedGlobal * RelativeTransform;
     }
     else
     {
-        // 부모 회전 무시 - 위치와 스케일만 상속
-        FTransform Result;
-        Result.SetScale3D(RelativeTransform.GetScale3D());
-        Result.SetRotation(RelativeTransform.GetRotation()); // 자신의 회전만 사용
-        Result.SetLocation(Parent->CachedGlobal.GetLocation() + RelativeTransform.GetLocation()); // 월드 축 기준 오프셋
-        CachedGlobal = Result;
+        // 부모 위치만 따라가며 회전과 스케일은 자신의 값을 사용.
+        CachedGlobal = RelativeTransform;
+        CachedGlobal.SetLocation(Parent->CachedGlobal.GetLocation() + RelativeTransform.GetLocation());
     }
 
     CachedGlobal.GetMatrix(); // 행렬도 이 시점에 한 번만 계산해 둔다
@@ -177,9 +236,10 @@ void USceneComponent::MarkActorTransformDirty()
     bGlobalDirty = true;
     OnTransformChanged();
 
-    if (ActorOwner)
+    for (USceneComponent* Child : AttachedComponents)
     {
-        ActorOwner->MarkComponentsTransformDirty();
+        if (Child && Child->AttachParent == this)
+            Child->MarkActorTransformDirty();
     }
 }
 
@@ -225,3 +285,4 @@ const FVector& USceneComponent::GetRelativeScale() const
 {
     return GetRelativeTransform().GetScale3D();
 }
+

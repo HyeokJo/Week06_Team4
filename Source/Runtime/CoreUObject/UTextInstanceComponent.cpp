@@ -1,7 +1,7 @@
 #include "UTextInstanceComponent.h"
-#include "Runtime/Asset/UFont.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Asset/UFont.h"
+#include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
@@ -36,19 +36,30 @@ FMatrix GetRenderMatrix(const FTransform &Transform, const FCamera &Camera) {
 }
 } // namespace
 
-void UTextInstanceComponent::Initialize() {
-  Super::Initialize();
+void UTextInstanceComponent::PostInitProperties()
+{
+    Super::PostInitProperties();
 
-  FAssetRegistry& Registry = FAssetRegistry::GetInstance();
-  SetMesh(Registry.Get<UStaticMesh>("#Rect"));
-  SetMaterial(Registry.Get<UMaterial>("Material/Text.json"));
-  SetFont(Registry.Get<UFont>("Font/BazziOTF.json"));
-
-  RenderData.Type = ERenderType::Text;
-
-  RebuildTextMesh();
+    // 기본 에셋은 복원 이전에만 지정한다.
+    FAssetRegistry& Registry = FAssetRegistry::GetInstance();
+    SetMesh(Registry.Get<UStaticMesh>("#Rect"));
+    SetMaterial(Registry.Get<UMaterial>("Material/Text.json"));
+    SetFont(Registry.Get<UFont>("Font/BazziOTF.json"));
+    RenderData.Type = ERenderType::Text;
 }
 
+void UTextInstanceComponent::Initialize()
+{
+    if (IsInitialized()) return;
+    Font = FontAsset 
+        ? FRenderResourceLibrary::Get().GetFont(std::filesystem::path(FontAsset->GetID().ToString()).stem().string())
+        : nullptr;
+
+    Super::Initialize();
+
+    // 복원된 Text와 Font를 이용한다. 기본 폰트를 다시 지정하지 않는다.
+    RebuildTextMesh();
+}
 void UTextInstanceComponent::Update(float delta) {}
 
 void UTextInstanceComponent::SetText(const FWString &InText) {
@@ -219,7 +230,16 @@ const FRenderData& UTextInstanceComponent::GetRenderData(const FCamera &Camera) 
   return RenderData;
 }
 
-void UTextInstanceComponent::Serialize(FArchive &Archive) const {
+void UTextInstanceComponent::Serialize(FArchive& Archive)
+{
+    Super::Serialize(Archive);
+
+    // 데이터만 복원하고 Font 캐시와 글자 인스턴스는 Initialize()에서 만든다.
+    Archive.OptionalField("Text", Text);
+    Archive.OptionalField("Font", FontAsset);
+}
+
+void UTextInstanceComponent::Serialize(FJsonArchive &Archive) const {
   Super::Serialize(Archive);
 
   Archive.SetWString("Text", Text);
@@ -229,7 +249,7 @@ void UTextInstanceComponent::Serialize(FArchive &Archive) const {
   }
 }
 
-void UTextInstanceComponent::Deserialize(const FArchive &Archive) {
+void UTextInstanceComponent::Deserialize(const FJsonArchive &Archive) {
   Super::Deserialize(Archive);
 
   Text = Archive.GetWString("Text");
