@@ -44,6 +44,7 @@ public:
 	//FVector GetForwardVector() const;
 	const FVector& GetRightVector() const { return RightVector; }
 	const float GetFarZ() const { return Projection.GetFarPlane(); }
+	const EProjectionType GetProjectionType() const { return Projection.GetProjectionType(); }
 
 	void SetPosition(const FVector& Value);
 	void SetYaw(float Value);

@@ -254,8 +254,8 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     Renderer.ClearLastRenderState();
 
 
-    //Scene Depth View Mode 그리기
-    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+    //Scene Depth View Mode 그리기. Orthographic일때는 종료
+    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth && View.Camera.GetProjectionType() != EProjectionType::Orthographic)
     {
         SceneDepthViewMode(View.Camera);
     }

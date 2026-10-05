@@ -102,7 +102,7 @@ struct FSceneDepthConstants
 	float FarZ;
 
 	//Scene Depth View에서 0 ~ 1의 표현 Clamp 거리
-	float ClampZ = 10.f;
+	float ClampZ = 50.f;
 
 	FVector2 padding;
 };
