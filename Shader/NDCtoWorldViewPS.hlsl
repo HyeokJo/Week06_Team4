@@ -50,8 +50,11 @@ float4 MainPS(PS_IN input) : SV_Target
         return float4(0, 0, 0, 1);
     }
     
+    //아래거로 쓰면 view z 거리 별로 선이 생김. 색이 반전됨.
     //uv = SV_Position.xy / ViewportSize
-        const float2 uv = input.Pos.xy / ViewportSize;
+    //const float2 uv = input.Pos.xy / ViewportSize;    
+    
+    const float2 uv = input.UV;
     
     float4 NDC = float4(0.0, 0.0, 0.0, 1.0);
     
@@ -67,11 +70,10 @@ float4 MainPS(PS_IN input) : SV_Target
     WorldPos.xyz = WorldPos.xyz / WorldPos.w;
     WorldPos.w = 1.0;
         
-    float returnColor = floor(WorldPos.x + 0.5) + floor(WorldPos.y + 0.5) + floor(WorldPos.z + 0.5);
+    float returnColor = floor(WorldPos.x) + floor(WorldPos.y) + floor(WorldPos.z);
     returnColor = returnColor % 2.0;
     returnColor = abs(returnColor);
     
-    //return float4(returncolor, returncolor, returncolor, 1);
     return float4(returnColor, returnColor, returnColor, 1);
     //return color;
 }
