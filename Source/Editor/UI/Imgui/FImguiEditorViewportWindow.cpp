@@ -425,7 +425,8 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     }
 
     AActor* OwnerActor = HitComponent->GetActorOwner();
-    Editor.SelectActor(OwnerActor);
+    Editor.SelectComponent(HitComponent);
+    //Editor.SelectActor(OwnerActor);
 
     const char *ActorClass =
         OwnerActor->GetClass() ? OwnerActor->GetClass()->GetDisplayName().c_str() : "Unknown";

@@ -82,11 +82,12 @@ void FEngine::Tick(float DeltaTime)
 	{
 		SCOPE_CYCLE_COUNTER("Game");
 
-		// TODO: PIE Update / Editor Update 구분
-		for (auto& World : WorldList)
+		const bool bHasPIEWorld = GetWorld(EWorldType::PIE) != nullptr;
+		for (UWorld* World : WorldList)
 		{
-			if (World)
-				World->Update(DeltaTime);
+			if (!World) continue;
+			if (bHasPIEWorld && World->GetWorldType() == EWorldType::Editor) continue;
+			World->Update(DeltaTime);
 		}
 
 		Application->Update(DeltaTime);

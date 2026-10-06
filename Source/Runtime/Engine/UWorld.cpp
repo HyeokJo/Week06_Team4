@@ -13,6 +13,7 @@
 #include "Runtime/Core/Log.h"
 #include "Runtime/Engine/FDuplicateArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
+#include "Runtime/CoreUObject/UActorComponent.h"
 
 IMPLEMENT_UCLASS(UWorld, UObject)
 UCLASS_META(UWorld, SerializeName, "World")
@@ -49,6 +50,8 @@ void UWorld::Release()
     }
 	DestroyObject(Level);   //여기서 Level->Release()가 호출됨
     Level = nullptr;
+    ActorTickRegistry.Clear();
+    ComponentTickRegistry.Clear();
     if (Scene)
     {
         Scene->Clear();
@@ -109,16 +112,40 @@ void UWorld::BeginPlay()
             Actor->BeginPlay();
     }
 }
+void UWorld::RefreshActorTick(AActor* Actor, bool bRegistered)
+{
+    // 호출자는 Actor가 소속된 World를 통해 등록 상태를 갱신한다.
+    ActorTickRegistry.Refresh(Actor, Actor->PrimaryActorTick, bRegistered);
+}
+
+void UWorld::RefreshComponentTick(UActorComponent* Component, bool bRegistered)
+{
+    // Component의 활성 여부는 소유 Actor Tick과 독립적이다.
+    ComponentTickRegistry.Refresh(Component, Component->PrimaryComponentTick, bRegistered);
+}
 
 void UWorld::Update(float DeltaTime) 
 {
     if (!bHasBegunPlay || bPaused) { return; }
     
-    for (AActor* Actor : Level->Actors) 
+    const bool bEditorWorld = WorldType == EWorldType::Editor || WorldType == EWorldType::EditorPreview;
+    if (!bEditorWorld && !bHasBegunPlay) return;
+
+    // Actor의 Update에서 Component가 추가되더라도 다음 프레임부터 실행한다.
+    ActorTickRegistry.BeginTick();
+    ComponentTickRegistry.BeginTick();
+
+    for (uint32 Index = 0; Index < TickGroupCount; ++Index)
     {
-        if (Actor && Actor->HasBegunPlay() && Actor->IsActorTickEnabled())
-            Actor->Update(DeltaTime);
+        const ETickGroup Group = static_cast<ETickGroup>(Index);
+
+        // 같은 그룹에서는 Actor 다음 Component 순서로 실행한다.
+        ActorTickRegistry.TickGroup(Group, DeltaTime, bEditorWorld);
+        ComponentTickRegistry.TickGroup(Group, DeltaTime, bEditorWorld);
     }
+
+    ActorTickRegistry.EndTick();
+    ComponentTickRegistry.EndTick();
 }
 
 void UWorld::EndPlay()

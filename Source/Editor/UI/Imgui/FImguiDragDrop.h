@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Runtime/Asset/UAsset.h";
+#include "Runtime/Asset/UAsset.h"
 
 struct FContentDragPayload
 {
