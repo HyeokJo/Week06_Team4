@@ -1,5 +1,6 @@
 #pragma once
 #include "Editor/Core/FEditor.h"
+#include "ThirdParty/Imgui/imgui.h"
 
 class AActor;
 class UActorComponent;
@@ -28,14 +29,18 @@ private:
 	void ShowActorHeader(const AActor& Actor) const;
 
 	// 소유 컴포넌트를 나열하고 루트를 표시한다. 부착 트리와는 구분한다.
-	void ShowComponentHierarchy(const AActor& Actor) const;
+	void ShowComponentHierarchy(FEditor& Editor, AActor& Actor);
+
+	// 목록 상단의 추가 버튼과 클래스 검색 팝업을 그린다.
+	void ShowAddComponentMenu(FEditor& Editor, AActor& Actor);
+	ImGuiTextFilter ComponentFilter;
 
 	// 컴포넌트마다 접이식 헤더를 만들고 그 안에 상세 속성을 그린다.
 	void ShowComponentSections(FEditor& Editor, AActor& Actor);
 	void ShowComponentDetails(FEditor& Editor, AActor& Actor, UActorComponent& Comp, bool bIsRoot);
 
-	// 루트는 에디터 기즈모와 동기화되고, 서브는 상대 트랜스폼을 편집한다.
-	void ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const;
+	// Root와 자식 모두 자신의 상대 Transform을 편집한다.
+	void ShowTransform(FEditor& Editor, USceneComponent& Comp) const;
 
 	// 컴포넌트 타입별 속성
 	void ShowTextSettings(UTextInstanceComponent& TextComp) const;

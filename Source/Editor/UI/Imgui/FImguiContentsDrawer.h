@@ -34,6 +34,8 @@ private:
 	// 우측 파일 목록
 	void RenderContentView();
 
+	void RenderComponentView();
+	bool bShowComponents = false;
 
 	// 폴더 안의 항목 하나.
 	// 이름은 표시용으로 미리 UTF-8로 변환해 둔다. ImGui는 UTF-8만 받는다.

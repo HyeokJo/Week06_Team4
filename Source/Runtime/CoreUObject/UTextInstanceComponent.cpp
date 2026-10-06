@@ -14,6 +14,10 @@
 
 IMPLEMENT_UCLASS(UTextInstanceComponent, UInstancePrimitiveComponent)
 
+// 현재 프로젝트의 텍스트 렌더링 컴포넌트를 목록에 노출한다.
+UCLASS_META(UTextInstanceComponent, DisplayName, "Text")
+UCLASS_META(UTextInstanceComponent, SpawnableComponent, "true")
+
 namespace {
 FMatrix GetRenderMatrix(const FTransform &Transform, const FCamera &Camera) {
   FMatrix CameraRotation = Camera.GetRotationMatrix();

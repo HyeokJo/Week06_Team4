@@ -1,9 +1,19 @@
 {
-    "NextUUID": 83,
-    "Version": 2,
-    "World": {
-        "Actors": [],
-        "Type": "UWorld",
-        "UUID": 80
-    }
+    "Objects": [
+        {
+            "Class": "UWorld",
+            "Data": {
+                "Level": 2
+            },
+            "Outer": 0
+        },
+        {
+            "Class": "ULevel",
+            "Data": {
+                "Actors": []
+            },
+            "Outer": 1
+        }
+    ],
+    "Version": 3
 }

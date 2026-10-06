@@ -129,8 +129,8 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
                     Input.bFocused = true;
                 }
 
-                // 클릭 전에도 마우스가 올라간 뷰포트에서 매 프레임 검사한다.
-                if (!Editor.IsPlaying() && Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
+                // 실제로 기즈모를 조작할 수 있는 선택에 대해서만 Hover를 검사한다.
+                if (Editor.CanManipulateSelection() && Input.bHovered && !Gizmo.IsInteracting())
                 {
                     UpdateGizmoHover(Editor, CurrentViewport, Input.LocalMouse, Input.SizePixels);
                 }
@@ -264,7 +264,7 @@ void FImguiEditorViewportWindow::UpdateGizmo(FEditor& Editor, const FEditorViewp
     FGizmo& Gizmo = Editor.GetGizmo();
 
     // Hover와 종료는 Process에서 처리하고, 여기서는 진행 중인 드래그만 갱신한다.
-    if (Editor.ObjectSelected() && Gizmo.IsInteracting() && Input.bLeftDown)
+    if (Editor.CanManipulateSelection() && Gizmo.IsInteracting() && Input.bLeftDown)
     {
         Gizmo.UpdateInteraction(Editor, Input.LocalMouse);
     }
@@ -360,7 +360,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
                                                const FVector2 &ViewportSizePixels)
 {
     // 기즈모 핸들 위를 눌렀으면 피킹 대신 조작을 시작한다.
-    if (Editor.GetSelectedActor() != nullptr)
+    if (Editor.CanManipulateSelection())
     {
         // Process에서 현재 뷰포트의 Hover 판정을 먼저 갱신한 상태다.
         FGizmo& Gizmo = Editor.GetGizmo();
@@ -441,10 +441,17 @@ void FImguiEditorViewportWindow::UpdateGizmoHover(FEditor &Editor,
                                                   const FVector2 &LocalMousePixels,
                                                   const FVector2 &ViewportSizePixels)
 {
+    FGizmo &Gizmo = Editor.GetGizmo();
+    if (!Editor.CanManipulateSelection())
+    {
+        // 조작할 수 없는 선택에서 이전 Hover 결과를 재사용하지 않는다.
+        Gizmo.HoveredHandle = EGizmoHandle::None;
+        return;
+    }
+    Editor.RefreshSelectedTransform();
     FRay Ray = FRayCastingManager::CreateRayFromScreenPosition(
         Viewport.ViewportCamera, LocalMousePixels, ViewportSizePixels);
 
-    FGizmo &Gizmo = Editor.GetGizmo();
     Gizmo.HoveredHandle = Gizmo.HitTest(Editor.SelectedTransform, Ray, Viewport.ViewportCamera);
 }
 

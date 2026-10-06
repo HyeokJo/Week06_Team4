@@ -8,3 +8,5 @@ struct FContentDragPayload
 };
 
 inline constexpr const char* ContentDragPayloadType = "ENGINE_CONTENT";
+
+inline constexpr const char* ComponentClassDragPayloadType = "ENGINE_COMPONENT_CLASS";

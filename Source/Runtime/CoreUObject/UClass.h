@@ -35,6 +35,18 @@ public:
 	static UClass* FindByName(const FString& Name);
 	const FString& GetDisplayName() const;
 	void SetMeta(const FString& key, const FString& value);
+
+	// TODO: 드롭다운 리스트를 만들기 위한 임시 게터 함수, 리플렉션 시스템 제작후 변경 가능하면 좋을듯.
+	static uint32 GetRegisteredClassCount()
+	{
+		return static_cast<uint32>(classList.size());
+	}
+	bool HasMetaValue(const FString& Key, const FString& Value) const
+	{
+		const auto It = metadata.find(Key);
+		return It != metadata.end() && It->second == Value;
+	}
+
 	static void ResolveTypeBitsets();
 	void ResolveTypeBitset(UClass* classPtr);
 

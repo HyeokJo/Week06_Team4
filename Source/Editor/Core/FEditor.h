@@ -27,7 +27,7 @@ class FRenderView;
 class FEditor {
 public:
   FTransform SelectedTransform;
-  FVector SelectedEulerDegDisplay;
+  //FVector SelectedEulerDegDisplay;
 
   // TODO: 이건 Scene에 들어가야함. 아마 아래와 같은 컴포넌트가 부착된 액터로 들어가야할 것
   // https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UDirectionalLightComponent
@@ -95,10 +95,23 @@ public:
     void UpdateCamera();
 
     bool SelectActor(AActor *Actor);
+	bool SelectComponent(UActorComponent* Component);
     void UnSelectActor();
     AActor *GetSelectedActor() const { return SelectedActor.Get(); }
-    [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
-    [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
+    UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
+    [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid() && !bComponentSelection; }
+    [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid() &&
+        (!bComponentSelection || SelectedComponent.IsValid()); }
+    USceneComponent* GetTransformTarget() const;
+    [[nodiscard]] bool CanManipulateSelection() const;
+    void RefreshSelectedTransform();
+    bool ApplySelectedWorldTransform(const FTransform& WorldTransform);
+    bool ConsumeComponentFocusRequest(const UActorComponent* Component);
+
+    // 폴더와 검색 팝업이 동일한 클래스 노출 조건을 사용한다.
+    static bool IsAddableComponentClass(const UClass* ClassType);
+    // 생성·부착·소유 목록 추가·선택을 두 UI의 공통 경로로 처리한다.
+    UActorComponent* AddComponentToActor(AActor* Actor, UClass* ClassType, USceneComponent* AttachParent = nullptr);
 
     [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
         return EditorViewports;
@@ -125,7 +138,10 @@ public:
     void SaveState();
     void LoadState();
     void SetViewLayout(FEditorState::SplitViewMode mode);
-    UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+    UTextInstanceComponent* GetTextcomp() {
+        AActor* Actor = GetSelectedActor();
+        return Actor && Actor->GetRootComponent() ? SelectedActorTextComp.Get() : nullptr;
+    }
 
     void RenderViewports(FRenderView& RenderView);
     void RenderGizmo(FRenderView& RenderView);
@@ -145,6 +161,9 @@ private:
     TArray<FEditorViewportClient> EditorViewports;
     FGizmo Gizmo;
     TWeakObjectPtr<AActor> SelectedActor;
+    TWeakObjectPtr<UActorComponent> SelectedComponent;
+    bool bComponentSelection = false;
+    bool bFocusSelectedComponent = false;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 
     FEditorState StateBeforePIE;

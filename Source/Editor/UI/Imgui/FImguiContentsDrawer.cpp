@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cctype>
 #include "FImguiDragDrop.h"
+#include "Runtime/CoreUObject/UClass.h"
 
 namespace fs = std::filesystem;
 
@@ -40,7 +41,8 @@ void FImguiContentsDrawer::Process(FEditor& Editor)
 
 	// 폭 0은 남은 공간을 전부 쓰라는 뜻
 	ImGui::BeginChild("RightPanel", ImVec2(0.0f, ContentSize.y), true);
-	RenderContentView();
+	if (bShowComponents) RenderComponentView();
+	else RenderContentView();
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -273,11 +275,20 @@ void FImguiContentsDrawer::RenderContentView()
 
 void FImguiContentsDrawer::RenderFolderTree()
 {
-	ImGui::Text("Folders");
+	ImGui::TextUnformatted("Folders");
 	ImGui::Separator();
 
-	// 루트 폴더부터 재귀적으로 렌더링
+	// 파일 시스템과 별개인 클래스 폴더이므로 하위 폴더와 TreePop이 없다.
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf |
+		ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (bShowComponents) Flags |= ImGuiTreeNodeFlags_Selected;
+
+	ImGui::TreeNodeEx("Components###ComponentClasses", Flags);
+	if (ImGui::IsItemClicked()) bShowComponents = true;
+
+	// 기존 에셋 폴더 트리는 유지한다.
 	RenderFolderTreeNode(RootPath);
+
 }
 
 void FImguiContentsDrawer::RenderFolderTreeNode(const fs::path& FolderPath)
@@ -299,10 +310,11 @@ void FImguiContentsDrawer::RenderFolderTreeNode(const fs::path& FolderPath)
 
 	if (!bContainsDirectory)
 	{
-		// NoTreePushOnOpen을 같이 주면 TreePop을 부르지 않아도 된다.
 		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
-	if (CurrentPath == FolderPath)
+
+	// 선택 여부는 Selected 표시만 결정한다.
+	if (!bShowComponents && CurrentPath == FolderPath)
 	{
 		Flags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -319,6 +331,7 @@ void FImguiContentsDrawer::RenderFolderTreeNode(const fs::path& FolderPath)
 	// 화살표를 눌러 접고 펴는 것과 폴더를 선택하는 것을 구분한다.
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
+		bShowComponents = false;
 		CurrentPath = FolderPath;
 	}
 
@@ -334,4 +347,39 @@ void FImguiContentsDrawer::RenderFolderTreeNode(const fs::path& FolderPath)
 	ImGui::PopID();
 }
 
+void FImguiContentsDrawer::RenderComponentView()
+{
+	ImGui::TextUnformatted("Components");
+	ImGui::SameLine();
+	if (ImGui::SmallButton("Back to Assets"))
+	{
+		// 가상 폴더 진입 전의 에셋 경로로 돌아간다.
+		bShowComponents = false;
+		return;
+	}
+	ImGui::Separator();
+	ImGui::TextDisabled("Drag a class onto the Outliner");
 
+	for (uint32 Index = 0; Index < UClass::GetRegisteredClassCount(); ++Index)
+	{
+		UClass* ClassType = UClass::GetClassById(Index);
+		if (!FEditor::IsAddableComponentClass(ClassType)) continue;
+
+		const FString& Name = ClassType->GetDisplayName();
+		ImGui::PushID(ClassType);
+
+		// 이 행은 생성할 클래스다. 클릭만으로 객체를 생성하지 않는다.
+		ImGui::Selectable(Name.c_str());
+
+		if (ImGui::BeginDragDropSource())
+		{
+			// ImGui가 포인터 값을 복사한다. 클래스 객체는 기존 레지스트리에 유지된다.
+			ImGui::SetDragDropPayload(
+				ComponentClassDragPayloadType, &ClassType, sizeof(ClassType));
+			ImGui::Text("Add %s", Name.c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		ImGui::PopID();
+	}
+}
