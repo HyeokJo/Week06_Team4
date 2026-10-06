@@ -761,6 +761,40 @@ void FRenderer::RenderSceneDepthView(const FMatrix& ViewProjection)
 	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
 }
 
+void FRenderer::RenderNDCtoWorldView(const FMatrix& ViewProjection)
+{
+	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#NDCtoWorldView"));
+	pipeline->Bind(*GetContext());
+
+	//OM Render Target에 DSV 바인딩 제거
+	//이걸 안해주면 출력의 DSV와 SRV로 넣어줄 DepthSRV가 같은 텍스처여서 SRV쪽이 null이 된다.
+	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
+
+	//Depth Buffer SRV 넣어주기
+	Context->PSSetShaderResources(0u, 1u, DepthSRV.GetAddressOf());
+
+	//메시 관련
+	// 토폴로지
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//버텍스 버퍼
+	ID3D11Buffer* NullVB = nullptr;
+	UINT Zero = 0;
+	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+	//인덱스 버퍼 필요??
+	Context->IASetIndexBuffer(NullVB, DXGI_FORMAT_R32_UINT, 0);
+
+	Context->Draw(3, 0);
+	//Context->DrawIndexed(0, 0, 0);
+
+	// 슬롯 해제
+	ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
+	Context->PSSetShaderResources(0, 1, NullSRVs);
+	//뎁스 DSV 원복
+	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
+}
+
 bool FRenderer::InitializeDeviceAndSwapChain(HWND Window)
 {
 	constexpr D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };

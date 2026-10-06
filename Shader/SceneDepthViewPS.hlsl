@@ -38,8 +38,10 @@ float4 MainPS(PS_IN input) : SV_Target
     //const float Z = B * (1 / (depth - A)) / FarZ;
     //백버퍼의 색상은 256까지밖에 출력하지 못함에서 오는 Depth View Mode에 계단현상을 완화하기 위해
     //일정 거리마다 Clmap를 걸어서 0 ~ 1의 뎁스 색상이 반복되게 한다.
-    float FarClampZ = FarZ / ClampZ;
-    const float Z = B * (1 / (depth - A)) % FarClampZ / FarClampZ;
+    //float FarClampZ = FarZ / ClampZ;
+    //const float Z = B * (1 / (depth - A)) % ClampZ / ClampZ;
+    //z % Clamp할 거리 : 0 ~ Clamp 거리 : 50이라고 지정했다면 값이 0 ~ 50까지가 반복되니 0 ~ 1로 normalize필요
+    const float Z = B * (1 / (depth - A)) % ClampZ / ClampZ;
     //const float Z = B * (1 / (depth - A)) % (100 / 10) / (100 / 10);
     
         

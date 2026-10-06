@@ -52,6 +52,7 @@ public:
 	
 	//Scene Depth View Mode로 그리기
 	void SceneDepthViewMode(const FCamera& Camera);
+	void NDCtoWorldViewMode(const FCamera& Camera);
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);

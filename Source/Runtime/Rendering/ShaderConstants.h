@@ -19,6 +19,7 @@ struct FViewConstants {
 	FMatrix Projection;
 	FVector2 ViewportSize;
 	FVector2 Padding;
+	FMatrix InvViewProjection;
 };
 static_assert(sizeof(FViewConstants) % 16 == 0);
 
@@ -102,7 +103,7 @@ struct FSceneDepthConstants
 	float FarZ;
 
 	//Scene Depth View에서 0 ~ 1의 표현 Clamp 거리
-	float ClampZ = 50.f;
+	float ClampZ = 20.f;
 
 	FVector2 padding;
 };
