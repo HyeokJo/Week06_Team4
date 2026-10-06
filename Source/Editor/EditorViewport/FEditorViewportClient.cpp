@@ -57,7 +57,7 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEdit
 		.LengthUV = LengthUV,
 		.ViewMode = ViewMode,
 		.ShowFlags = ShowFlags,
-		.LightConstants = Editor.GlobalLight
+		.LightConstants = InWorld.GetScene()->GetWorldLightConstants()
 	};
 
 	// 에디터 렌더링 컨텍스트 구성
@@ -93,7 +93,7 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 		.LengthUV = LengthUV,
 		.ViewMode = ViewMode,
 		.ShowFlags = ShowFlags,
-		.LightConstants = Editor.GlobalLight
+		.LightConstants{}
 	};
 
 	RenderView.RenderOverlayPass(

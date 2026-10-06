@@ -131,6 +131,7 @@ public:
 
     const EWorldType GetWorldType() const { return WorldType; }
 
+    FScene* GetScene() const { return Scene; }
 private:
     FScene* Scene = nullptr;
     ULevel* Level = nullptr;// persistent level

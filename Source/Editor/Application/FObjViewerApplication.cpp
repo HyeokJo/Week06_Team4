@@ -83,7 +83,7 @@ void FObjViewerApplication::Render()
 		Renderer->UpdateLightConstants(Light, EViewModeIndex::VMI_Lit);
 
 		FObjectConstants Constants;
-		Constants.World = World;
+		Constants.SetWorld(World);
 		Constants.DisableShading = 0.3f;
 
 		// Set Material on all sections
@@ -289,15 +289,8 @@ void FObjViewerApplication::RenderSideBar()
 	{
 		ImGui::ColorEdit4("Background Color", BackgroundColor);
 		ImGui::Separator();
-		ImGui::SliderFloat("Light Yaw", &LightYaw, -180.0f, 180.0f);
-		ImGui::SliderFloat("Light Pitch", &LightPitch, -180.0f, 180.0f);
-		ImGui::SliderFloat("Light Intensity", &Light.Intensity, 0.0f, 3.0f);
-
-		float RadYaw = LightYaw * 3.141592f / 180.0f;
-		float RadPitch = LightPitch * 3.141592f / 180.0f;
-		FVector NewDirection = FVector(cosf(RadPitch) * cosf(RadYaw), cosf(RadPitch) * sinf(RadYaw), sinf(RadPitch));
-		NewDirection.Normalize();
-		Light.LightDirection = NewDirection;
+		ImGui::ColorEdit3("Ambient Color", &Light.AmbientColor.X);
+		ImGui::SliderFloat("Ambient Intensity", &Light.AmbientIntensity, 0.0f, 3.0f);
 	}
 
 	ImGui::End();
