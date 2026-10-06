@@ -3,6 +3,7 @@
 #include "Runtime/Material/FBlendDesc.h"
 #include "Runtime/Material/FRasterizerDesc.h"
 #include "Runtime/Material/FDepthStencilDesc.h"
+#include "Runtime/Material/FTextureSamplerDesc.h"
 #include "Runtime/Core/FString.h"
 #include "Vertices.h"
 #include <d3d11.h>
@@ -19,6 +20,8 @@ struct FRenderPipelineDesc
   FRasterizerDesc Rasterizer;
   FDepthStencilDesc DepthStencil;
   bool bIsInstancing = false;
+  bool bCreateInputLayout = false;
+  FTextureSamplerDesc Sampler;
 };
 
 struct FRenderPipelineCreateInfo

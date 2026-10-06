@@ -25,7 +25,7 @@ struct FRasterizerDesc
 {
 	ERasterizerFillMode FillMode		= ERasterizerFillMode::Solid;
 	ERasterizerCullMode CullMode		= ERasterizerCullMode::Back;
-	ERasterizerFrontFaceMode FrontFace	= ERasterizerFrontFaceMode::CounterClockwise;
+	ERasterizerFrontFaceMode FrontFace	= ERasterizerFrontFaceMode::Clockwise;
 	bool bUseMultisample				= false;
 	bool bUseAntialiasedLine			= false;
 
