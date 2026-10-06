@@ -304,7 +304,7 @@ void FImguiControlPanelWindow::CullingSetting(FEditor& Editor)
 
         ImGui::Checkbox("Occluder 자신도 판정", &Globals::bIncludeOccluderCull);
 
-        if (ImGui::Button("오라클 측정 (1프레임 멈춤)")) { Globals::bRequestOcclusionOracle = true; }
+        //if (ImGui::Button("오라클 측정 (1프레임 멈춤)")) { Globals::bRequestOcclusionOracle = true; }
         ImGui::SameLine();
         if (ImGui::Button("깊이 버퍼 BMP 저장")) { Globals::bRequestOcclusionDump = true; }
 

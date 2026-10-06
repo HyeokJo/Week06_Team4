@@ -244,12 +244,14 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     // 기본 씬 오브젝트 패스
     FlushBasePass(View.Camera);
 
+    //Occlusion 관련 기능 제거.
+    // 추후에 아예 삭제하도록 합니다.
     //BasePass 이후에 깊이 버퍼 기준으로 가시성 질의
-    if (bOracleRequested)
+    /*if (bOracleRequested)
     {
         RunOcclusionOracle();
         bOracleRequested = false;
-    }
+    }*/
 
     Renderer.ClearLastRenderState();
 
