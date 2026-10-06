@@ -7,6 +7,8 @@ enum class EViewModeIndex : uint8 {
   VMI_Lit,
   VMI_Unlit,
   VMI_Wireframe,
+  VMI_SceneDepth,
+  VMI_NDCtoWorld,
 };
 
 // 렌더링 쇼 플래그

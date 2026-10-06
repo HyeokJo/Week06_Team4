@@ -49,6 +49,10 @@ public:
 	void FlushLinePass(const FCamera& Camera);
 	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
+	
+	//Scene Depth View Mode로 그리기
+	void SceneDepthViewMode(const FCamera& Camera);
+	void NDCtoWorldViewMode(const FCamera& Camera);
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -123,4 +127,9 @@ private:
 	TArray<FDrawCommand> OracleOccludedCommands;  // 오클루전으로 지운 것 (검증 대상)
 
 	void RunOcclusionOracle();
+
+	//임시 : 거의 고정으로 변하지 않는 SceneDepth Constants 값을 이곳에서 지정해둔다.
+	//나중에 멀티 뷰포트 고쳐지고, 카메라의 Far 값 개별 수정이 가능해진다면
+	//카메라의 값으로 넘기고 뷰포트마다 개별 적용해야 할 것이다.
+	FSceneDepthConstants SceneDepthConstants;
 };

@@ -402,7 +402,7 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
     {
         // 뷰 모드 드롭박스
         int CurrentViewMode = static_cast<int>(ActiveViewport->ViewMode);
-        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe" };
+        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe", "Scene Depth", "NDC to World"};
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::Combo("##ViewMode", &CurrentViewMode, ViewModes, IM_ARRAYSIZE(ViewModes)))
         {
