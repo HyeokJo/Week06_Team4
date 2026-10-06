@@ -265,19 +265,45 @@ void FImguiPropertyWindow::ShowBillboardSettings(UBillBoardComp& BillboardComp) 
 {
 	ImGui::Separator();
 	ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "Billboard Settings");
-
+	
+	const TMap<FName, TSharedPtr<FTexture>> AllTextures = FRenderResourceLibrary::Get().GetAllTextures();
 	UTexture* TextureAsset = BillboardComp.GetTexture();
 	FTexture* Texture = TextureAsset ? TextureAsset->Get() : nullptr;
+	FName SelectedSpriteName = TextureAsset ? TextureAsset->GetName() : "";
 	const float FullWidth = ImGui::GetContentRegionAvail().x;
 
 	ImGui::TextDisabled("Texture");
 	if (Texture && Texture->GetSRV())
 	{
-		ImGui::Image(reinterpret_cast<ImTextureID>(Texture->GetSRV()), ImVec2(FullWidth, SlotSize));
+		ImGui::Image(reinterpret_cast<ImTextureID>(Texture->GetSRV()), ImVec2(SlotSize, SlotSize));
 	}
 	else
 	{
 		ImGui::Button("No\nTexture", ImVec2(FullWidth, SlotSize));
+	}
+
+	ImGui::SameLine(0.0f, 10.0f);
+	
+	if (ImGui::BeginCombo("##Sprite", SelectedSpriteName.ToString().c_str()))
+	{
+		for (const auto& Item : AllTextures)
+		{
+			UTexture* Texture = FAssetRegistry::GetInstance().Get<UTexture>(Item.first);
+			const bool bIsSelected = (SelectedSpriteName == Texture->GetName());
+			FString ItemDisplayName = Texture->GetName().ToString();
+
+			if (ImGui::Selectable(ItemDisplayName.c_str(), bIsSelected))
+			{
+				SelectedSpriteName = ItemDisplayName;
+				BillboardComp.SetTexture(Texture);
+			}
+
+			if (bIsSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 
 	if (ImGui::BeginDragDropTarget())

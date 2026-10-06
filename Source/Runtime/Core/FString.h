@@ -45,3 +45,18 @@ inline FString WideToUTF8(const FWideString& InWideStr)
 
 	return result;
 }
+
+// string을 wstring으로 변환하는 함수
+inline FWideString UTF8ToWide(const FString& str)
+{
+	if (str.empty()) return L"";
+
+	// 필요한 버퍼 크기 계산
+	int size_needed = MultiByteToWideChar(CP_ACP, 0, &str[0], (int)str.size(), NULL, 0);
+
+	std::wstring wstrTo(size_needed, 0);
+	// 실제 변환 수행
+	MultiByteToWideChar(CP_ACP, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+
+	return wstrTo;
+}

@@ -138,6 +138,9 @@ private:
   bool CreateWireframePipeline(FRenderer &Renderer);
   bool CreateOutlinePipeline(FRenderer &Renderer);
   bool CreatePostProcessPipeline(FRenderer &Renderer);
+  bool CreateSceneDepthViewPipeline(FRenderer &Renderer);
+  bool CreateNDCtoWorldViewPipeline(FRenderer &Renderer);
+  TSharedPtr<FRenderPipeline> CreateNormalPPPipeline(FRenderer &Renderer, const FRenderPipelineDesc& Desc);
 
   bool CreateInstancingArrayMap();
   FRenderer *RendererRef = nullptr;

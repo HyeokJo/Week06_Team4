@@ -77,6 +77,7 @@ public:
   void UpdateLightConstants(const FLightConstants &Constants, const EViewModeIndex InMode);
   void UpdateFrameConstants(const FFrameConstants &Constants);
   void UpdateViewConstants(const FViewConstants &Constants);
+  void UpdateSceneDepthConstants(const FSceneDepthConstants &Constants);
 
   // 텍스트 인스턴싱
   void AddTextInstanceArray(const FDrawCommand& Command);
@@ -108,6 +109,11 @@ public:
   float GetHeight() const { return Viewport.Height; }
 
   void ClearLastRenderState();
+
+  //Scene Depth View 그리기
+  void RenderSceneDepthView(const FMatrix& ViewProjection);
+  //NDC -> World View Mode 그리기
+  void RenderNDCtoWorldView(const FMatrix& ViewProjection);
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);
@@ -151,14 +157,17 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> ViewConstantBuffer;
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantBuffer;*/
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
+  //TODO : 일단은 상수 버퍼로 하겠지만 멀티 뷰포트가 멀티 RTV로 수정된다면 카메라마다 다를 경우를 대비해 늘려야한다.
+  Microsoft::WRL::ComPtr<ID3D11Buffer> SceneDepthConstantBuffer;
 
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
 
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> EditorRenderTarget;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
 
   TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;
   TMap<FDepthStencilDesc, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> DepthStencilStateMap;
