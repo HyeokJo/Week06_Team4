@@ -106,6 +106,20 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 		.LightConstants = Editor.GlobalLight
 	};
 
+	// 카메라 상수 버퍼가 갱신이 안됐었음
+	//TODO: 더 효율적인 방법이 없나 확인해야함.
+	FRenderer& Renderer = RenderView.GetRenderer();
+	const FViewConstants ViewConstants{
+		.View = SceneView.Camera.GetViewMatrix(),
+		.Projection = SceneView.Camera.GetProjectionMatrix(),
+		.ViewportSize = FVector2{
+			SceneView.LengthUV.X * Renderer.GetWidth(),
+			SceneView.LengthUV.Y * Renderer.GetHeight()
+		}
+	};
+	Renderer.UpdateViewConstants(ViewConstants);
+
+
 	RenderView.RenderOverlayPass(
 		ViewportCamera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp()
 	);
