@@ -55,9 +55,9 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 	{
 		ImGui::TextDisabled("No selection");
 	}
-
+	ImGui::BeginDisabled(Editor.IsPlaying());
 	ShowGizmoSettings(Editor);
-
+	ImGui::EndDisabled();
 	ImGui::End();
 }
 
@@ -116,7 +116,9 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 
 		// 컴포넌트마다 위젯 ID 를 분리해야 같은 라벨끼리 충돌하지 않는다.
 		ImGui::PushID(Comp);
+		ImGui::BeginDisabled(!Editor.CanEditActorProperties(&Actor));
 		ShowComponentDetails(Editor, Actor, *Comp, bIsRoot);
+		ImGui::EndDisabled();
 		ImGui::PopID();
 
 		ImGui::Spacing();
@@ -160,7 +162,7 @@ void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp,
 {
 	ImGui::TextDisabled("Transform");
 
-	if (bIsRoot)
+	if (bIsRoot && !Editor.IsPlaying()) 
 	{
 		// 루트 컴포넌트 트랜스폼은 에디터 기즈모와 동기화
 		FVector Location = Editor.SelectedTransform.GetLocation();
@@ -205,10 +207,10 @@ void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp,
 
 	if (bTransformChanged)
 	{
-		Comp.MarkActorTransformDirty();
+		//Setter내부적으로 Marking중, Setter이외에서 바꿔야 할때만 Marking 호출.
+		//Comp.MarkActorTransformDirty();
+		Comp.SetRelativeTransform(RelTransform);
 	}
-
-	Comp.SetRelativeTransform(RelTransform);
 }
 
 void FImguiPropertyWindow::ShowTextSettings(UTextInstanceComponent& TextComp) const

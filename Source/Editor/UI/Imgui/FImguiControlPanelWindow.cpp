@@ -33,6 +33,8 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::Separator();
 
+    ImGui::BeginDisabled(!Editor.CanEditSceneStructure());
+
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
         Editor.LoadWorld("DefaultScene/Default.scene");
@@ -40,6 +42,9 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     //액터 스폰
     ActorSpawnSetting(Editor);
+
+    ImGui::EndDisabled();
+
     // 그리드 설정
     GridSetting(Editor);
     // 뷰포트 렌더 모드 및 쇼 플래그 설정
@@ -48,8 +53,11 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     //카메라 
     CameraSetting(Editor);
     ImGui::Separator();
-    //전역조명
+    //전역조명, 현재는 복제 및 복원되지않음.
+    //TODO: 전역 조명을 Component로 만들면, 해당 조건을 삭제해줘야함.
+    ImGui::BeginDisabled(Editor.IsPlaying());
     DirectionLightSetting(Editor);
+    ImGui::EndDisabled();
 
     ImGui::Separator();
     BVHDebugSetting(Editor);
@@ -234,6 +242,7 @@ void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
     ImGui::Text("Render State Sort");
     ImGui::Checkbox("정렬 활성화", &Globals::bEnableRenderSort);
 
+    ImGui::BeginDisabled(!Editor.CanEditSceneStructure());
     if (ImGui::Button("1000 random spawn"))
     {
         for (int i = 0; i < 1000; ++i)
@@ -242,6 +251,8 @@ void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
             Editor.SpawnActorToCurrentScene(EditorConstant::SpawnableActors[Index]);
         }
     }
+    ImGui::EndDisabled();
+
 }
 
 void FImguiControlPanelWindow::SIMDCullingDebugSetting(FEditor& Editor)
