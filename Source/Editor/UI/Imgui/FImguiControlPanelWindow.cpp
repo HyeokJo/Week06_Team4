@@ -33,6 +33,8 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::Separator();
 
+    ImGui::BeginDisabled(!Editor.CanEditSceneStructure());
+
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
         Editor.LoadWorld("DefaultScene/Default.scene");
@@ -40,6 +42,9 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     //액터 스폰
     ActorSpawnSetting(Editor);
+
+    ImGui::EndDisabled();
+
     // 그리드 설정
     GridSetting(Editor);
     // 뷰포트 렌더 모드 및 쇼 플래그 설정
@@ -234,6 +239,7 @@ void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
     ImGui::Text("Render State Sort");
     ImGui::Checkbox("정렬 활성화", &Globals::bEnableRenderSort);
 
+    ImGui::BeginDisabled(!Editor.CanEditSceneStructure());
     if (ImGui::Button("1000 random spawn"))
     {
         for (int i = 0; i < 1000; ++i)
@@ -242,6 +248,8 @@ void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
             Editor.SpawnActorToCurrentScene(EditorConstant::SpawnableActors[Index]);
         }
     }
+    ImGui::EndDisabled();
+
 }
 
 void FImguiControlPanelWindow::SIMDCullingDebugSetting(FEditor& Editor)
@@ -391,7 +399,7 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
     {
         // 뷰 모드 드롭박스
         int CurrentViewMode = static_cast<int>(ActiveViewport->ViewMode);
-        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe", "Scene Depth" };
+        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe", "Scene Depth", "NDC to World"};
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::Combo("##ViewMode", &CurrentViewMode, ViewModes, IM_ARRAYSIZE(ViewModes)))
         {

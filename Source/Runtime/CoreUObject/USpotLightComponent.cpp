@@ -9,7 +9,8 @@
 IMPLEMENT_UCLASS(USpotLightComponent, UPrimitiveComponent)
 UCLASS_META(USpotLightComponent, DisplayName, "SpotLight")
 UCLASS_META(USpotLightComponent, MeshName, "#SpotlightCone")
-
+// 기본 메시·Material은 기존 PostInitProperties()에서 설정한다.
+UCLASS_META(USpotLightComponent, SpawnableComponent, "true")
 
 void USpotLightComponent::PostInitProperties()
 {

@@ -137,6 +137,8 @@ public:
 
   //Scene Depth View 그리기
   void RenderSceneDepthView(const FMatrix& ViewProjection);
+  //NDC -> World View Mode 그리기
+  void RenderNDCtoWorldView(const FMatrix& ViewProjection);
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);

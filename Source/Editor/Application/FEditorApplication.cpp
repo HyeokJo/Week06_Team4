@@ -63,12 +63,10 @@ void FEditorApplication::Tick(float DeltaTime) {
   ToolBar.Process(Editor, ConsoleWindow, ControlPanelWindow, PropertyWindow);
   EditorViewportWindow.Process(Editor, DeltaTime);
 
-  ImGui::BeginDisabled(Editor.IsPlaying());
   WorldOutliner.Process(Editor);
   ControlPanelWindow.Process(Editor);
   PropertyWindow.Process(Editor);
   ContentsDrawer.Process(Editor);
-  ImGui::EndDisabled();
 
   ConsoleWindow.Process(Editor, [this](const char* Command) {ExecuteCommand(Command);});
   Editor.Process();

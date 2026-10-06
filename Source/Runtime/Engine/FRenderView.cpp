@@ -263,6 +263,13 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
         SceneDepthViewMode(View.Camera);
     }
 
+    //NDC 좌표에서 월드 좌표로 복원하여 월드 격자를 그리는 테스트 모드
+    //해당 모드를 지우고 싶다면 지워도 됩니다. 연습용으로 만들었습니다.
+    if (View.ViewMode == EViewModeIndex::VMI_NDCtoWorld && View.Camera.GetProjectionType() != EProjectionType::Orthographic)
+    {
+        NDCtoWorldViewMode(View.Camera);
+    }
+
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
         DrawGrid(View.Camera, *EditorCtx.Grid);
@@ -307,6 +314,12 @@ void FRenderView::BeginView(const FSceneView& View)
     SceneDepthConstants.FarZ = View.Camera.GetFarZ();
     Renderer.UpdateSceneDepthConstants(SceneDepthConstants);
 
+    FMatrix InvV;
+    View.Camera.GetViewMatrix().Inverse(InvV);
+
+    FMatrix CameraProj = View.Camera.GetProjectionMatrix();
+    FMatrix InvP;
+    CameraProj.ToD3DMatrix().Inverse(InvP);
 
     // ViewConstants 갱신
     FViewConstants ViewConstants
@@ -318,6 +331,7 @@ void FRenderView::BeginView(const FSceneView& View)
             View.LengthUV.X * Renderer.GetWidth(),
             View.LengthUV.Y * Renderer.GetHeight(),
         },
+        .InvViewProjection = InvP * InvV,
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
@@ -348,6 +362,11 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
 void FRenderView::SceneDepthViewMode(const FCamera& Camera)
 {
     Renderer.RenderSceneDepthView(Camera.GetViewProjectionMatrix());
+}
+
+void FRenderView::NDCtoWorldViewMode(const FCamera& Camera)
+{
+    Renderer.RenderNDCtoWorldView(Camera.GetViewProjectionMatrix());
 }
 
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)

@@ -7,6 +7,10 @@
 
 IMPLEMENT_UCLASS(UStaticMeshComponent, UMeshComponent)
 
+// 빈 상태로 추가한 뒤 Property Window에서 메시를 지정한다.
+UCLASS_META(UStaticMeshComponent, DisplayName, "StaticMesh")
+UCLASS_META(UStaticMeshComponent, SpawnableComponent, "true")
+
 float UStaticMeshComponent::ComputeScreenSize(const FCamera& Camera) const
 {
 	return std::sqrt(ComputeScreenSizeSquared(Camera));

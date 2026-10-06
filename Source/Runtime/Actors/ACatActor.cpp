@@ -21,7 +21,8 @@ void ACatActor::PostInitProperties()
 	Super::PostInitProperties();
 
 	// 기본 설정은 복원 전에 적용한다.
-	bTickEnabled = true;
+	PrimaryActorTick.bCanEverTick = true;
+	SetActorTickEnabled(true);
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	CatStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/oiia/oiia.json"));
 }

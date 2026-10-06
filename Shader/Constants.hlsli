@@ -11,6 +11,7 @@ cbuffer ViewConstants : register(b1)
     row_major float4x4 Projection;
     float2 ViewportSize;
     float2 ViewPadding;
+    row_major float4x4 InvViewProj;
 }
 
 cbuffer ObjectConstants : register(b2)

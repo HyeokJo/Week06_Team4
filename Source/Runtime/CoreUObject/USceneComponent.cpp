@@ -6,9 +6,13 @@
 
 #include <numbers>
 #include <algorithm>
-
+#include <cmath>
 
 IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
+
+// 메시 없이 부착점으로 사용할 수 있는 컴포넌트다.
+UCLASS_META(USceneComponent, DisplayName, "Scene")
+UCLASS_META(USceneComponent, SpawnableComponent, "true")
 
 void USceneComponent::Initialize()
 {
@@ -229,6 +233,40 @@ const FMatrix* USceneComponent::GetGlobalInverseMatrix() const
         CachedInverseVersion = GlobalVersion;
     }
     return bCachedInverseValid ? &CachedGlobalInverse : nullptr;
+}
+
+bool USceneComponent::SetWorldTransform(const FTransform& GlobalTransform)
+{
+    FTransform NewRelative = GlobalTransform;
+	const USceneComponent* Parent = GetTransformParent();
+	if (Parent)
+	{
+		const FTransform& ParentGlobal = Parent->GetGlobalTransform();
+        if (bInheritRotation)
+        {
+			const FVector& ParentScale = ParentGlobal.GetScale3D();
+			constexpr float Epsilon = 1e-8f;
+			if (std::abs(ParentScale.X) < Epsilon || 
+                std::abs(ParentScale.Y) < Epsilon || 
+                std::abs(ParentScale.Z) < Epsilon)
+			{
+                return false;
+			}
+			FQuaternion InverseParentRotation = ParentGlobal.GetRotation().Normalized().Conjugate();
+
+            const FVector Offset = GlobalTransform.GetLocation()-ParentGlobal.GetLocation();
+			NewRelative.SetLocation(InverseParentRotation.RotateVector(Offset) / ParentScale);
+
+            NewRelative.SetRotation((InverseParentRotation * GlobalTransform.GetRotation()).Normalized());
+            NewRelative.SetScale3D(GlobalTransform.GetScale3D() / ParentScale);
+        }
+        else
+        {
+			NewRelative.SetLocation(GlobalTransform.GetLocation() - ParentGlobal.GetLocation());
+        }
+	}
+	SetRelativeTransform(NewRelative);
+	return true;
 }
 
 void USceneComponent::MarkActorTransformDirty()

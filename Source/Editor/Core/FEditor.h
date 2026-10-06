@@ -27,7 +27,7 @@ class FRenderView;
 class FEditor {
 public:
   FTransform SelectedTransform;
-  FVector SelectedEulerDegDisplay;
+  //FVector SelectedEulerDegDisplay;
 
   FEditorState State;
 
@@ -67,6 +67,17 @@ public:
         UWorld* World = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
         return World && World->IsPaused();
     }
+    // 프로퍼티는 현재 화면에 표시하는 World의 Actor만 편집한다.
+    [[nodiscard]] bool CanEditActorProperties(const AActor* Actor) const;
+
+    // PIE 중에는 에디터 UI를 통한 액터·컴포넌트 구조 변경을 제한한다.
+    [[nodiscard]] bool CanEditSceneStructure() const { return !IsPlaying(); }
+
+    // 씬 저장 정책은 구조 변경 정책과 별도로 관리한다.
+    [[nodiscard]] bool CanSaveScene() const { return !IsPlaying(); }
+
+    // 아웃라이너 버튼과 Delete 키가 같은 삭제 경로를 사용한다.
+    bool DeleteSelectedActor();
     void NewScene();
     void SaveWorld(const FString &Path);
     void LoadWorld(const FString &Path);
@@ -80,10 +91,23 @@ public:
     void UpdateCamera();
 
     bool SelectActor(AActor *Actor);
+	bool SelectComponent(UActorComponent* Component);
     void UnSelectActor();
     AActor *GetSelectedActor() const { return SelectedActor.Get(); }
-    [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
-    [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
+    UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
+    [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid() && !bComponentSelection; }
+    [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid() &&
+        (!bComponentSelection || SelectedComponent.IsValid()); }
+    USceneComponent* GetTransformTarget() const;
+    [[nodiscard]] bool CanManipulateSelection() const;
+    void RefreshSelectedTransform();
+    bool ApplySelectedWorldTransform(const FTransform& WorldTransform);
+    bool ConsumeComponentFocusRequest(const UActorComponent* Component);
+
+    // 폴더와 검색 팝업이 동일한 클래스 노출 조건을 사용한다.
+    static bool IsAddableComponentClass(const UClass* ClassType);
+    // 생성·부착·소유 목록 추가·선택을 두 UI의 공통 경로로 처리한다.
+    UActorComponent* AddComponentToActor(AActor* Actor, UClass* ClassType, USceneComponent* AttachParent = nullptr);
 
     [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
         return EditorViewports;
@@ -92,10 +116,13 @@ public:
     {
         if (!GEngine) return nullptr;
 
-        // PIE 실행 중에는 화면과 아웃라이너가 복제 World를 사용한다.
-        UWorld* PIEWorld = GEngine->GetWorld(EWorldType::PIE);
-        return PIEWorld ? PIEWorld : GEngine->GetWorld(EWorldType::Editor);
+        const FEditorViewportClient* ActiveViewport = &EditorViewports[ActiveViewportIndex];
+
+        if (!ActiveViewport) return nullptr;
+
+        return GEngine->GetWorld(ActiveViewport->GetWorldType());
     }
+
     void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
     // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
     [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -107,7 +134,10 @@ public:
     void SaveState();
     void LoadState();
     void SetViewLayout(FEditorState::SplitViewMode mode);
-    UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+    UTextInstanceComponent* GetTextcomp() {
+        AActor* Actor = GetSelectedActor();
+        return Actor && Actor->GetRootComponent() ? SelectedActorTextComp.Get() : nullptr;
+    }
 
     void RenderViewports(FRenderView& RenderView);
     void RenderGizmo(FRenderView& RenderView);
@@ -127,6 +157,9 @@ private:
     TArray<FEditorViewportClient> EditorViewports;
     FGizmo Gizmo;
     TWeakObjectPtr<AActor> SelectedActor;
+    TWeakObjectPtr<UActorComponent> SelectedComponent;
+    bool bComponentSelection = false;
+    bool bFocusSelectedComponent = false;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 
     FEditorState StateBeforePIE;

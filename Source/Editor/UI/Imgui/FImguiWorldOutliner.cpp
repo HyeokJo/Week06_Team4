@@ -6,6 +6,7 @@
 #include "ThirdParty/Imgui/imgui.h"
 #include <string>
 #include <algorithm>
+#include "FImguiDragDrop.h"
 
 void FImguiWorldOutliner::Process(FEditor& Editor)
 {
@@ -96,15 +97,12 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	ImGui::Separator();
 
 	// 하단 컨트롤 영역
-	if (SelectedActor)
+	if (AActor* Actor = Editor.GetSelectedActor())
 	{
-		if (ImGui::Button("Delete"))
-		{
-			AActor* ActorToDelete = SelectedActor;
-			Editor.UnSelectActor();
-			ActorToDelete->Destroy();
+		ImGui::BeginDisabled(!Editor.ActorSelected() || !Editor.CanEditActorProperties(Actor));
+		if (ImGui::Button("Delete") && Editor.DeleteSelectedActor())
 			bCacheDirty = true;
-		}
+		ImGui::EndDisabled();
 	}
 	else
 	{
@@ -166,22 +164,56 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 	const float Indent = Item.Depth * 16.0f;
 	if (Indent > 0.0f) ImGui::Indent(Indent);
 
-	auto& Expanded = Item.Type == EOutlinerItemRowType::Actor
-		? ExpandedActorUUIDs : ExpandedComponentUUIDs;
+	auto& Expanded = Item.Type == EOutlinerItemRowType::Actor ? ExpandedActorUUIDs : ExpandedComponentUUIDs;
 	const bool bIsOpen = Expanded.contains(Item.UUID);
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_SpanAvailWidth
-		| ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	if (!Item.bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
-	if (Item.Type == EOutlinerItemRowType::Actor && Item.Actor == SelectedActor)
-		Flags |= ImGuiTreeNodeFlags_Selected;
 
-	// Clipper는 부모 행을 건너뛸 수 있으므로 ImGui의 트리 스택에 의존하지 않는다.
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_SpanAvailWidth |
+		ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	if (!Item.bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
+
+	// Component 선택 상태에서는 소유 Actor 행 대신 Component 행을 강조한다.
+	const bool bSelected = Item.Type == EOutlinerItemRowType::Actor
+		? Editor.ActorSelected() && Item.Actor == SelectedActor
+		: Item.Component == Editor.GetSelectedComponent();
+	if (bSelected) Flags |= ImGuiTreeNodeFlags_Selected;
+
+	// Clipper가 부모 행을 건너뛸 수 있으므로 기존 펼침 상태 관리 방식을 유지한다.
 	ImGui::SetNextItemOpen(bIsOpen, ImGuiCond_Always);
-	const bool bNowOpen = ImGui::TreeNodeEx(
-		reinterpret_cast<void*>(static_cast<uintptr_t>(Item.UUID)), Flags,
-		"%s", Item.DisplayLabel.c_str());
+	const bool bNowOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(Item.UUID)),	Flags, "%s", Item.DisplayLabel.c_str());
+
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-		Editor.SelectActor(Item.Actor);
+	{
+		// Actor 행과 Component 행의 선택 경로를 구분한다.
+		if (Item.Type == EOutlinerItemRowType::Actor)
+			Editor.SelectActor(Item.Actor);
+		else
+			Editor.SelectComponent(Item.Component);
+	}
+
+	// Actor 행은 Root 아래, SceneComponent 행은 해당 컴포넌트 아래를 대상으로 한다.
+	const bool bActorRow = Item.Type == EOutlinerItemRowType::Actor;
+	USceneComponent* AttachParent = bActorRow ? Item.Actor->GetRootComponent() : Item.Component->Cast<USceneComponent>();
+
+	// 일반 ActorComponent 행에는 Transform 부착 부모가 없으므로 드롭 타깃으로 사용하지 않는다.
+	if ((bActorRow || AttachParent != nullptr) && ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ComponentClassDragPayloadType))
+		{
+			// 내부 클래스 드래그에서 전달한 UClass* 값을 읽는다.
+			UClass* ClassType = *static_cast<UClass* const*>(Payload->Data);
+
+			if (UActorComponent* Added = Editor.AddComponentToActor(Item.Actor, ClassType, AttachParent))
+			{
+				// 추가 결과가 다음 프레임의 트리에 나타나도록 대상 행을 펼친다.
+				ExpandedActorUUIDs.insert(Item.Actor->GetUUID());
+				if (AttachParent && Added->Cast<USceneComponent>())
+					ExpandedComponentUUIDs.insert(AttachParent->GetUUID());
+
+				bDisplayListDirty = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
 
 	if (Item.bHasChildren && bNowOpen != bIsOpen)
 	{
@@ -189,22 +221,27 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 		else Expanded.erase(Item.UUID);
 		bDisplayListDirty = true;
 	}
+
 	if (Indent > 0.0f) ImGui::Unindent(Indent);
 }
+
 bool FImguiWorldOutliner::ShowSearchBar()
 {
+	// 입력이 변경된 경우에만 검색 필터를 갱신한다.
 	ImGui::SetNextItemWidth(-1.0f);
-	if (ImGui::InputTextWithHint("##OutlinerFilter", "Search...", FilterBuffer, sizeof(FilterBuffer)))
+	if (!ImGui::InputTextWithHint(
+		"##OutlinerFilter", "Search...", FilterBuffer, sizeof(FilterBuffer)))
 	{
-		CurrentFilterStr = FilterBuffer;
-
-		std::transform(CurrentFilterStr.begin(), CurrentFilterStr.end(), CurrentFilterStr.begin(),
-			[](unsigned char c) { return static_cast<char>(::tolower(c)); });
-
-		return true;;
+		return false;
 	}
 
-	return false;
+	// 기존 소문자 라벨과 비교할 수 있도록 검색어도 소문자로 변환한다.
+	CurrentFilterStr = FilterBuffer;
+	std::transform(
+		CurrentFilterStr.begin(), CurrentFilterStr.end(), CurrentFilterStr.begin(),
+		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	return true;
 }
 
 void FImguiWorldOutliner::RebuildDisplayList()

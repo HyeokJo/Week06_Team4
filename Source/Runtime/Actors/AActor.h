@@ -5,6 +5,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include <type_traits>
 #include <concepts>
+#include "Runtime/Engine/FTick.h"
 
 class ULevel;
 
@@ -20,7 +21,7 @@ protected:
 	//nullptr일 경우 위치정보가 필요없는 논리적 액터
 	USceneComponent* RootComponent = nullptr;
 	TArray<UActorComponent*> AttachedComp;
-	bool bTickEnabled = false;
+	FTickSettings PrimaryActorTick;
 
 	explicit AActor() = default;
 
@@ -61,7 +62,20 @@ public:
 	[[nodiscard]] bool IsRegistered() const { return Owner != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 	[[nodiscard]] bool IsInitialized() const { return bInitialized; }
-	[[nodiscard]] bool IsActorTickEnabled() const { return bTickEnabled; }
+	[[nodiscard]] bool IsEditorActor() const;
+
+	[[nodiscard]] bool IsActorTickEnabled() const { return PrimaryActorTick.bTickEnabled; }
+	// Editor는 BeginPlay 없이 명시적으로 허용한 Actor만 실행한다.
+	bool bTickInEditor = false;
+	bool ShouldTick(bool bEditorWorld) const
+	{
+		return IsRegistered() && PrimaryActorTick.bCanEverTick && IsActorTickEnabled()
+			&& (bEditorWorld ? bTickInEditor : HasBegunPlay());
+	}
+
+	void SetActorTickEnabled(bool bEnabled);
+	void SetActorTickGroup(ETickGroup Group);
+
 	void Destroy();
 
 private:
@@ -69,6 +83,6 @@ private:
 	bool bHasBegunPlay = false;
 	//소유권만 삭제, 객체 삭제는 하지않음.
 	void RemoveOwnedComponentReference(UActorComponent* Component);
-
+	void RefreshTickRegistration();
 	bool bInitialized = false;
 };

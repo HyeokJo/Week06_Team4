@@ -326,6 +326,56 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 		return false;
 	}
 
+	FRenderPipelineDesc Desc = {
+		.VertexShaderFilePath = std::filesystem::path(VsPath).string(),
+		.PixelShaderFilePath = std::filesystem::path(PsPath).string(),
+	};
+
+	TSharedPtr<FRenderPipeline> SceneDepthViewPipeline = CreateNormalPPPipeline(Renderer, Desc);
+
+	if (SceneDepthViewPipeline)
+	{
+		AllPipelineMap[FName("#SceneDepthView")] = std::move(SceneDepthViewPipeline);
+	}
+
+	return AllPipelineMap[FName("#SceneDepthView")] != nullptr;	
+}
+
+bool FRenderResourceLibrary::CreateNDCtoWorldViewPipeline(FRenderer& Renderer)
+{
+	const FWString Path = EngineUtil::GetContentDirectory();
+	const FWString VsPath = Path + L"/Shader/FullScreenTriangleVS.cso";
+	const FWString PsPath = Path + L"/Shader/NDCtoWorldViewPs.cso";
+
+	if (!std::filesystem::exists(VsPath) || !std::filesystem::exists(PsPath))
+	{
+		return false;
+	}
+
+	FRenderPipelineDesc Desc = {
+		.VertexShaderFilePath = std::filesystem::path(VsPath).string(),
+		.PixelShaderFilePath = std::filesystem::path(PsPath).string(),
+	};
+	
+	TSharedPtr<FRenderPipeline> NDCtoWorldPipeline = CreateNormalPPPipeline(Renderer, Desc);
+
+	if (NDCtoWorldPipeline)
+	{
+		AllPipelineMap[FName("#NDCtoWorldView")] = std::move(NDCtoWorldPipeline);
+	}
+
+	return AllPipelineMap[FName("#NDCtoWorldView")] != nullptr;
+}
+
+TSharedPtr<FRenderPipeline> FRenderResourceLibrary::CreateNormalPPPipeline(FRenderer& Renderer, 
+																		   const FRenderPipelineDesc& Desc)
+{
+	ID3D11Device* Device = Renderer.GetDevice();
+	if (!Device)
+	{
+		return nullptr;
+	}
+
 	//VB, PB, InputLayout 생성이 필요없다.
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
@@ -337,10 +387,10 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 
 	// 버텍스 셰이더 로드 및 생성
 	Microsoft::WRL::ComPtr<ID3DBlob> Blob;
-	HRESULT Result = D3DReadFileToBlob(VsPath.c_str(), &Blob);
+	HRESULT Result = D3DReadFileToBlob(UTF8ToWide(Desc.VertexShaderFilePath).c_str(), &Blob);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	Result = Device->CreateVertexShader(Blob->GetBufferPointer(),
@@ -348,14 +398,14 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 										&VertexShader);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	// 픽셀 셰이더 로드 및 생성
-	Result = D3DReadFileToBlob(PsPath.c_str(), &Blob);
+	Result = D3DReadFileToBlob(UTF8ToWide(Desc.PixelShaderFilePath).c_str(), &Blob);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	Result = Device->CreatePixelShader(Blob->GetBufferPointer(),
@@ -363,7 +413,7 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 									   &PixelShader);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	// 래스터라이저 상태 생성
@@ -375,7 +425,7 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 	Result = Device->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	// 깊이 스텐실 상태 생성
@@ -389,7 +439,7 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 											 &DepthStencilState);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	// 블렌드 상태 생성
@@ -400,7 +450,7 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 	Result = Device->CreateBlendState(&BlendDesc, &BlendState);
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 	// 샘플러 상태 생성
@@ -417,7 +467,7 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 
 	if (FAILED(Result))
 	{
-		return false;
+		return nullptr;
 	}
 
 
@@ -430,8 +480,9 @@ bool FRenderResourceLibrary::CreateSceneDepthViewPipeline(FRenderer& Renderer)
 		.BlendState = std::move(BlendState),
 	};
 
-	AllPipelineMap[FName("#SceneDepthView")] = MakeShared<FRenderPipeline>(std::move(CreateInfo));
-	return true;
+	TSharedPtr<FRenderPipeline> Pipeline = MakeShared<FRenderPipeline>(std::move(CreateInfo));
+
+	return Pipeline;
 }
 
 bool FRenderResourceLibrary::InitializePipelines(FRenderer& Renderer)
@@ -439,7 +490,8 @@ bool FRenderResourceLibrary::InitializePipelines(FRenderer& Renderer)
 	return CreateWireframePipeline(Renderer) &&
 		CreateOutlinePipeline(Renderer) &&
 		CreatePostProcessPipeline(Renderer) &&
-		CreateSceneDepthViewPipeline(Renderer);
+		CreateSceneDepthViewPipeline(Renderer) &&
+		CreateNDCtoWorldViewPipeline(Renderer);
 }
 
 bool FRenderResourceLibrary::Initialize(FRenderer& Renderer)
