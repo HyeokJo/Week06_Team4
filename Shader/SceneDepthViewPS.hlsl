@@ -21,7 +21,7 @@ float4 MainPS(PS_IN input) : SV_Target
 {
     // Depth SRV의 Depth값
     // 레스터라이저를 거친 Pos는 이미 스크린 좌표이다.
-    const float depth = SceneDepthTexture.Load(int3(input.Pos.xy, 0)).r;
+    const float rawdepth = SceneDepthTexture.Load(int3(input.Pos.xy, 0)).r;
     //const float depth = SceneDepthTexture.Load(int3(input.UV, 0)).r;
     
     //depth = A + B/z
@@ -41,9 +41,9 @@ float4 MainPS(PS_IN input) : SV_Target
     //float FarClampZ = FarZ / ClampZ;
     //const float Z = B * (1 / (depth - A)) % ClampZ / ClampZ;
     //z % Clamp할 거리 : 0 ~ Clamp 거리 : 50이라고 지정했다면 값이 0 ~ 50까지가 반복되니 0 ~ 1로 normalize필요
-    const float Z = B * (1 / (depth - A)) % ClampZ / ClampZ;
+    const float viewZ = B * (1 / (rawdepth - A)) % ClampZ / ClampZ;
     //const float Z = B * (1 / (depth - A)) % (100 / 10) / (100 / 10);
     
         
-    return float4(Z, Z, Z, 1);
+    return float4(viewZ, viewZ, viewZ, 1);
 }
