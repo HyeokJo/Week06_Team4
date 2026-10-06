@@ -66,16 +66,17 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 	//Editor 모드일때만 렌더링.
 	if (WorldType == EWorldType::Editor)
 	{
-		bool bIsEditorActor = Editor.GetSelectedActor() && Editor.GetSelectedActor()->IsEditorActor();
-		EditorCtx.SelectedActor = bIsEditorActor ? Editor.GetSelectedActor() : nullptr;
+		Editor.RefreshSelectedTransform();
+		AActor* Actor = Editor.GetSelectedActor();
+		const bool bIsEditorActor = Actor && Actor->IsEditorActor();
+		EditorCtx.SelectedActor = bIsEditorActor ? Actor : nullptr;
 		EditorCtx.SelectedTransform = Editor.SelectedTransform;
-		EditorCtx.Gizmo = (Editor.ObjectSelected() && bIsEditorActor) ? &Editor.GetGizmo() : nullptr;
-		EditorCtx.TextComp = (Editor.ObjectSelected() && bIsEditorActor) ? Editor.GetTextcomp() : nullptr;
+		EditorCtx.Gizmo = Editor.CanManipulateSelection() ? &Editor.GetGizmo() : nullptr;
+		EditorCtx.TextComp = Editor.ObjectSelected() && bIsEditorActor ? Editor.GetTextcomp() : nullptr;
 		EditorCtx.Grid = &Grid;
 		EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
-
-		if (EditorCtx.SelectedActor && bIsEditorActor) {
-			if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
+		if (bIsEditorActor) {
+			if (USceneComponent* RootComp = Editor.GetTransformTarget()) {
 				EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
 			}
 		}
@@ -93,8 +94,11 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 
 void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 {
-	// Editor 만 Gizmo 렌더링
-	if (WorldType != EWorldType::Editor || !Editor.GetSelectedActor() || !Editor.GetSelectedActor()->IsEditorActor()) return;
+	AActor* Actor = Editor.GetSelectedActor();
+	if (WorldType != EWorldType::Editor || !Actor || !Actor->IsEditorActor())
+		return;
+
+	Editor.RefreshSelectedTransform();
 
 	FSceneView SceneView{
 		.Camera = ViewportCamera,
@@ -106,17 +110,29 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 		.LightConstants = Editor.GlobalLight
 	};
 
-	RenderView.RenderOverlayPass(
-		ViewportCamera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp()
-	);
+	// 기존 카메라 상수 버퍼 갱신을 유지하여 현재 뷰포트의 카메라로 그린다.
+	FRenderer& Renderer = RenderView.GetRenderer();
+	const FViewConstants ViewConstants{
+		.View = SceneView.Camera.GetViewMatrix(),
+		.Projection = SceneView.Camera.GetProjectionMatrix(),
+		.ViewportSize = FVector2{
+			SceneView.LengthUV.X * Renderer.GetWidth(),
+			SceneView.LengthUV.Y * Renderer.GetHeight()
+		}
+	};
+	Renderer.UpdateViewConstants(ViewConstants);
 
-	// 마지막으로 그린 뷰의 렌더 모드가 남지 않도록 설정
+	// 일반 ActorComponent를 선택해도 소유 Actor의 UUID 오버레이는 유지한다.
+	RenderView.RenderOverlayPass(
+		ViewportCamera, SceneView, Editor.SelectedTransform,
+		Editor.GetGizmo(), Editor.GetTextcomp());
+
+	// 기즈모 표시와 입력에 같은 허용 조건을 사용한다.
+	if (!Editor.CanManipulateSelection()) return;
+
 	RenderView.SetRenderMode(ViewMode);
 	RenderView.RenderGizmo(
-		Editor.SelectedTransform,
-		ViewportCamera,
-		TopLeftUV,
-		LengthUV,
-		Editor.GetGizmo()
-	);
+		Editor.SelectedTransform, ViewportCamera,
+		TopLeftUV, LengthUV, Editor.GetGizmo());
+
 }

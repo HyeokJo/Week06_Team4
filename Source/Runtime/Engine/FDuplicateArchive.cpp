@@ -133,6 +133,7 @@ bool FDuplicateArchive::SerializeValue(const char*, UObject*& Value)
         // 원본의 Value를 변경하지 않고 기록할 참조만 따로 결정한다.
         UObject* StoredObject = Value;
 
+        //UAsset이 아닌경우 아래 처리
         if (StoredObject && !StoredObject->IsA<UAsset>())
         {
             if (StoredObject == SourceWorld || StoredObject->IsIn(SourceWorld))
@@ -146,6 +147,8 @@ bool FDuplicateArchive::SerializeValue(const char*, UObject*& Value)
                 StoredObject = nullptr;
             }
         }
+
+		// UAsset은 항상 원본 그대로 기록한다. 월드 밖의 일반 객체는 허용된 경우만 기록한다.
 
         Address = static_cast<uint64>(reinterpret_cast<std::uintptr_t>(StoredObject));
     }

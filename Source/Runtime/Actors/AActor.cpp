@@ -141,8 +141,10 @@ void AActor::Serialize(FArchive& Archive)
 
 	Archive.Field("OwnedComponents", Components);
 	Archive.Field("RootComponent", StoredRoot);
-	Archive.OptionalField("TickEnabled", bTickEnabled);
-
+	Archive.OptionalField("CanEverTick", PrimaryActorTick.bCanEverTick);
+	Archive.OptionalField("TickEnabled", PrimaryActorTick.bTickEnabled);
+	Archive.OptionalField("TickGroup", PrimaryActorTick.TickGroup);
+	Archive.OptionalField("TickInEditor", bTickInEditor);
 	if (Archive.IsLoading())
 	{
 		// Outer로 생성한 소유 관계와 저장 데이터의 소유 목록을 대조한다.
@@ -154,6 +156,7 @@ void AActor::Serialize(FArchive& Archive)
 
 		AttachedComp = std::move(Components);
 		RootComponent = StoredRoot;
+		RefreshTickRegistration();
 	}
 
 	// Initialize, Register, BeginPlay는 여기서 호출하지 않는다.
@@ -314,6 +317,7 @@ void AActor::Register(ULevel& InLevel)
 	}
 
 	Owner = &InLevel;
+	RefreshTickRegistration();
 	for (UActorComponent* Component : AttachedComp)
 	{
 		if (Component)
@@ -340,18 +344,8 @@ void AActor::BeginPlay() {
 }
 
 void AActor::Update(float DeltaTime) {
-	if (!bTickEnabled || !bHasBegunPlay)
-	{
-		return;
-	}
-
-	for (UActorComponent* Component : AttachedComp)
-	{
-		if (Component && Component->IsTickEnabled())
-		{
-			Component->Update(DeltaTime);
-		}
-	}
+	// Component들의 Tick은 World의 Tick Registry에서 처리함.
+	// 파생 Actor 자신의 로직만 추가할것.
 }
 
 void AActor::EndPlay() {
@@ -388,7 +382,29 @@ void AActor::Unregister() {
 			(*It)->Unregister();
 		}
 	}
+	Owner->GetWorld()->RefreshActorTick(this, false);
 	Owner = nullptr;
+}
+
+// 등록된 Actor만 해당 World의 레지스트리를 갱신한다.
+void AActor::RefreshTickRegistration()
+{
+	if (Owner) Owner->GetWorld()->RefreshActorTick(this, true);
+}
+
+void AActor::SetActorTickEnabled(bool bEnabled)
+{
+	// 활성화 여부만 바꾼다. Component Tick 설정은 변경하지 않는다.
+	PrimaryActorTick.bTickEnabled = bEnabled;
+	RefreshTickRegistration();
+}
+
+void AActor::SetActorTickGroup(ETickGroup Group)
+{
+	// Count는 실행 그룹으로 지정할 수 없다.
+	if (static_cast<uint32>(Group) >= TickGroupCount) return;
+	PrimaryActorTick.TickGroup = Group;
+	RefreshTickRegistration();
 }
 
 void AActor::Destroy() {
