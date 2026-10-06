@@ -10,6 +10,8 @@ class USpotLightComponent;
 class UTextInstanceComponent;
 class UBillBoardComp;
 class UAnimatedBillboardComp;
+class UMovementComponent;
+class URotationMovementComponent;
 
 // 선택된 액터의 컴포넌트 속성을 편집하는 창.
 class FImguiPropertyWindow final {
@@ -41,6 +43,8 @@ private:
 
 	// Root와 자식 모두 자신의 상대 Transform을 편집한다.
 	void ShowTransform(FEditor& Editor, USceneComponent& Comp) const;
+	void ShowMovementSettings(AActor& Actor, UMovementComponent& Movement) const;
+	void ShowRotationMovementSettings(URotationMovementComponent& Movement) const;
 
 	// 컴포넌트 타입별 속성
 	void ShowTextSettings(UTextInstanceComponent& TextComp) const;

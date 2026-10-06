@@ -20,7 +20,7 @@
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UFont.h"
-
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
 
 namespace
 {
@@ -148,7 +148,13 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowTransform(Editor, *SceneComp);
 	}
-
+	if (UMovementComponent* Movement = Comp.Cast<UMovementComponent>())
+	{
+		ShowMovementSettings(Actor, *Movement);
+		if (URotationMovementComponent* Rotating = Comp.Cast<URotationMovementComponent>())
+			ShowRotationMovementSettings(*Rotating);
+		return;
+	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -785,4 +791,57 @@ void FImguiPropertyWindow::ShowAddComponentMenu(FEditor& Editor, AActor& Actor)
 	}
 
 	ImGui::EndDisabled();
+}
+
+void FImguiPropertyWindow::ShowMovementSettings(AActor& Actor, UMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Movement Settings");
+
+	// Tick 활성 상태 변경은 기존 Setter를 통해 World 레지스트리에 반영한다.
+	bool bTickEnabled = Movement.IsTickEnabled();
+	if (ImGui::Checkbox("Tick Enabled", &bTickEnabled))
+		Movement.SetComponentTickEnabled(bTickEnabled);
+
+	ImGui::Checkbox("Tick In Editor", &Movement.bTickInEditor);
+	ImGui::Checkbox("Auto Root When Unassigned", &Movement.bAutoRegisterUpdatedComponent);
+
+	// 같은 클래스가 여러 개 있어도 UUID로 이동 대상을 구분한다.
+	USceneComponent* Target = Movement.GetUpdatedComponent();
+	const FString Preview = Target
+		? Target->GetClass()->GetDisplayName()
+		+ " (ID: " + std::to_string(Target->GetUUID()) + ")"
+		: "None";
+
+	if (ImGui::BeginCombo("Updated Component", Preview.c_str()))
+	{
+		if (ImGui::Selectable("None", Target == nullptr))
+			Movement.SetUpdatedComponent(nullptr);
+
+		// Actor의 전체 소유 목록에서 SceneComponent만 고른다.
+		for (UActorComponent* Component : Actor.GetAttachedComponents())
+		{
+			USceneComponent* Scene = Component ? Component->Cast<USceneComponent>() : nullptr;
+			if (!Scene) continue;
+
+			const FString Label =
+				(Scene == Actor.GetRootComponent() ? FString("[Root] ") : FString())
+				+ Scene->GetClass()->GetDisplayName()
+				+ " (ID: " + std::to_string(Scene->GetUUID()) + ")";
+
+			if (ImGui::Selectable(Label.c_str(), Scene == Target))
+				Movement.SetUpdatedComponent(Scene);
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Rotation Settings");
+
+	// XYZ 속도는 도/s 단위다. 체크를 끄면 월드축 기준으로 회전한다.
+	ImGui::DragFloat3("Rotation Rate XYZ (deg/s)", &Movement.RotationRate.X, 1.0f);
+	ImGui::Checkbox("Rotate In Local Space", &Movement.bRotationInLocalSpace);
 }

@@ -126,8 +126,8 @@ void UWorld::RefreshComponentTick(UActorComponent* Component, bool bRegistered)
 
 void UWorld::Update(float DeltaTime) 
 {
-    if (!bHasBegunPlay || bPaused) { return; }
-    
+    if (!bActive || bPaused) { return; }
+
     const bool bEditorWorld = WorldType == EWorldType::Editor || WorldType == EWorldType::EditorPreview;
     if (!bEditorWorld && !bHasBegunPlay) return;
 
