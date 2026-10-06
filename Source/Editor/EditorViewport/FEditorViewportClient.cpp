@@ -1,8 +1,8 @@
 #include "FEditorViewportClient.h"
 #include "Runtime/Engine/FSceneView.h"
-#include "Runtime/Engine/UWorld.h"
 #include "Editor/Core/FEditor.h"
 #include "Runtime/Engine/FRenderView.h"
+#include "Runtime/Engine/FEngine.h"
 
 void FEditorViewportClient::UpdateFocusedAndHovered(bool bFocused, bool bHovered)
 {
@@ -47,7 +47,7 @@ void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogon
 	}
 }
 
-void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEditor& Editor)
+void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 {
 	// 뷰포트 렌더링 명세 구성
 	FSceneView SceneView{
@@ -64,28 +64,38 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, UWorld& InWorld, FEdit
 	FEditorRenderContext EditorCtx;
 
 	//Editor 모드일때만 렌더링.
-	if (!Editor.IsPlaying())
+	if (WorldType == EWorldType::Editor)
 	{
-		EditorCtx.SelectedActor = Editor.GetSelectedActor();
+		bool bIsEditorActor = Editor.GetSelectedActor() && Editor.GetSelectedActor()->IsEditorActor();
+		EditorCtx.SelectedActor = bIsEditorActor ? Editor.GetSelectedActor() : nullptr;
 		EditorCtx.SelectedTransform = Editor.SelectedTransform;
-		EditorCtx.Gizmo = Editor.ObjectSelected() ? &Editor.GetGizmo() : nullptr;
-		EditorCtx.TextComp = Editor.ObjectSelected() ? Editor.GetTextcomp() : nullptr;
+		EditorCtx.Gizmo = (Editor.ObjectSelected() && bIsEditorActor) ? &Editor.GetGizmo() : nullptr;
+		EditorCtx.TextComp = (Editor.ObjectSelected() && bIsEditorActor) ? Editor.GetTextcomp() : nullptr;
 		EditorCtx.Grid = &Grid;
 		EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
 
-		if (EditorCtx.SelectedActor) {
+		if (EditorCtx.SelectedActor && bIsEditorActor) {
 			if (USceneComponent* RootComp = EditorCtx.SelectedActor->GetRootComponent()) {
 				EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
 			}
 		}
 	}
 
+	if (!GEngine) return;
+
+	UWorld* CurrentWorld = GEngine->GetWorld(WorldType);
+
+	if (!CurrentWorld) return;
+
 	// 뷰포트 렌더링 일괄 수행
-	RenderView.RenderView(SceneView, InWorld, EditorCtx);
+	RenderView.RenderView(SceneView, *CurrentWorld, EditorCtx);
 }
 
 void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 {
+	// Editor 만 Gizmo 렌더링
+	if (WorldType != EWorldType::Editor || !Editor.GetSelectedActor() || !Editor.GetSelectedActor()->IsEditorActor()) return;
+
 	FSceneView SceneView{
 		.Camera = ViewportCamera,
 		.ViewProj = ViewportCamera.GetViewProjectionMatrix(),

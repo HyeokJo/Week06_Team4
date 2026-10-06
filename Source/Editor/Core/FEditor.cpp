@@ -65,6 +65,7 @@ bool FEditor::StartPIE()
     // AddWorld가 Activate, BeginPlay, BVH 생성까지 처리한다.
     // 기본 인자는 Editor이므로 PIE를 명시해야 원본 World가 유지된다.
     GEngine->AddWorld(PIEWorld, EWorldType::PIE);
+    EditorViewports[ActiveViewportBeforePIE].SetWorldType(EWorldType::PIE);
     return true;
 }
 
@@ -80,15 +81,12 @@ void FEditor::Process() {
     }
 
     // 씬의 액터 업데이트
-    if(!IsPlaying())
-    {
-        if (SelectedActor) {
-            SelectedActor->SetTransform(SelectedTransform);
-        }
+    if (SelectedActor && SelectedActor->IsEditorActor()) {
+        SelectedActor->SetTransform(SelectedTransform);
         SaveState();
     }
 
-  State.Tick(FTimeManager::GetDeltaTime());
+    State.Tick(FTimeManager::GetDeltaTime());
 }
 
 void FEditor::SaveState() {
@@ -389,20 +387,17 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 void FEditor::RenderViewports(FRenderView& RenderView)
 {
     //Active인 ViewportClient만 렌더링
-    UWorld* World = GetCurrentWorld();
-    if (!World) return;
     for (SWindow& Lf : Leaf)
     {
         if (!Lf.bisActive) 
             continue;
         // 현재 월드를 받아서 렌더링
-        EditorViewports[Lf.ViewportIndex].Draw(RenderView, *World, *this);
+        EditorViewports[Lf.ViewportIndex].Draw(RenderView, *this);
     }
 }
 
 void FEditor::RenderGizmo(FRenderView& RenderView)
 {
-    if (IsPlaying()) return;
     if (ObjectSelected())
     {
         for (const SWindow& Lf : Leaf)
@@ -427,6 +422,9 @@ void FEditor::EndPIE()
 {
     UWorld* PIEWorld = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
     if (!PIEWorld) return;
+
+
+    EditorViewports[ActiveViewportBeforePIE].SetWorldType(EWorldType::Editor);
 
     // 폐기할 Component를 오버레이와 기즈모가 참조하지 않도록 한다.
     ClearSelectionForGC();

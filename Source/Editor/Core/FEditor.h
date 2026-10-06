@@ -107,10 +107,13 @@ public:
     {
         if (!GEngine) return nullptr;
 
-        // PIE 실행 중에는 화면과 아웃라이너가 복제 World를 사용한다.
-        UWorld* PIEWorld = GEngine->GetWorld(EWorldType::PIE);
-        return PIEWorld ? PIEWorld : GEngine->GetWorld(EWorldType::Editor);
+        const FEditorViewportClient* ActiveViewport = &EditorViewports[ActiveViewportIndex];
+
+        if (!ActiveViewport) return nullptr;
+
+        return GEngine->GetWorld(ActiveViewport->GetWorldType());
     }
+
     void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
     // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
     [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;

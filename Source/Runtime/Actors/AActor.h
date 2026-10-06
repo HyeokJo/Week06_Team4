@@ -62,6 +62,8 @@ public:
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 	[[nodiscard]] bool IsInitialized() const { return bInitialized; }
 	[[nodiscard]] bool IsActorTickEnabled() const { return bTickEnabled; }
+	[[nodiscard]] bool IsEditorActor() const;
+
 	void Destroy();
 
 private:

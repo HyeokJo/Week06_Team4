@@ -157,7 +157,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     if (Viewport && Viewport == Editor.GetActiveViewport() && bHasActiveInput)
     {
         Viewport->UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
-        if (!Editor.IsPlaying())
+        if (Editor.GetCurrentWorld()->GetWorldType() == EWorldType::Editor)
         {
             UpdateSelection(Editor, *Viewport, ActiveInput);
             UpdateGizmo(Editor, *Viewport, ActiveInput);
