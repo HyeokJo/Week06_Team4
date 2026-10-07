@@ -20,6 +20,8 @@ struct FViewConstants {
 	FVector2 ViewportSize;
 	FVector2 Padding;
 	FMatrix InvViewProjection;
+	FVector CameraPos;
+	float padding;
 };
 static_assert(sizeof(FViewConstants) % 16 == 0);
 

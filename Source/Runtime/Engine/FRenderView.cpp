@@ -255,19 +255,28 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
 
     Renderer.ClearLastRenderState();
 
+    //Base Pass 직후 안개 그리기
+    // 아래쪽 Scene Depth ViewMode에서는 덮어져야 한다.
+    // 라인들도 선명하게 보여야한다.
+    //Fog Show Flag가 켜져 있을 때 Post Process Fog 렌더링
+    if ((View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Fog)) != 0)
+    {
+        RenderPPFog(View.Camera);
+    }
 
     //Scene Depth View Mode 그리기. Orthographic일때는 종료
     if (View.ViewMode == EViewModeIndex::VMI_SceneDepth && View.Camera.GetProjectionType() != EProjectionType::Orthographic)
     {
-        SceneDepthViewMode(View.Camera);
+        SceneDepthViewMode();
     }
 
     //NDC 좌표에서 월드 좌표로 복원하여 월드 격자를 그리는 테스트 모드
     //해당 모드를 지우고 싶다면 지워도 됩니다. 연습용으로 만들었습니다.
     if (View.ViewMode == EViewModeIndex::VMI_NDCtoWorld && View.Camera.GetProjectionType() != EProjectionType::Orthographic)
     {
-        NDCtoWorldViewMode(View.Camera);
+        NDCtoWorldViewMode();
     }
+
 
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
@@ -295,6 +304,11 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     FlushLinePass(View.Camera);
 
     Renderer.ClearLastRenderState();
+
+
+    
+
+
 
     // 후처리 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
@@ -331,6 +345,7 @@ void FRenderView::BeginView(const FSceneView& View)
             View.LengthUV.Y * Renderer.GetHeight(),
         },
         .InvViewProjection = InvP * InvV,
+        .CameraPos = View.Camera.GetPosition()
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
@@ -358,14 +373,14 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
     FlushLineBatch(Camera.GetViewProjectionMatrix());
 }
 
-void FRenderView::SceneDepthViewMode(const FCamera& Camera)
+void FRenderView::SceneDepthViewMode()
 {
-    Renderer.RenderSceneDepthView(Camera.GetViewProjectionMatrix());
+    Renderer.RenderSceneDepthView();
 }
 
-void FRenderView::NDCtoWorldViewMode(const FCamera& Camera)
+void FRenderView::NDCtoWorldViewMode()
 {
-    Renderer.RenderNDCtoWorldView(Camera.GetViewProjectionMatrix());
+    Renderer.RenderNDCtoWorldView();
 }
 
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
@@ -618,6 +633,11 @@ void FRenderView::CullScene(const FSceneView& View, const UWorld& World)
         SCOPE_CYCLE_COUNTER("Occlusion");
         Globals::OccludedCount = OcclusionCuller.Cull(View, World, VisibleFlags, OccludedFlags);
     }
+}
+
+void FRenderView::RenderPPFog(const FCamera& Camera)
+{
+    Renderer.RenderPPFog();
 }
 
 FFrustum FRenderView::GetCullFrustum(const FSceneView& View)

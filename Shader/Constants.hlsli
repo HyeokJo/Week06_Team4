@@ -12,6 +12,8 @@ cbuffer ViewConstants : register(b1)
     float2 ViewportSize;
     float2 ViewPadding;
     row_major float4x4 InvViewProj;
+    float3 CameraPos;
+    float padding;
 }
 
 cbuffer ObjectConstants : register(b2)

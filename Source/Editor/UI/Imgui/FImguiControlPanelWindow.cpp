@@ -313,6 +313,18 @@ void FImguiControlPanelWindow::CullingSetting(FEditor& Editor)
     ImGui::EndDisabled();
 }
 
+void FImguiControlPanelWindow::FogSetting(FEditor& Editor)
+{
+    float Fog = 0.f;
+    ImGui::SetNextItemWidth(180.0f);
+    if (ImGui::DragFloat("##Fog", &Fog, 0.1f, 0.0f, 1.0f, "%.1f"))
+    {
+        
+    }
+    ImGui::SameLine();
+    ImGui::Text("Fog");
+}
+
 void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
 {
     static UClass* SelectedActorClass = EditorConstant::SpawnableActors[0];
@@ -430,6 +442,11 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
             if (ImGui::Checkbox("Grid", &bGrid))
             {
                 ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Grid);
+            }
+            bool bFog = ActiveViewport->HasShowFlag(EEngineShowFlags::SF_Fog);
+            if (ImGui::Checkbox("Fog", &bFog))
+            {
+                ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Fog);
             }
             ImGui::EndCombo();
         }

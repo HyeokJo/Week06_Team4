@@ -51,8 +51,8 @@ public:
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
 	
 	//Scene Depth View Mode로 그리기
-	void SceneDepthViewMode(const FCamera& Camera);
-	void NDCtoWorldViewMode(const FCamera& Camera);
+	void SceneDepthViewMode();
+	void NDCtoWorldViewMode();
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -91,6 +91,9 @@ public:
 
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
+
+	//Fog 렌더링
+	void RenderPPFog(const FCamera& Camera);
 
 private:
 	FCullingSettings CullingSettings;

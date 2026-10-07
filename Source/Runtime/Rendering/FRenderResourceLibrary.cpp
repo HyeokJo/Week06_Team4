@@ -454,7 +454,7 @@ bool FRenderResourceLibrary::CreatePPFog_AlphaBlendingPipeline(FRenderer& Render
 	FRenderPipelineDesc Desc = {
 		.VertexShaderFilePath = std::filesystem::path(VsPath).string(),
 		.PixelShaderFilePath = std::filesystem::path(PsPath).string(),
-		.Blend = { EBlendMode::Translucent },
+		.Blend = { EBlendMode::PremultipliedAlpha },
 		.Rasterizer = FRasterizerDesc{},
 		.DepthStencil = FDepthStencilDesc{false, false, EDepthWriteMode::Disable},
 		.bIsInstancing = false,

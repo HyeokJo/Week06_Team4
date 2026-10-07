@@ -111,9 +111,11 @@ public:
   void ClearLastRenderState();
 
   //Scene Depth View 그리기
-  void RenderSceneDepthView(const FMatrix& ViewProjection);
+  void RenderSceneDepthView();
   //NDC -> World View Mode 그리기
-  void RenderNDCtoWorldView(const FMatrix& ViewProjection);
+  void RenderNDCtoWorldView();
+  //Fog Rendering
+  void RenderPPFog();
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);
