@@ -14,6 +14,7 @@ class UAnimatedBillboardComp;
 class UMovementComponent;
 class URotationMovementComponent;
 class UProjectileMovementComponent;
+class UFogComponent;
 
 // 선택된 액터의 컴포넌트 속성을 편집하는 창.
 class FImguiPropertyWindow final {
@@ -60,6 +61,7 @@ private:
 	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
 	void ShowPointLightSettings(UPointLightComponent& LightComp) const;
 	void ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const;
+	void ShowFogSettings(AActor& Actor, UFogComponent& FogComp, bool bIsRoot) const;
 
 	// 머티리얼의 텍스처 미리보기 겸 드롭 타깃.
 	void ShowMaterialSlot(UStaticMeshComponent& MeshComp, int Slot = 0) const;

@@ -140,8 +140,24 @@ private:
   bool CreatePostProcessPipeline(FRenderer &Renderer);
   bool CreateSceneDepthViewPipeline(FRenderer &Renderer);
   bool CreateNDCtoWorldViewPipeline(FRenderer &Renderer);
-  TSharedPtr<FRenderPipeline> CreateNormalPPPipeline(FRenderer &Renderer, const FRenderPipelineDesc& Desc);
+  bool CreatePPFog_AlphaBlendingPipeline(FRenderer &Renderer);
+
+  TSharedPtr<FRenderPipeline> CreateRenderPipeline(FRenderer& Renderer, const FRenderPipelineDesc& Desc);
+
+  Microsoft::WRL::ComPtr<ID3D11RasterizerState>
+      GetOrCreateRasterizerState(ID3D11Device* Device, const FRasterizerDesc& Desc);
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilState>
+      GetOrCreateDepthStencilState(ID3D11Device* Device, const FDepthStencilDesc& Desc);
+  Microsoft::WRL::ComPtr<ID3D11BlendState>
+      GetOrCreateBlendState(ID3D11Device* Device, const FBlendDesc& Desc);
+  Microsoft::WRL::ComPtr<ID3D11SamplerState>
+      GetOrCreateSamplerState(ID3D11Device* Device, const FTextureSamplerDesc& Desc);
 
   bool CreateInstancingArrayMap();
   FRenderer *RendererRef = nullptr;
+
+  TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;
+  TMap<FDepthStencilDesc, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> DepthStencilStateMap;
+  TMap<FBlendDesc, Microsoft::WRL::ComPtr<ID3D11BlendState>> BlendStateMap;
+  TMap<FTextureSamplerDesc, Microsoft::WRL::ComPtr<ID3D11SamplerState>> SamplerStateMap;
 };

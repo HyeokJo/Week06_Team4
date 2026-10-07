@@ -23,6 +23,7 @@
 #include "Runtime/Asset/UFont.h"
 #include "Runtime/CoreUObject/URotationMovementComponent.h"
 #include "Runtime/CoreUObject/UProjectileMovementComponent.h"
+#include "Runtime/CoreUObject/UFogComponent.h"
 
 namespace
 {
@@ -190,6 +191,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
 		ShowStaticMeshSettings(Actor, static_cast<UStaticMeshComponent&>(Comp), bIsRoot);
+	}
+	else if (Comp.IsA<UFogComponent>())
+	{
+		ShowFogSettings(Actor, static_cast<UFogComponent&>(Comp), bIsRoot);
 	}
 }
 
@@ -521,6 +526,42 @@ void FImguiPropertyWindow::ShowStaticMeshSettings(AActor& Actor, UStaticMeshComp
 		}
 
 		ImGui::EndTable();
+	}
+}
+
+void FImguiPropertyWindow::ShowFogSettings(AActor& Actor, UFogComponent& FogComp, bool bIsRoot) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Fog Settings");
+
+	FVector FogColor = FogComp.GetFogColor();
+	if (ImGui::ColorEdit3("Fog Color", &FogColor.X))
+	{
+		FogComp.SetFogColor(FogColor);
+	}
+
+	float FogDensity = FogComp.GetFogDensity();
+	if (ImGui::DragFloat("Fog Density", &FogDensity, 0.001f, 0.0f, 0.2f))
+	{
+		FogComp.SetFogDensity(FogDensity);
+	}
+
+	float FogHeightFalloff = FogComp.GetFogHeightFalloff();
+	if (ImGui::DragFloat("Fog Height Falloff", &FogHeightFalloff, 0.001f, 0.001f, 2.0f))
+	{
+		FogComp.SetFogHeightFalloff(FogHeightFalloff);
+	}
+
+	float FogMaxOpacity = FogComp.GetFogMaxOpacity();
+	if (ImGui::DragFloat("Fog Max Opacity", &FogMaxOpacity, 0.001f, 0.0f, 1.f))
+	{
+		FogComp.SetFogMaxOpacity(FogMaxOpacity);
+	}
+
+	float StartDistance = FogComp.GetStartDistance();
+	if (ImGui::DragFloat("Start Distance", &StartDistance, 0.01f, 0.0f, 5000.f))
+	{
+		FogComp.SetStartDistance(StartDistance);
 	}
 }
 

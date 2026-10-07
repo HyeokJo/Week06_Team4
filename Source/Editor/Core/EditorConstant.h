@@ -13,6 +13,7 @@
 #include "Runtime/Actors/ASpotlightActor.h"
 #include "Runtime/Actors/ATextRenderActor.h"
 #include "Runtime/Actors/ACatActor.h"
+#include "Runtime/Actors/AExponentialHeightFogActor.h"
 
 namespace EditorConstant
 {
@@ -32,6 +33,7 @@ namespace EditorConstant
 	   ASpotlightActor::StaticClass(),
 	   ATextRenderActor::StaticClass(),
 	   ACatActor::StaticClass(),
+	   AExponentialHeightFogActor::StaticClass(),
 	};
 
 }

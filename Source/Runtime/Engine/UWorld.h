@@ -13,6 +13,8 @@
 
 #include "ThirdParty/Json/json.hpp"
 
+class FogComponent;
+
 enum EWorldType
 {
 	Editor, EditorPreview, PIE, Game
@@ -125,6 +127,10 @@ public:
     FSceneBVH& GetSceneBVH() { return Scene->GetSceneBVH(); }
     const FSceneBVH& GetSceneBVH() const { return Scene->GetSceneBVH(); }
     [[nodiscard]] const TArray<uint8>& GetOcclusionTargetFlags() const { return Scene->GetOcclusionTargetFlags(); }
+
+    [[nodiscard]] const TArray<UFogComponent*>& GetFogComponents() const { return Scene->GetFogComponents(); }
+    void AddFogComponent(UFogComponent* FogComp) { Scene->AddFogComponent(FogComp); }
+    void RemoveFogComponent(UFogComponent* FogComp) { Scene->RemoveFogComponent(FogComp); }
 
     void RemoveActor(AActor* Actor);
     void DestroyActor(AActor* Actor);

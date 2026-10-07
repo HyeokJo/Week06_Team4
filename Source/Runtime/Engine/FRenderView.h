@@ -51,8 +51,8 @@ public:
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
 	
 	//Scene Depth View Mode로 그리기
-	void SceneDepthViewMode(const FCamera& Camera);
-	void NDCtoWorldViewMode(const FCamera& Camera);
+	void SceneDepthViewMode();
+	void NDCtoWorldViewMode();
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -91,6 +91,9 @@ public:
 
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
+
+	//Fog 렌더링
+	void RenderPPFog(const UWorld& World, const FCamera& Camera);
 
 private:
 	FCullingSettings CullingSettings;
@@ -134,4 +137,12 @@ private:
 	FSceneDepthConstants SceneDepthConstants;
 	TArray<FPointLightConstants> PointLightConstants;
 	void GatherPointLightConstants(FScene& Scene);
+
+	//임시 : 멀티 뷰포트가 정상 동작하게 되면 수정을 고려할 것.
+	FFogConstants FogConstants;
+	void UploadFogConstants(const FSceneView& View, const TArray<UFogComponent*>& FogComponents);
+
+	//Post Process Pass 단에서 업데이트 할 Constant Buffer 들 호출 모음
+	void UpdatePPConstants(const FSceneView& View, const UWorld& World);
+
 };

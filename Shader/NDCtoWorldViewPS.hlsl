@@ -50,6 +50,9 @@ float4 MainPS(PS_IN input) : SV_Target
         return float4(0, 0, 0, 1);
     }
     
+    //아래거로 쓰면 view z 거리 별로 선이 생김. 색이 반전됨.
+    //uv = SV_Position.xy / ViewportSize
+    //const float2 uv = input.Pos.xy / ViewportSize;   
     // 전체 렌더 타겟의 픽셀 위치 대신 현재 뷰포트 기준 UV를 사용한다.
     const float2 uv = input.UV;
     
@@ -64,14 +67,19 @@ float4 MainPS(PS_IN input) : SV_Target
     
     //NDC로부터 Inverse ViewProjection 행렬곱으로 월드 좌표 구하기
     float4 WorldPos = mul(NDC, InvViewProj);
+    
+    //NDC * InvViewProj = Clip/w_c * InvViewProj = WorldPos / w_c
+    //그러므로 w_c를 곱해줘야한다.
+    // [Clip.x, Clip.y, Clip.z, w_c] -> [World_x, World_y, World_z, 1]이 되는데
+    // Clip/w_c에 InvViewProj를 곱했기에 결과는 [world_x/w_c, World_y/w_c, World_z/w_c, 1/w_c]이다.
+    // World.w = 1/w_c이기에 World.w로 나눠주면 w_c를 곱한 것과 같다.
     WorldPos.xyz = WorldPos.xyz / WorldPos.w;
     WorldPos.w = 1.0;
         
-    float returnColor = floor(WorldPos.x + 0.5) + floor(WorldPos.y + 0.5) + floor(WorldPos.z + 0.5);
+    float returnColor = floor(WorldPos.x) + floor(WorldPos.y) + floor(WorldPos.z);
     returnColor = returnColor % 2.0;
     returnColor = abs(returnColor);
     
-    //return float4(returncolor, returncolor, returncolor, 1);
     return float4(returnColor, returnColor, returnColor, 1);
     //return color;
 }

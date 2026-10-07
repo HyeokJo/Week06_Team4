@@ -25,6 +25,7 @@ struct FTextureDesc;
 class FCamera;
 class UTextInstanceComponent;
 struct FDrawCommand;
+struct FFogConstants;
 
 #include "Runtime/Engine/ShowFlags.h"
 
@@ -103,6 +104,7 @@ public:
   void UpdateFrameConstants(const FFrameConstants &Constants);
   void UpdateViewConstants(const FViewConstants &Constants);
   void UpdateSceneDepthConstants(const FSceneDepthConstants &Constants);
+  void UpdateFogConstants(const FFogConstants&Constants);
 
   // 텍스트 인스턴싱
   void AddTextInstanceArray(const FDrawCommand& Command);
@@ -136,9 +138,11 @@ public:
   void ClearLastRenderState();
 
   //Scene Depth View 그리기
-  void RenderSceneDepthView(const FMatrix& ViewProjection);
+  void RenderSceneDepthView();
   //NDC -> World View Mode 그리기
-  void RenderNDCtoWorldView(const FMatrix& ViewProjection);
+  void RenderNDCtoWorldView();
+  //Fog Rendering
+  void RenderPostProcessFog();
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);
@@ -184,6 +188,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
   //TODO : 일단은 상수 버퍼로 하겠지만 멀티 뷰포트가 멀티 RTV로 수정된다면 카메라마다 다를 경우를 대비해 늘려야한다.
   Microsoft::WRL::ComPtr<ID3D11Buffer> SceneDepthConstantBuffer;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> FogConstantBuffer;
 
   TSharedPtr<FStructuredBuffer> PointLightBuffer;
 
