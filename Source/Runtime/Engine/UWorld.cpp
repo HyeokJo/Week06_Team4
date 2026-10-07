@@ -292,21 +292,25 @@ UWorld* UWorld::DuplicateWorld(UWorld* SourceWorld, EWorldType TargetWorldType,
             { SourceWorld, NewWorld },
             { SourceWorld->GetLevel(), NewWorld->GetLevel() }
         };
+        //World,Level에서 시작해서 포함하는 모든 객체가 들어갈 리스트
         TArray<UObject*> PendingObjects{ SourceWorld, SourceWorld->GetLevel() };
         TArray<uint8> Data;
 
         // Writer가 내부 참조를 발견하면서 복제본을 생성하고 데이터를 기록한다.
         FDuplicateArchive Writer(false, Data, Duplicates, PendingObjects, SourceWorld, Flags);
+        FDuplicateArchive Reader(true, Data, Duplicates, PendingObjects, SourceWorld, Flags);
+
+        // Writer가 새 객체를 추가하므로 매 반복마다 PendingObjects.size()를 확인한다.
         for (size_t Index = 0; Index < PendingObjects.size(); ++Index)
         {
             UObject* Source = PendingObjects[Index];
-            Source->Serialize(Writer);
-        }
 
-        // 같은 대응표를 사용해 데이터를 복원하고 내부 참조를 치환한다.
-        FDuplicateArchive Reader(true, Data, Duplicates, PendingObjects, SourceWorld, Flags);
-        for (UObject* Source : PendingObjects)
+            // 현재 객체를 기록하며, 참조 대상의 복제본과 소유 관계를 먼저 확보한다.
+            Source->Serialize(Writer);
+
+            // 방금 기록한 데이터만 읽고, 내부 참조를 대응표의 복제본으로 연결한다.
             Duplicates.at(Source)->Serialize(Reader);
+        }
         Reader.CheckEnd();
 
         // 복원 완료 후 초기화한다. 등록·BeginPlay는 호출자가 별도로 진행한다.
