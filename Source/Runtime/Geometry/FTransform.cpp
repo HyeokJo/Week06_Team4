@@ -25,7 +25,11 @@ void FTransform::SetRotation(const FQuaternion& Value)
 
 void FTransform::SetScale3D(const FVector& Value)
 {
-	Scale3D = Value;
+	Scale3D = FVector{
+		Value.X == 0.0f ? 1e-12f : Value.X,
+		Value.Y == 0.0f ? 1e-12f : Value.Y,
+		Value.Z == 0.0f ? 1e-12f : Value.Z
+	};
 	bTransformMatrixDirty = true;
 }
 

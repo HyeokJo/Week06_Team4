@@ -6,6 +6,7 @@
 #include "Editor/Visualizer/IVisualizer.h"
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
+#include "Runtime/CoreUObject/PointLightComponent.h"
 #include "Runtime/CoreUObject/Mesh/UStaticMeshComponent.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/Engine/FCamera.h"
@@ -52,6 +53,7 @@ namespace
                 Material.Color,
                 Material.UVScale,
                 Material.UVOffset,
+                FMatrix::Identity,
                 FMatrix::Identity,
                 Material.bDisableShading ? 1.0f : 0.0f,
             },
@@ -155,12 +157,12 @@ void FRenderView::CollectScenePrimitives(const UWorld& World, const FSceneView& 
 
         if (!PrimitiveComponent->Cast<UBillBoardComp>())
         {
-            DrawCommand.Constants.World = PrimitiveComponent->GetGlobalTransformMatrix();
+            DrawCommand.Constants.SetWorld(PrimitiveComponent->GetGlobalTransformMatrix());
         }
         else
         {
             const FMatrix World = PrimitiveComponent->GetRenderMatrix(View.Camera);
-            DrawCommand.Constants.World = World;
+            DrawCommand.Constants.SetWorld(World);
         }
         DrawCommand.Constants.Color = { 1.0f, 1.0f, 1.0f, 0.0f };
         DrawCommand.Constants.DisableShading = View.ViewMode == EViewModeIndex::VMI_Unlit ? 1.0f : 0.0f;
@@ -224,6 +226,7 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
 {
     // 뷰포트 시작
     BeginView(View);
+    GatherPointLightConstants(*World.GetScene());
 
     //컬링 측정
     {
@@ -242,7 +245,7 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     }
 
     // 기본 씬 오브젝트 패스
-    FlushBasePass(View.Camera);
+    FlushBasePass(View.Camera, PointLightConstants);
 
     //BasePass 이후에 깊이 버퍼 기준으로 가시성 질의
     if (bOracleRequested)
@@ -346,9 +349,9 @@ void FRenderView::DrawGrid(const FCamera& Camera, FGrid& Grid)
     Renderer.FlushLineBatch(Constants, FName("Grid"));
 }
 
-void FRenderView::FlushBasePass(const FCamera& Camera)
+void FRenderView::FlushBasePass(const FCamera& Camera, TArray<FPointLightConstants>& PointLightConstants)
 {
-    FlushQueue(Camera);
+    FlushQueue(Camera, PointLightConstants);
 }
 
 void FRenderView::FlushLinePass(const FCamera& Camera)
@@ -459,7 +462,7 @@ void FRenderView::DrawStencilMask(const FCamera& Camera,
     FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
 
     DrawCommand.Constants.DisableShading = true;
-    DrawCommand.Constants.World = ModelMatrix;
+    DrawCommand.Constants.SetWorld(ModelMatrix);
 
     auto OutlineMaterial = FRenderResourceLibrary::Get().GetMaterial("#Outline");
     if (OutlineMaterial)
@@ -493,18 +496,16 @@ void FRenderView::ClearTextInstances()
 void FRenderView::FlushLineBatch(const FMatrix& ViewProjection, const FName& PipelineId)
 {
     FObjectConstants Constants{};
-    Constants.World = FMatrix::Identity;
+    Constants.SetWorld(FMatrix::Identity);
     Constants.DisableShading = 1.0f;
     Renderer.FlushLineBatch(Constants, PipelineId);
 }
 
-void FRenderView::FlushQueue(const FCamera& Camera)
+void FRenderView::FlushQueue(const FCamera& Camera, TArray<FPointLightConstants>& PointLightConstants)
 {
-    auto& ResLib = FRenderResourceLibrary::Get();
-    
     // Primitive 큐 처리
     Renderer.DrawPrimitiveBatch(
-        RenderQueue.GetPrimRenderQ()
+        RenderQueue.GetPrimRenderQ(), PointLightConstants
     );
 
     // Instancing 큐
@@ -674,4 +675,15 @@ void FRenderView::RunOcclusionOracle()
 
     OracleDrawnCommands.clear();
     OracleOccludedCommands.clear();
+}
+
+void FRenderView::GatherPointLightConstants(FScene& Scene)
+{
+    PointLightConstants.clear();
+    auto& PointLights = Scene.GetPointLights();
+
+    PointLightConstants.reserve(PointLights.size());
+    for (auto& PointLight : PointLights) {
+        PointLightConstants.push_back(PointLight->GetShaderConstant());
+    }
 }

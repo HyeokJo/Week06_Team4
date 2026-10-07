@@ -50,8 +50,8 @@ float4 MainPS(PS_IN input) : SV_Target
         return float4(0, 0, 0, 1);
     }
     
-    //uv = SV_Position.xy / ViewportSize
-        const float2 uv = input.Pos.xy / ViewportSize;
+    // 전체 렌더 타겟의 픽셀 위치 대신 현재 뷰포트 기준 UV를 사용한다.
+    const float2 uv = input.UV;
     
     float4 NDC = float4(0.0, 0.0, 0.0, 1.0);
     

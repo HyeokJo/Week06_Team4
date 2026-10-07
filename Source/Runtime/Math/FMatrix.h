@@ -133,9 +133,9 @@ struct alignas(16) FMatrix
 	inline static FMatrix MakeScale(const FVector& S)
 	{
 		FMatrix R = GetIdentity();
-		R.M[0][0] = S.X;
-		R.M[1][1] = S.Y;
-		R.M[2][2] = S.Z;
+		R.M[0][0] = S.X == 0.0f ? 1e-12f : S.X;
+		R.M[1][1] = S.Y == 0.0f ? 1e-12f : S.Y;
+		R.M[2][2] = S.Z == 0.0f ? 1e-12f : S.Z;
 		return R;
 	}
 

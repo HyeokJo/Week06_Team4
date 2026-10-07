@@ -133,6 +133,7 @@ public:
 
     const EWorldType GetWorldType() const { return WorldType; }
 
+    FScene* GetScene() const { return Scene; }
 private:
     TTickRegistry<AActor> ActorTickRegistry;
     TTickRegistry<UActorComponent> ComponentTickRegistry;

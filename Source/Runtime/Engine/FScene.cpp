@@ -1,5 +1,5 @@
 #include "FScene.h"
-
+#include "Runtime\Core\Globals.h"
 #include <algorithm>
 
 void FScene::SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary)
@@ -60,6 +60,32 @@ void FScene::RemoveRenderComponent(UPrimitiveComponent* Prim) {
 
     Prim->SetSceneIndex(-1);
     Prim->SetBatchIndex(-1);
+}
+
+bool FScene::AddPointLight(UPointLightComponent* PointLight)
+{
+    if (PointLights.size() < Globals::MaxPointLights) {
+        PointLights.push_back(PointLight);
+        WorldLightConstants.PointLightCount = PointLights.size();
+        return true;
+    }
+    else {
+        UE_LOG_WARN("Exeeded Max Point Light Count - This PointLightComponent is not Working");
+        return false;
+    }
+}
+
+bool FScene::RemovePointLight(UPointLightComponent* PointLight)
+{
+    auto Result = std::erase(PointLights, PointLight);
+    if (Result == 0) {
+        UE_LOG_WARN("No Data in FScene");
+        return false;
+    }
+    else {
+        WorldLightConstants.PointLightCount = PointLights.size();
+        return true;
+    }
 }
 
 void FScene::MarkBoundsDirty(UPrimitiveComponent* Prim)

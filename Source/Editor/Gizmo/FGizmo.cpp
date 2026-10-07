@@ -248,7 +248,7 @@ void FGizmo::DrawAxis(FRenderer& Renderer, EGizmoHandle Handle, const FMatrix& W
 	}
 
 	FObjectConstants Constants{};
-	Constants.World = World;
+	Constants.SetWorld(World);
 	Constants.Color = DrawColor;
 	Constants.DisableShading = 1.0f;
 	Renderer.Draw(*GizmoMesh, *GizmoMaterial, Constants);
