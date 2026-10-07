@@ -1350,8 +1350,14 @@ void FRenderer::Draw(const FDrawCommand& Command, uint32 Slot,
 void FRenderer::DrawPrimitiveBatch(std::span<const FDrawCommand> Commands, TArray<FPointLightConstants>& PointLightConstants)
 {
 	size_t Begin = 0;
-	PointLightBuffer->UpdateStructuredBuffer(PointLightConstants.data(), static_cast<uint32>(PointLightConstants.size()));
-	Context1->PSSetShaderResources(1, 1, PointLightBuffer->SRV.GetAddressOf());
+
+	//UpdateSubresource: Empty pDstBox Warning 방지
+	if (PointLightConstants.size() != 0)
+	{
+		PointLightBuffer->UpdateStructuredBuffer(PointLightConstants.data(), static_cast<uint32>(PointLightConstants.size()));
+		Context1->PSSetShaderResources(1, 1, PointLightBuffer->SRV.GetAddressOf());
+	}
+	
 
 	while (Begin < Commands.size())
 	{
