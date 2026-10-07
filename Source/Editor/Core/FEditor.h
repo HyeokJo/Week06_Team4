@@ -12,6 +12,7 @@
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/UI/SSplitter.h"
 #include "Runtime/Engine/FEngine.h"
+#include "Runtime/Rendering/FViewportRenderSurface.h"
 #include "Editor/Visualizer/FVisualizerRegistry.h"
 
 enum class EEditorPrimitiveType : uint8 {
@@ -139,13 +140,14 @@ public:
         return Actor && Actor->GetRootComponent() ? SelectedActorTextComp.Get() : nullptr;
     }
 
+    // 활성 뷰포트마다 표면에 렌더링(씬, 후처리, 기즈모)한 뒤 백버퍼 영역에 합성한다.
     void RenderViewports(FRenderView& RenderView);
-    void RenderGizmo(FRenderView& RenderView);
-  
+
     //Viewport관련
+    static constexpr int32 MaxViewportCount = 4;
     int32 ActiveViewportIndex = 0;
     SWindow* Root = nullptr;
-    SWindow Leaf[4];
+    SWindow Leaf[MaxViewportCount];
     SSplitterH HorizonSplitter; //세로선
     SSplitterH HorizonSplitter2; //세로선
     SSplitterV VerticalSplitter; // 가로선
@@ -155,6 +157,9 @@ private:
     // 씬을 다중으로 가질 수 있도록 구조개선 가능-이경우 에디터쪽에
     // 클래스를 추가해 씬과 FEditorViewportClient들을 연관
     TArray<FEditorViewportClient> EditorViewports;
+    // 뷰포트 번호(EditorViewports 인덱스)별 렌더 표면.
+    // 클라이언트는 값으로 복사(PIE 백업/복원)되므로 GPU 리소스는 여기서 따로 소유한다.
+    FViewportRenderSurface ViewportSurfaces[MaxViewportCount];
     FGizmo Gizmo;
     TWeakObjectPtr<AActor> SelectedActor;
     TWeakObjectPtr<UActorComponent> SelectedComponent;
@@ -167,4 +172,11 @@ private:
     int32 ActiveViewportBeforePIE = 0;
     // 임시 최대화된 현재 뷰포트 번호
     int32 MaximizedViewportBeforePIE = -1;
+
+    // 표면이 없거나 영역 크기와 다르면 만든다. bDeferResize면 크기 변경은 미룬다.
+    // 이번 프레임에 그릴 수 있으면 true
+    bool UpdateViewportSurface(FRenderer& Renderer, const FEditorViewportClient& Viewport,
+                               FViewportRenderSurface& Surface, bool bDeferResize);
+    // 활성 Leaf가 쓰지 않는 뷰포트 번호의 표면을 해제한다.
+    void ReleaseUnusedViewportSurfaces();
 };

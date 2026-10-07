@@ -7,6 +7,8 @@
 
 class FEditor;
 class FRenderView;
+class FViewportRenderSurface;
+struct FSceneView;
 
 class FEditorViewportClient final {
 	bool bFocused = false;
@@ -59,7 +61,11 @@ public:
 	[[nodiscard]] EWorldType GetWorldType() const { return WorldType; }
 
 	void Update();
-	void Draw(FRenderView& RenderView, FEditor& Editor);
-	void DrawGizmo(FRenderView& RenderView, FEditor& Editor);
+	// 씬, 기즈모를 Surface에 그린 뒤 백버퍼의 이 뷰포트 영역으로 합성한다.
+	// Surface는 FEditor가 뷰포트 번호로 소유한다. 이 클래스는 값으로 복사되므로 GPU 리소스를 갖지 않는다.
+	void Draw(FRenderView& RenderView, FEditor& Editor, FViewportRenderSurface& Surface);
 	void SetWorldType(EWorldType InType) { WorldType = InType; }
+
+private:
+	void DrawGizmo(FRenderView& RenderView, FEditor& Editor, const FSceneView& SceneView);
 };

@@ -83,8 +83,8 @@ void FEditorApplication::Render() {
       GEngine->UpdateWorldBounds();
   }
 
+  // 뷰포트별 렌더링(씬, 후처리, 기즈모)과 백버퍼 합성까지 한 번에 처리한다.
   Editor.RenderViewports(*RenderView);
-  Editor.RenderGizmo(*RenderView);
 
   ImguiManager.RenderUI();
 }

@@ -21,12 +21,14 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <wrl/client.h>
+#include <algorithm>
+#include <cmath>
 
 bool FRenderer::Initialize(HWND Window)
 {
 	if (!InitializeDeviceAndSwapChain(Window) ||
 		!InitializeBackBufferAndDepthStencil() ||
-		!InitializeEditorViewportRenderTarget() || !InitializeConstantBuffers())
+		!InitializeConstantBuffers())
 	{
 		Shutdown();
 		return false;
@@ -51,6 +53,8 @@ void FRenderer::Shutdown()
 	}
 
 	LineBatcher.Shutdown();
+
+	CurrentSurface = nullptr;
 
 	RasterizerStateMap.clear();
 	DepthStencilStateMap.clear();
@@ -97,37 +101,70 @@ void FRenderer::BeginFrame()
 	CurrentFrameResourceIndex = (CurrentFrameResourceIndex + 1) % NumFrameResourceCount;
 	BeginGPUTimer();
 
+	CurrentSurface = nullptr;
+
+	// 뷰포트 표면은 각자 BeginViewportSurface에서 지운다.
+	// 백버퍼는 뷰포트 영역 밖(상단바, 스플리터 여백)이 비지 않도록 지운다.
 	Context->RSSetViewports(1, &Viewport);
-	BindEditorViewportRenderTargets();
+	Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), DepthStencilView.Get());
 
 	constexpr float ClearColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	//constexpr float ClearColor[] = {0.05f, 0.05f, 0.08f, 1.0f};
-	Context->ClearRenderTargetView(EditorViewPortRTV.Get(), ClearColor);
+	Context->ClearRenderTargetView(BackBufferRTV.Get(), ClearColor);
 	Context->ClearDepthStencilView(
 		DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
-
-void FRenderer::BindEditorViewportRenderTargets()
-{
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(),
-								DepthStencilView.Get());
-}
-
-void FRenderer::SetViewportUV(FVector2 TopLeftUV, FVector2 LengthUV)
-{
-	// Viewport는 전체 백버퍼 크기를 유지하고, UV는 그리기 직전에 픽셀로 변환한다.
-	D3D11_VIEWPORT RenderViewport = Viewport;
-	RenderViewport.TopLeftX = TopLeftUV.X * Viewport.Width;
-	RenderViewport.TopLeftY = TopLeftUV.Y * Viewport.Height;
-	RenderViewport.Width = LengthUV.X * Viewport.Width;
-	RenderViewport.Height = LengthUV.Y * Viewport.Height;
-	Context->RSSetViewports(1, &RenderViewport);
-};
 
 void FRenderer::ClearDepth()
 {
+	ID3D11DepthStencilView* TargetDSV = CurrentSurface ? CurrentSurface->GetDepthStencilView() : DepthStencilView.Get();
 	Context->ClearDepthStencilView(
-		DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		TargetDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+D3D11_VIEWPORT FRenderer::GetViewportPixelRect(FVector2 TopLeftUV, FVector2 LengthUV) const
+{
+	// 표면 크기와 합성 영역이 어긋나지 않도록 정수 픽셀로 맞춘다.
+	const float Left = std::round(TopLeftUV.X * Viewport.Width);
+	const float Top = std::round(TopLeftUV.Y * Viewport.Height);
+	const float Width = std::round(LengthUV.X * Viewport.Width);
+	const float Height = std::round(LengthUV.Y * Viewport.Height);
+
+	return D3D11_VIEWPORT{
+		.TopLeftX = Left,
+		.TopLeftY = Top,
+		.Width = (std::max)(Width, 0.0f),
+		.Height = (std::max)(Height, 0.0f),
+		.MinDepth = 0.0f,
+		.MaxDepth = 1.0f,
+	};
+}
+
+void FRenderer::BeginViewportSurface(FViewportRenderSurface& Surface)
+{
+	CurrentSurface = &Surface;
+	Surface.ResetColor();
+
+	BindViewportSurfaceTargets();
+
+	constexpr float ClearColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	Context->ClearRenderTargetView(Surface.GetSceneColorRTV(), ClearColor);
+	Context->ClearDepthStencilView(
+		Surface.GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void FRenderer::BindViewportSurfaceTargets()
+{
+	if (!CurrentSurface)
+	{
+		return;
+	}
+
+	ID3D11RenderTargetView* SceneColorRTV = CurrentSurface->GetSceneColorRTV();
+	Context->OMSetRenderTargets(1, &SceneColorRTV, CurrentSurface->GetDepthStencilView());
+
+	const D3D11_VIEWPORT SurfaceViewport = CurrentSurface->GetFullViewport();
+	Context->RSSetViewports(1, &SurfaceViewport);
 }
 
 void FRenderer::FlushDrawStats()
@@ -152,22 +189,17 @@ void FRenderer::SwapBuffer()
 
 void FRenderer::OnWindowSize(UINT Width, UINT Height)
 {
+	// 뷰포트 표면은 창이 아니라 뷰포트 영역 크기를 따르므로 FEditor가 따로 재생성한다.
 	Context->OMSetRenderTargets(0, nullptr, nullptr);
 	BackBufferRTV.Reset();
 	DepthStencilView.Reset();
-	DepthStencilSRV.Reset();
 	DepthStencilBuffer.Reset();
-	EditorViewPortRTV.Reset();
-	EditorViewPortSRV.Reset();
-	EditorRenderTarget.Reset();
-	DepthSRV.Reset();
 
 	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
 	Viewport.Width = static_cast<float>(Width);
 	Viewport.Height = static_cast<float>(Height);
 
 	InitializeBackBufferAndDepthStencil();
-	InitializeEditorViewportRenderTarget();
 }
 
 TSharedPtr<FMesh> FRenderer::CreateMesh(const FMeshDesc& Desc)
@@ -729,108 +761,110 @@ void FRenderer::ClearLastRenderState()
 	LastRenderPipeline = nullptr;
 }
 
+void FRenderer::DrawFullScreenPass(const FName& PipelineId, ID3D11RenderTargetView* Target,
+								   const D3D11_VIEWPORT& TargetViewport,
+								   std::initializer_list<ID3D11ShaderResourceView*> Inputs)
+{
+	constexpr UINT MaxInputCount = 4u;
+	const UINT InputCount = static_cast<UINT>(Inputs.size());
+
+	TSharedPtr<FRenderPipeline> Pipeline = GetPipeline(PipelineId);
+	if (!Pipeline || !Target || InputCount > MaxInputCount)
+	{
+		return;
+	}
+
+	// 입력 SRV가 출력(RTV/DSV)과 같은 텍스처면 런타임이 SRV를 null로 바꾸므로
+	// 출력은 DSV 없이 먼저 바인딩한다.
+	Context->OMSetRenderTargets(1, &Target, nullptr);
+	Context->RSSetViewports(1, &TargetViewport);
+
+	Pipeline->Bind(*Context.Get());
+
+	// 정점은 SV_VertexID로 만들므로 정점/인덱스 버퍼를 비운다.
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	ID3D11Buffer* NullBuffer = nullptr;
+	UINT Zero = 0;
+	Context->IASetVertexBuffers(0, 1, &NullBuffer, &Zero, &Zero);
+	Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R32_UINT, 0);
+
+	if (InputCount > 0u)
+	{
+		Context->PSSetShaderResources(0u, InputCount, Inputs.begin());
+	}
+
+	Context->Draw(3, 0);
+	++PendingDrawCount;
+	++PendingPrimCount;
+
+	// 다음 패스가 같은 텍스처를 출력으로 쓸 수 있도록 입력 슬롯을 비운다.
+	if (InputCount > 0u)
+	{
+		ID3D11ShaderResourceView* NullSRVs[MaxInputCount] = {};
+		Context->PSSetShaderResources(0u, InputCount, NullSRVs);
+	}
+
+	// 파이프라인과 텍스처 슬롯을 캐시 밖에서 바꿨으므로 다음 드로우가 다시 바인딩하게 한다.
+	ClearLastRenderState();
+}
+
+void FRenderer::RenderDepthPostProcess(const FName& PipelineId)
+{
+	if (!CurrentSurface)
+	{
+		return;
+	}
+
+	DrawFullScreenPass(PipelineId, CurrentSurface->GetSceneColorRTV(),
+					   CurrentSurface->GetFullViewport(), { CurrentSurface->GetDepthSRV() });
+
+	// 이후 라인/기즈모 패스가 깊이를 쓰도록 DSV를 다시 붙인다.
+	BindViewportSurfaceTargets();
+}
+
 void FRenderer::RenderSceneDepthView()
 {
-	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#SceneDepthView"));
-	pipeline->Bind(*GetContext());
-
-	//OM Render Target에 DSV 바인딩 제거
-	//이걸 안해주면 출력의 DSV와 SRV로 넣어줄 DepthSRV가 같은 텍스처여서 SRV쪽이 null이 된다.
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
-
-	//Depth Buffer SRV 넣어주기
-	Context->PSSetShaderResources(0u, 1u, DepthSRV.GetAddressOf());
-
-	//메시 관련
-	// 토폴로지
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//버텍스 버퍼
-	ID3D11Buffer* NullVB = nullptr;
-	UINT Zero = 0;
-	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
-
-	//인덱스 버퍼 필요??
-	Context->IASetIndexBuffer(NullVB, DXGI_FORMAT_R32_UINT, 0);
-	
-	Context->Draw(3, 0);
-	//Context->DrawIndexed(0, 0, 0);
-
-	// 슬롯 해제
-	ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
-	Context->PSSetShaderResources(0, 1, NullSRVs);
-	//뎁스 DSV 원복
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
+	RenderDepthPostProcess(FName("#SceneDepthView"));
 }
 
 void FRenderer::RenderNDCtoWorldView()
 {
-	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#NDCtoWorldView"));
-	pipeline->Bind(*GetContext());
-
-	//OM Render Target에 DSV 바인딩 제거
-	//이걸 안해주면 출력의 DSV와 SRV로 넣어줄 DepthSRV가 같은 텍스처여서 SRV쪽이 null이 된다.
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
-
-	//Depth Buffer SRV 넣어주기
-	Context->PSSetShaderResources(0u, 1u, DepthSRV.GetAddressOf());
-
-	//메시 관련
-	// 토폴로지
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//버텍스 버퍼
-	ID3D11Buffer* NullVB = nullptr;
-	UINT Zero = 0;
-	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
-
-	//인덱스 버퍼 필요??
-	Context->IASetIndexBuffer(NullVB, DXGI_FORMAT_R32_UINT, 0);
-
-	Context->Draw(3, 0);
-	//Context->DrawIndexed(0, 0, 0);
-
-	// 슬롯 해제
-	ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
-	Context->PSSetShaderResources(0, 1, NullSRVs);
-	//뎁스 DSV 원복
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
+	RenderDepthPostProcess(FName("#NDCtoWorldView"));
 }
 
 void FRenderer::RenderPostProcessFog()
 {
-	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#PostProcessFog"));
-	pipeline->Bind(*GetContext());
+	RenderDepthPostProcess(FName("#PostProcessFog"));
+}
 
-	//OM Render Target에 DSV 바인딩 제거
-	//이걸 안해주면 출력의 DSV와 SRV로 넣어줄 DepthSRV가 같은 텍스처여서 SRV쪽이 null이 된다.
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
+void FRenderer::RenderOutline()
+{
+	if (!CurrentSurface)
+	{
+		return;
+	}
 
-	//Depth Buffer SRV 넣어주기
-	Context->PSSetShaderResources(0u, 1u, DepthSRV.GetAddressOf());
+	// 씬 컬러를 읽으면서 같은 텍스처에 쓸 수 없으므로 다른 컬러에 쓰고 교체한다.
+	DrawFullScreenPass(FName("#PostProcess"), CurrentSurface->GetSpareColorRTV(),
+					   CurrentSurface->GetFullViewport(),
+					   { CurrentSurface->GetSceneColorSRV(), CurrentSurface->GetStencilSRV() });
+	CurrentSurface->SwapColor();
 
-	//메시 관련
-	// 토폴로지
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	BindViewportSurfaceTargets();
+}
 
-	//버텍스 버퍼
-	ID3D11Buffer* NullVB = nullptr;
-	UINT Zero = 0;
-	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+void FRenderer::CompositeViewportSurface(const FViewportRenderSurface& Surface, FVector2 TopLeftUV, FVector2 LengthUV)
+{
+	const D3D11_VIEWPORT Region = GetViewportPixelRect(TopLeftUV, LengthUV);
+	if (Region.Width < 1.0f || Region.Height < 1.0f)
+	{
+		return;
+	}
 
-	//인덱스 버퍼 필요??
-	Context->IASetIndexBuffer(NullVB, DXGI_FORMAT_R32_UINT, 0);
-
-	Context->Draw(3, 0);
-	//Context->DrawIndexed(0, 0, 0);
-
-	// 슬롯 해제
-	ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
-	Context->PSSetShaderResources(0, 1, NullSRVs);
-	//뎁스 DSV 원복
-	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
-	//Blend State 끄기로 전환
-	Context->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+	// 백버퍼 RTV가 _SRGB이므로 sRGB 인코딩은 이 쓰기에서 한 번만 일어난다.
+	// 표면 크기와 영역 크기가 다르면(리사이즈 대기 중) 늘려서 표시한다.
+	DrawFullScreenPass(FName("#ViewportComposite"), BackBufferRTV.Get(), Region,
+					   { Surface.GetSceneColorSRV() });
 }
 
 bool FRenderer::InitializeDeviceAndSwapChain(HWND Window)
@@ -911,18 +945,20 @@ bool FRenderer::InitializeBackBufferAndDepthStencil()
 	const UINT Width = static_cast<UINT>(Viewport.Width);
 	const UINT Height = static_cast<UINT>(Viewport.Height);
 
+	// 백버퍼에 직접 그리는 경로용 깊이 버퍼. 셰이더에서 읽지 않으므로 SRV는 만들지 않는다.
+	// 에디터 뷰포트의 깊이는 FViewportRenderSurface가 뷰포트마다 가진다.
 	D3D11_TEXTURE2D_DESC DepthStencilDesc = {
 		.Width = Width,
 		.Height = Height,
 		.MipLevels = 1u,
 		.ArraySize = 1u,
-		.Format = DXGI_FORMAT_R24G8_TYPELESS,
+		.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
 		.SampleDesc =
 			{
 				.Count = 1u,
 			},
 		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
+		.BindFlags = D3D11_BIND_DEPTH_STENCIL,
 	};
 
 	Result =
@@ -938,81 +974,6 @@ bool FRenderer::InitializeBackBufferAndDepthStencil()
 	};
 	Result = Device->CreateDepthStencilView(DepthStencilBuffer.Get(), &DsvDesc,
 											&DepthStencilView);
-	if (FAILED(Result))
-	{
-		return false;
-	}
-
-	//Stencil용 SRV
-	D3D11_SHADER_RESOURCE_VIEW_DESC StencilSrvDesc{
-		.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D = {.MostDetailedMip = 0, .MipLevels = 1},
-	};
-	Result = Device->CreateShaderResourceView(DepthStencilBuffer.Get(),
-											  &StencilSrvDesc, &DepthStencilSRV);
-	if (FAILED(Result))
-	{
-		return false;
-	}
-
-	//Depth용 SRV
-	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSrvDesc{
-		.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D = {.MostDetailedMip = 0, .MipLevels = 1},
-	};
-	Result = Device->CreateShaderResourceView(DepthStencilBuffer.Get(),
-											  &DepthSrvDesc, &DepthSRV);
-	if (FAILED(Result))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool FRenderer::InitializeEditorViewportRenderTarget()
-{
-	if (!Device)
-	{
-		return false;
-	}
-
-	const UINT Width = static_cast<UINT>(Viewport.Width);
-	const UINT Height = static_cast<UINT>(Viewport.Height);
-	if (Width == 0 || Height == 0)
-	{
-		return false;
-	}
-
-	D3D11_TEXTURE2D_DESC ColorTexDesc{
-		.Width = Width,
-		.Height = Height,
-		.MipLevels = 1u,
-		.ArraySize = 1u,
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.SampleDesc = {.Count = 1u},
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-	};
-
-	HRESULT Result =
-		Device->CreateTexture2D(&ColorTexDesc, nullptr, &EditorRenderTarget);
-	if (FAILED(Result))
-	{
-		return false;
-	}
-
-	Result = Device->CreateRenderTargetView(EditorRenderTarget.Get(), nullptr,
-											&EditorViewPortRTV);
-	if (FAILED(Result))
-	{
-		return false;
-	}
-
-	Result = Device->CreateShaderResourceView(EditorRenderTarget.Get(), nullptr,
-											  &EditorViewPortSRV);
 	if (FAILED(Result))
 	{
 		return false;
@@ -1780,36 +1741,6 @@ void FRenderer::ClearTextInstances()
 	}
 
 	FRenderResourceLibrary::Get().DestroyAllInstancingArray();
-}
-
-void FRenderer::RenderOutline()
-{
-	// 백버퍼 뷰포트 및 토폴로지 복구
-
-	Context->RSSetViewports(1, &Viewport);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context->IASetInputLayout(nullptr);
-
-	ID3D11Buffer* NullVB = nullptr;
-	UINT Zero = 0;
-	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
-
-	Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
-	// 씬 텍스처와 스텐실 텍스처 바인딩
-	ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
-										DepthStencilSRV.Get() };
-	Context->PSSetShaderResources(0, 2, SRVs);
-
-	FRenderResourceLibrary::Get()
-		.GetPipeline(FName("#PostProcess"))
-		->Bind(*Context.Get());
-	Context->Draw(3, 0);
-	INC_DWORD_STAT("Draws");
-	INC_DWORD_STAT_BY("Prims", 1);
-
-	// 슬롯 해제
-	ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
-	Context->PSSetShaderResources(0, 2, NullSRVs);
 }
 
 bool FRenderer::InitializeGPUTimerQueries()

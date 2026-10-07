@@ -141,6 +141,7 @@ private:
   bool CreateSceneDepthViewPipeline(FRenderer &Renderer);
   bool CreateNDCtoWorldViewPipeline(FRenderer &Renderer);
   bool CreatePPFog_AlphaBlendingPipeline(FRenderer &Renderer);
+  bool CreateViewportCompositePipeline(FRenderer &Renderer);
 
   TSharedPtr<FRenderPipeline> CreateRenderPipeline(FRenderer& Renderer, const FRenderPipelineDesc& Desc);
 
