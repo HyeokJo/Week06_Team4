@@ -92,13 +92,9 @@ void FSceneBVH::Build(const TArray<UPrimitiveComponent*>& Components)
     {
         if (!C) continue;
 
-        const FAxisAlignedBoundingBox& Local = C->GetLocalBounds();
+        const FAxisAlignedBoundingBox WorldBox = C->GetWorldBounds();
 
-        //빈 박스는 BVH에서 제외한다.
-        if (!Local.IsValid()) { continue; }
-
-        const FMatrix World = C->GetGlobalTransformMatrix();
-        FAxisAlignedBoundingBox WorldBox(Local, World);
+        if (!WorldBox.IsValid()) continue;
 
         //{AABB, 중심점, 컴포넌트}
         Prims.push_back({ WorldBox, (WorldBox.Min + WorldBox.Max) * 0.5f, C });
@@ -238,11 +234,11 @@ void FSceneBVH::RefitObject(UPrimitiveComponent* Moved)
     const int32 ObjectIndex = Moved->GetBVHIndex();
     if (ObjectIndex < 0 || static_cast<uint32>(ObjectIndex) >= Objects.size()) return;
 
-    const FAxisAlignedBoundingBox Local = Moved->GetLocalBounds();
-    if (!Local.IsValid()) { return; }
+    const FAxisAlignedBoundingBox WorldBound = Moved->GetWorldBounds();
+    if (!WorldBound.IsValid()) { return; }
 
     //변경된 Transform으로 AABB 다시 넣기
-    ObjectBounds[ObjectIndex] = FAxisAlignedBoundingBox(Local, Moved->GetGlobalTransformMatrix());
+    ObjectBounds[ObjectIndex] = WorldBound;
 
     RefitFromLeaf(LeafOfObject[ObjectIndex]);
 }
@@ -356,13 +352,11 @@ bool FSceneBVH::QueryRay(const FRay& Ray, const FCamera& Camera, UPrimitiveCompo
     for (UPrimitiveComponent* C : PendingObjects)
     {
         if (!C) { continue; }
-
-        const FAxisAlignedBoundingBox Local = C->GetLocalBounds();
-        if (!Local.IsValid()) { continue; }
+        const FAxisAlignedBoundingBox WorldBounds = C->GetWorldBounds();
+        if (!WorldBounds.IsValid()) { continue; }
 
         //대기열은 바운드 캐시가 없으므로 즉석 계산
-        const FAxisAlignedBoundingBox World(Local, C->GetGlobalTransformMatrix());
-        TestObjectRay(C, World, Ray, Camera, InvDir, Closest, OutHit, OutImpact);
+        TestObjectRay(C, WorldBounds, Ray, Camera, InvDir, Closest, OutHit, OutImpact);
     }
 
     return OutHit != nullptr;
