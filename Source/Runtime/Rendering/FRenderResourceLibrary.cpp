@@ -504,6 +504,27 @@ bool FRenderResourceLibrary::CreateViewportCompositePipeline(FRenderer& Renderer
 	return AllPipelineMap[FName("#ViewportComposite")] != nullptr;
 }
 
+bool FRenderResourceLibrary::CreateFXAAPipelines(FRenderer& Renderer)
+{
+	const std::filesystem::path Path{EngineUtil::GetContentDirectory()};
+	FRenderPipelineDesc Desc = {
+		.VertexShaderFilePath = (Path / "Shader/FullScreenTriangleVS.cso").string(),
+		.PixelShaderFilePath = (Path / "Shader/FXAAInputPS.cso").string(),
+		.Blend = {EBlendMode::Opaque},
+		.Rasterizer = {ERasterizerFillMode::Solid, ERasterizerCullMode::None},
+		.DepthStencil = {false, false, EDepthWriteMode::Disable},
+		.bCreateInputLayout = false,
+		.Sampler = {ETextureSamplerFilterMode::Bilinear, ETextureSamplerWrapMode::Clamp}
+	};
+	auto InputPipeline = CreateRenderPipeline(Renderer, Desc);
+	Desc.PixelShaderFilePath = (Path / "Shader/FXAAPS.cso").string();
+	auto FXAAPipeline = CreateRenderPipeline(Renderer, Desc);
+	if (!InputPipeline || !FXAAPipeline) return false;
+	AllPipelineMap[FName("#FXAAInput")] = std::move(InputPipeline);
+	AllPipelineMap[FName("#FXAA")] = std::move(FXAAPipeline);
+	return true;
+}
+
 TSharedPtr<FRenderPipeline> FRenderResourceLibrary::CreateRenderPipeline(FRenderer& Renderer, const FRenderPipelineDesc& Desc)
 {
 	ID3D11Device* Device = Renderer.GetDevice();
@@ -807,7 +828,8 @@ bool FRenderResourceLibrary::InitializePipelines(FRenderer& Renderer)
 		CreateSceneDepthViewPipeline(Renderer) &&
 		CreateNDCtoWorldViewPipeline(Renderer)&&
 		CreatePPFog_AlphaBlendingPipeline(Renderer) &&
-		CreateViewportCompositePipeline(Renderer);
+		CreateViewportCompositePipeline(Renderer) &&
+		CreateFXAAPipelines(Renderer);
 }
 
 bool FRenderResourceLibrary::Initialize(FRenderer& Renderer)

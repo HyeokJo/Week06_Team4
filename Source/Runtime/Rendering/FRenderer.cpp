@@ -837,6 +837,29 @@ void FRenderer::RenderPostProcessFog()
 	RenderDepthPostProcess(FName("#PostProcessFog"));
 }
 
+void FRenderer::RenderFXAA()
+{
+	if (!CurrentSurface)
+	{
+		return;
+	}
+
+	const D3D11_VIEWPORT SurfaceViewport = CurrentSurface->GetFullViewport();
+
+	// 1) 선형 씬 컬러를 sRGB로 인코딩한다. FXAA의 휘도 판정은 지각(sRGB) 공간에서 한다.
+	DrawFullScreenPass(FName("#FXAAInput"), CurrentSurface->GetSpareColorRTV(), SurfaceViewport,
+					   { CurrentSurface->GetSceneColorSRV() });
+	CurrentSurface->SwapColor();
+
+	// 2) FXAA 결과를 다시 선형으로 되돌린다. 두 번 교체하므로 결과는 처음 컬러에 남는다.
+	//    텍셀 크기는 셰이더가 View 상수의 ViewportSize(= 표면 크기)로 계산한다.
+	DrawFullScreenPass(FName("#FXAA"), CurrentSurface->GetSpareColorRTV(), SurfaceViewport,
+					   { CurrentSurface->GetSceneColorSRV() });
+	CurrentSurface->SwapColor();
+
+	BindViewportSurfaceTargets();
+}
+
 void FRenderer::RenderOutline()
 {
 	if (!CurrentSurface)

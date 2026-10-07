@@ -154,6 +154,8 @@ public:
   void RenderNDCtoWorldView();
   //Fog Rendering
   void RenderPostProcessFog();
+  // 씬 컬러에 FXAA를 적용한다. 표면의 두 컬러를 번갈아 써서 추가 RT 없이 처리한다.
+  void RenderFXAA();
   // 씬 컬러와 스텐실을 읽어 선택 외곽선을 입힌다. 결과는 표면의 다른 컬러에 쓰고 교체한다.
   void RenderOutline();
 
