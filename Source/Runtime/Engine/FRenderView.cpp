@@ -268,6 +268,13 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     }*/
 
     Renderer.ClearLastRenderState();
+    
+    // 후처리 패스
+    // FXAA는 씬(라인 포함)에만 적용하고, 외곽선과 기즈모는 그 위에 그린다.
+    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_FXAA)) != 0)
+    {
+        Renderer.RenderFXAA();
+    }
 
     //Base Pass 직후 안개 그리기
     // 아래쪽 Scene Depth ViewMode에서는 덮어져야 한다.
@@ -319,12 +326,6 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
 
     Renderer.ClearLastRenderState();
 
-    // 후처리 패스
-    // FXAA는 씬(라인 포함)에만 적용하고, 외곽선과 기즈모는 그 위에 그린다.
-    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_FXAA)) != 0)
-    {
-        Renderer.RenderFXAA();
-    }
 
     // 선택 외곽선. 기즈모는 외곽선 위에 그려지도록 이후에 그린다.
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
