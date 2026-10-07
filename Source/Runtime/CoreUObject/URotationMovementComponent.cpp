@@ -6,7 +6,7 @@
 IMPLEMENT_UCLASS(URotationMovementComponent, UMovementComponent)
 
 // 기존 Components 폴더와 추가 메뉴가 이 메타를 읽어 목록에 표시한다.
-UCLASS_META(URotationMovementComponent, DisplayName, "RotatingMovement")
+UCLASS_META(URotationMovementComponent, DisplayName, "RotationMovement")
 UCLASS_META(URotationMovementComponent, SpawnableComponent, "true")
 
 void URotationMovementComponent::Serialize(FArchive& Archive)
@@ -14,6 +14,7 @@ void URotationMovementComponent::Serialize(FArchive& Archive)
     Super::Serialize(Archive);
     Archive.OptionalField("RotationRate", RotationRate);
     Archive.OptionalField("RotationInLocalSpace", bRotationInLocalSpace);
+    Archive.OptionalField("PivotTranslation", PivotTranslation);
 }
 
 void URotationMovementComponent::Update(float DeltaTime)
@@ -33,6 +34,14 @@ void URotationMovementComponent::Update(float DeltaTime)
         ? CurrentRotation * DeltaRotation   // 로컬축 기준 회전
         : DeltaRotation * CurrentRotation;  // 월드축 기준 회전
 
-    // 자전이므로 위치를 유지한다. 상대 회전 환산과 Dirty 처리는 부모 함수가 수행한다.
-    MoveUpdatedComponent(FVector::ZeroVector, NewWorldRotation);
+    //피벗이 0일때는 자전 유지
+    FVector WorldDelta = FVector::ZeroVector;
+    if (PivotTranslation != FVector::ZeroVector)
+    {
+        // 회전 전후의 피벗 오프셋 차이만큼 대상 원점을 이동시킨다.
+        // 대상과 부모의 스케일은 피벗 오프셋에 곱하지 않는다.
+        WorldDelta = CurrentRotation.RotateVector(PivotTranslation) - NewWorldRotation.RotateVector(PivotTranslation);
+    }
+
+    MoveUpdatedComponent(WorldDelta, NewWorldRotation);
 }
