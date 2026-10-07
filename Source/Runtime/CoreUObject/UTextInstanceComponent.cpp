@@ -44,6 +44,8 @@ void UTextInstanceComponent::PostInitProperties()
 {
     Super::PostInitProperties();
 
+    bHiddenInGame = true;
+
     // 기본 에셋은 복원 이전에만 지정한다.
     FAssetRegistry& Registry = FAssetRegistry::GetInstance();
     SetMesh(Registry.Get<UStaticMesh>("#Rect"));
