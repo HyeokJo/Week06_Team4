@@ -135,3 +135,23 @@ struct FSceneDepthConstants
 };
 
 static_assert(sizeof(FSceneDepthConstants) % 16 == 0);
+
+
+
+// PostProcess FogPS에서 쓸 Constant Buffer
+// Register = b6
+struct FFogConstants
+{
+	FVector4 FogColor;
+
+	float FogDensity;
+	float FogHeightFalloff;
+	float FogComponentHeight;
+	float rho0;
+
+	float StartDistance;
+	float FogMaxOpacity;
+	FVector2 FogPadding;
+};
+
+static_assert(sizeof(FFogConstants) % 16 == 0);

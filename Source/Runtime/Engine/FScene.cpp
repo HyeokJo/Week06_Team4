@@ -88,6 +88,30 @@ bool FScene::RemovePointLight(UPointLightComponent* PointLight)
     }
 }
 
+void FScene::AddFogComponent(UFogComponent* FogComp)
+{
+    if (FogComp == nullptr)
+        return;
+
+    auto Iter = std::find(FogComponents.begin(), FogComponents.end(), FogComp);
+
+    if (Iter == FogComponents.end())
+    {
+        FogComponents.push_back(FogComp);
+    }
+}
+
+void FScene::RemoveFogComponent(UFogComponent* FogComp)
+{
+    if (FogComp == nullptr)
+        return;
+
+    const auto It = std::find(FogComponents.begin(), FogComponents.end(), FogComp);
+    if (It == FogComponents.end()) return;
+    
+    FogComponents.erase(It);
+}
+
 void FScene::MarkBoundsDirty(UPrimitiveComponent* Prim)
 {
     // 씬에 아직 추가 전이거나 이미 대기 중이면 무시

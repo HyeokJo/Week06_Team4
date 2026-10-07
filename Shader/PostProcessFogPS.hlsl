@@ -10,7 +10,15 @@
 cbuffer FogConstants : register(b6)
 {
     float4 FogColor;
-    float FogDencity;
+    
+    float FogDensity;
+    float FogHeightFalloff;
+    float FogComponentHeight;
+    float rho0;
+    
+    float StartDistance;
+    float FogMaxOpacity;
+    float2 Fogpadding;
 }
 
 
@@ -23,16 +31,8 @@ struct PS_IN
     float2 UV : TEXCOORD0;
 };
 
-static float4 TempFogColor = float4(1.0, 0.0, 0.0, 1.0);
 // 자연로그 2 (ln 2) 값 정의
 static const float ln2 = 0.69314718f;
-
-struct FFogParams
-{
-    float Density;
-    float Falloff;
-    float Height;
-};
 
 float4 RestoreWorldPos(float rawdepth, float2 uv)
 {
@@ -77,18 +77,10 @@ float4 DistanceBasedFog(float4 D_WorldPos)
     //프리 멀티플라이드 블렌드
     //알파를 미리 곱해서 출력한다.
     // color * 알파, 알파
-    return float4(TempFogColor.rgb * f, f);
+    return float4(FogColor.rgb * f, f);
 }
 
-float GetPointHeight(float C_Height, float W_Height, float d, float s)
-{
-    //h = 시작 높이 + 추가 높이 = h0 + dz * (s / d) = h0 + (dz / d) * s
-    
-    float dz = W_Height - C_Height;
-    return C_Height + (dz / d) * s;
-}
-
-float HeightDensity(float C_Height, float W_Height, float Comp_Height, float Falloff, float Distance, float Density, float s)
+float HeightDensity(float h0, float h1, float H, float k, float d, float D, float s)
 {
     //ρ(h) = D · 2^( −k · (h − H) ) = D * e^(-k * ln2 * (h - H))
     // h = h0 + (dz/d) * s
@@ -136,9 +128,9 @@ float HeightDensity(float C_Height, float W_Height, float Comp_Height, float Fal
     //  기준 밀도에서 계산해보면 h = H이므로 h - H = 0
     //  p(h) = D * 2^(0) = D가 된다. 기준 밀도에서는 사용자가 지정한 밀도 D로 그대로 나온다.
     //  기준 밀도 D에서 위로 올라갈수록 h의 값이 커지면서 k에 비례하게 밀도가 줄어들게 된다.
-    float dz = W_Height - C_Height;
+    float dz = h1 - h0;
     //return Density * exp2(-Falloff * (GetPointHeight(C_Height, W_Height, Distance, s) - Comp_Height));
-    return Density * exp(-Falloff * (C_Height - Comp_Height) * ln2) * exp(-Falloff * (dz / Distance) * s * ln2);
+    return D * exp(-k * (h0 - H) * ln2) * exp(-k * (dz / d) * s * ln2);
 
 }
 
@@ -205,33 +197,33 @@ float4 HeightFog(float4 H_WorldPos)
     //낮을수록 짙고, 높을수록 옅다.
     
     //카메라 높이
-    float CameraHeight = CameraPos.z;
+    float h0 = CameraPos.z;
     
     //픽셀의 월드 높이
-    float WorldHeight = H_WorldPos.z;
+    float h1 = H_WorldPos.z;
     
     //카메라와의 거리
     float d = length(H_WorldPos.xyz - CameraPos);
     
-    //임시 값. 외부로 뺄 것.
-    //높이 올라갈 때 밀도가 줄어드는 속도
-    float FogHeightFalloff = 0.02;
+    ////임시 값. 외부로 뺄 것.
+    ////높이 올라갈 때 밀도가 줄어드는 속도
+    //float FogHeightFalloff = 0.02;
     
-    //임시 밀도. 외부로 뺄 것.
-    float Density = 0.02;
+    ////임시 밀도. 외부로 뺄 것.
+    //float Density = 0.02;
     
-    //임시 컴포넌트 Height
-    float ComponentHeight = 0;
+    ////임시 컴포넌트 Height
+    //float ComponentHeight = 0;
     
     //안개 밀도
     //float tau0 = HeightDensity(CameraHeight, WorldHeight, ComponentHeight, FogHeightFalloff, d, Density, 0);
     
     //위와 같은 결과이지만 Getrho0에서는 dz/d의 수식이 없다.
     //distance가 0일 경우 위험성을 배제한 수식이다.
-    float tau0 = Getrho0(CameraHeight, WorldHeight, ComponentHeight, FogHeightFalloff, d, Density, 0);
+    //float tau0 = Getrho0(CameraHeight, WorldHeight, ComponentHeight, FogHeightFalloff, d, Density, 0);
     
     //x = ad = k*ln2*dz/d * d = k*ln2*dz
-    float x = FogHeightFalloff * ln2 * (WorldHeight - CameraHeight);
+    float x = FogHeightFalloff * ln2 * (h1 - h0);
     
     
     //-80보다 작은 값이라면 exp(-x)에 들어갈 때 문제된다.
@@ -256,7 +248,7 @@ float4 HeightFog(float4 H_WorldPos)
     //g(x) = (1 - e^(-x))/x    
     float g_x = (1 - ExpX) / x;
     
-    float tau = tau0 * d * g_x;
+    float tau = rho0 * d * g_x;
     
     //투과율
     //안개를 뚫고 살아남은 빛의 비율
@@ -269,7 +261,7 @@ float4 HeightFog(float4 H_WorldPos)
     //프리 멀티플라이드 블렌드
     //알파를 미리 곱해서 출력한다.
     // color * 알파, 알파
-    return float4(TempFogColor.rgb * f, f);
+    return float4(FogColor.rgb * f, f);
 }
 
 float4 MainPS(PS_IN input) : SV_Target

@@ -21,6 +21,7 @@
 #include <fstream>
 
 #include "Runtime/CoreUObject/FStatsManager.h"
+#include "Runtime/CoreUobject/UFogComponent.h"
 
 FRenderView::FRenderView(FRenderer &Renderer) : Renderer(Renderer) {}
 
@@ -228,6 +229,9 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     BeginView(View);
     GatherPointLightConstants(*World.GetScene());
 
+    //PP Constants Buffer Update
+    UpdatePPConstants(View, World);
+
     //컬링 측정
     {
         CullScene(View, World);
@@ -264,7 +268,7 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     //Fog Show Flag가 켜져 있을 때 Post Process Fog 렌더링
     if ((View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Fog)) != 0)
     {
-        RenderPPFog(View.Camera);
+        RenderPPFog(World, View.Camera);
     }
 
     //Scene Depth View Mode 그리기. Orthographic일때는 종료
@@ -308,11 +312,6 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
 
     Renderer.ClearLastRenderState();
 
-
-    
-
-
-
     // 후처리 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
 
@@ -327,8 +326,7 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.SetRenderMode(View.ViewMode);
     Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
-    SceneDepthConstants.FarZ = View.Camera.GetFarZ();
-    Renderer.UpdateSceneDepthConstants(SceneDepthConstants);
+    
 
     FMatrix InvV;
     View.Camera.GetViewMatrix().Inverse(InvV);
@@ -636,9 +634,16 @@ void FRenderView::CullScene(const FSceneView& View, const UWorld& World)
     }
 }
 
-void FRenderView::RenderPPFog(const FCamera& Camera)
+void FRenderView::RenderPPFog(const UWorld& World, const FCamera& Camera)
 {
-    Renderer.RenderPPFog();
+    const TArray<UFogComponent*>& FogComps = World.GetFogComponents();
+
+    if (FogComps.size() == 0) return;
+
+    UFogComponent* FogComp = FogComps[0];
+    if (FogComp == nullptr) return;
+    
+    Renderer.RenderPostProcessFog();
 }
 
 FFrustum FRenderView::GetCullFrustum(const FSceneView& View)
@@ -708,4 +713,31 @@ void FRenderView::GatherPointLightConstants(FScene& Scene)
     for (auto& PointLight : PointLights) {
         PointLightConstants.push_back(PointLight->GetShaderConstant());
     }
+}
+
+void FRenderView::UploadFogConstants(const FSceneView& View, const TArray<UFogComponent*>& FogComponents)
+{
+    if (FogComponents.size() == 0) return;
+    UFogComponent* FogComp = FogComponents[0];
+    if (FogComp == nullptr) return;
+    
+
+    FogConstants.FogColor = FogComp->GetFogColor();
+    FogConstants.FogDensity = FogComp->GetFogDensity();
+    FogConstants.FogHeightFalloff = FogComp->GetFogHeightFalloff();
+    FogConstants.FogMaxOpacity = FogComp->GetFogMaxOpacity();
+    FogConstants.StartDistance = FogComp->GetStartDistance();
+    FogConstants.FogComponentHeight = FogComp->GetGlobalTransform().GetLocation().Z;
+    FogConstants.rho0 = FogComp->Calculaterho0(View.Camera.GetPosition().Z);
+}
+
+void FRenderView::UpdatePPConstants(const FSceneView& View, const UWorld& World)
+{
+    //Scene Depth
+    SceneDepthConstants.FarZ = View.Camera.GetFarZ();
+    Renderer.UpdateSceneDepthConstants(SceneDepthConstants);
+
+    //Fog Constant Update    
+    UploadFogConstants(View, World.GetFogComponents());
+    Renderer.UpdateFogConstants(FogConstants);
 }

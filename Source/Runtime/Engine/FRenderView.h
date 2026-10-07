@@ -93,7 +93,7 @@ public:
 	void RequestOcclusionOracle() { bOracleRequested = true; }
 
 	//Fog 렌더링
-	void RenderPPFog(const FCamera& Camera);
+	void RenderPPFog(const UWorld& World, const FCamera& Camera);
 
 private:
 	FCullingSettings CullingSettings;
@@ -137,4 +137,12 @@ private:
 	FSceneDepthConstants SceneDepthConstants;
 	TArray<FPointLightConstants> PointLightConstants;
 	void GatherPointLightConstants(FScene& Scene);
+
+	//임시 : 멀티 뷰포트가 정상 동작하게 되면 수정을 고려할 것.
+	FFogConstants FogConstants;
+	void UploadFogConstants(const FSceneView& View, const TArray<UFogComponent*>& FogComponents);
+
+	//Post Process Pass 단에서 업데이트 할 Constant Buffer 들 호출 모음
+	void UpdatePPConstants(const FSceneView& View, const UWorld& World);
+
 };
