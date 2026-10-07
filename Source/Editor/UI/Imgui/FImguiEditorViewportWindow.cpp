@@ -18,6 +18,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     //화면이 버튼을 눌러 최대일때 처리
     ApplyPendingViewportMaximize(Editor);
 
+
     // 종료와 Hover 초기화는 뷰포트의 포커스/표시 여부와 관계없이 처리한다.
     FGizmo& Gizmo = Editor.GetGizmo();
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) Gizmo.EndInteraction();
@@ -130,7 +131,8 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
                 }
 
                 // 실제로 기즈모를 조작할 수 있는 선택에 대해서만 Hover를 검사한다.
-                if (Editor.CanManipulateSelection() && Input.bHovered && !Gizmo.IsInteracting())
+                if (&CurrentViewport == Viewport && Editor.CanManipulateSelection() && Input.bHovered 
+                    && !Gizmo.IsInteracting())
                 {
                     UpdateGizmoHover(Editor, CurrentViewport, Input.LocalMouse, Input.SizePixels);
                 }
@@ -157,7 +159,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     if (Viewport && Viewport == Editor.GetActiveViewport() && bHasActiveInput)
     {
         Viewport->UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
-        if (Editor.GetCurrentWorld()->GetWorldType() == EWorldType::Editor)
+        if (Editor.CanUseEditorControls(Viewport->GetWorldType()))
         {
             UpdateSelection(Editor, *Viewport, ActiveInput);
             UpdateGizmo(Editor, *Viewport, ActiveInput);
@@ -273,7 +275,7 @@ void FImguiEditorViewportWindow::UpdateGizmo(FEditor& Editor, const FEditorViewp
 void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportClient &Viewport,
                                               const FViewportInput &Input, float DeltaTime)
 {
-    if (!Input.bFocused)
+    if (!Input.bFocused || !Editor.CanUseEditorControls(Viewport.GetWorldType()))
     {
         CameraController.ResetVelocity();
         return;
@@ -309,7 +311,7 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
 
 
     // 기즈모를 드래그하는 중에는 모드가 바뀌면 안 된다.
-    if (Viewport.GetWorldType() == EWorldType::Editor && !Editor.GetGizmo().IsInteracting())
+    if (!Editor.GetGizmo().IsInteracting())
     {
         UpdateShortcuts(Editor);
     }

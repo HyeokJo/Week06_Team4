@@ -61,6 +61,7 @@ bool FEditor::StartPIE()
     ActiveViewportBeforePIE = ActiveViewportIndex;
     MaximizedViewportBeforePIE = State.GetSplitMode() != FEditorState::SplitViewMode::SINGLE && Root == &Leaf[0]
         ? Leaf[0].ViewportIndex : -1;
+    bPIEEjected = false;
     ClearSelectionForGC();
 
     // AddWorld가 Activate, BeginPlay, BVH 생성까지 처리한다.
@@ -74,6 +75,11 @@ void FEditor::Process() {
     if (FInputManager::Get().IsKeyDown(VK_F11))
     {
         bZenMode = !bZenMode;
+    }
+
+    if (FInputManager::Get().IsKeyDown(VK_F8) && !ImGui::GetIO().WantTextInput)
+    {
+        TogglePIEEject();
     }
 
     if (!PendingComponentDeletion.IsValid() && FInputManager::Get().IsKeyDown(VK_DELETE) && !ImGui::IsAnyItemActive())
@@ -196,26 +202,12 @@ bool FEditor::SelectActor(AActor *Actor) {
       Gizmo.Mode = EGizmoMode::Translate;
     }
     
-    if (SelectedActorTextComp && Actor->IsEditorActor() && Actor->GetRootComponent())
-    {
-        SelectedActorTextComp->SetupAttachment(SelectedActor->GetRootComponent());
-        SelectedActorTextComp->SetInheritRotation(false);
-        FTransform RelativeTrans;
-        RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
-        SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
-        SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
-    }
-  return true;
+    UpdateSelectionOverlay();
+    return true;
 }
 
 void FEditor::UnSelectActor() {
     ClearSelectionForGC();
-
-    //if (!IsPlaying() && SelectedActor)
-    //    SelectedActor->SetTransform(SelectedTransform);
-    //// 선택 Actor의 소유 컴포넌트가 아니므로 삭제하지 않고 분리한다.
-    //if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
-    //SelectedActor = nullptr;
 }
 
 const TArray<UPrimitiveComponent*>& FEditor::GetPrimitiveComponents() const
@@ -434,6 +426,7 @@ void FEditor::TogglePIEPause()
 
 void FEditor::EndPIE()
 {
+    bPIEEjected = false;
     UWorld* PIEWorld = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
     if (!PIEWorld) return;
 
@@ -532,9 +525,11 @@ USceneComponent* FEditor::GetTransformTarget() const
 
 bool FEditor::CanManipulateSelection() const
 {
-    // PIE에서는 프로퍼티 편집과 별개로 기즈모 조작을 허용하지 않는다.
-    AActor* Actor = GetSelectedActor();
-    return Actor && Actor->IsEditorActor() && CanEditActorProperties(Actor) && GetTransformTarget() != nullptr;
+    UWorld* World = GetCurrentWorld();
+
+    // 입력 대상은 활성 뷰의 World에 속해야 하고, Transform 조작이 가능해야 한다.
+    return World && CanUseEditorControls(World->GetWorldType()) &&
+        CanEditActorProperties(GetSelectedActor()) && GetTransformTarget() != nullptr;
 }
 
 void FEditor::RefreshSelectedTransform()
@@ -644,4 +639,51 @@ void FEditor::ProcessComponentDeletion()
         NextSelection = Actor->GetRootComponent();
 
     if (NextSelection) SelectComponent(NextSelection);
+}
+
+bool FEditor::CanUseEditorControls(EWorldType WorldType) const
+{
+    return WorldType == EWorldType::Editor || (WorldType == EWorldType::PIE && bPIEEjected);
+}
+
+void FEditor::TogglePIEEject()
+{
+    if (!IsPlaying()) return;
+
+    // World와 Pause 상태는 유지하고, 입력·표시 허용 상태만 전환한다.
+    bPIEEjected = !bPIEEjected;
+
+    // 진행 중인 드래그가 다음 조작 상태까지 이어지지 않도록 종료한다.
+    Gizmo.EndInteraction();
+    Gizmo.HoveredHandle = EGizmoHandle::None;
+
+    // Actor와 Component 선택은 유지하며, 표시 데이터만 갱신한다.
+    RefreshSelectedTransform();
+    UpdateSelectionOverlay();
+}
+
+void FEditor::UpdateSelectionOverlay()
+{
+    if (!SelectedActorTextComp) return;
+
+    AActor* Actor = GetSelectedActor();
+    ULevel* Level = Actor ? Actor->GetOwner() : nullptr;
+    UWorld* World = Level ? Level->GetWorld() : nullptr;
+    USceneComponent* RootComponent = Actor ? Actor->GetRootComponent() : nullptr;
+
+    // 일반 PIE로 돌아가면 오버레이 연결만 끊고 선택 자체는 유지한다.
+    if (!World || !RootComponent || !CanUseEditorControls(World->GetWorldType()))
+    {
+        SelectedActorTextComp->SetupDetachment(true);
+        return;
+    }
+
+    // F8 이전에 선택한 PIE 객체도 탈출 직후 올바른 UUID를 표시한다.
+    SelectedActorTextComp->SetupAttachment(RootComponent);
+    SelectedActorTextComp->SetInheritRotation(false);
+
+    FTransform RelativeTransform;
+    RelativeTransform.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
+    SelectedActorTextComp->SetRelativeTransform(RelativeTransform);
+    SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(Actor->GetUUID()));
 }

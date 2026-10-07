@@ -51,7 +51,6 @@ public:
 public:
     void Initialize();
     void Shutdown();
-
     void Process();
     bool StartPIE();
     [[nodiscard]] bool IsPlaying() const
@@ -61,7 +60,9 @@ public:
     // Pause와 Stop은 현재 PIE World를 대상으로 한다.
     void TogglePIEPause();
     void EndPIE();
-
+    void TogglePIEEject();
+    [[nodiscard]] bool CanUseEditorControls(EWorldType WorldType) const;
+    [[nodiscard]] bool IsPIEEjected()const { return bPIEEjected; }
     [[nodiscard]] bool IsPIEPaused() const
     {
         UWorld* World = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
@@ -166,6 +167,8 @@ private:
     bool bFocusSelectedComponent = false;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 
+    bool bPIEEjected = false;
+    void UpdateSelectionOverlay();
     FEditorState StateBeforePIE;
     TArray<FEditorViewportClient> ViewportsBeforePIE;
     int32 ActiveViewportBeforePIE = 0;

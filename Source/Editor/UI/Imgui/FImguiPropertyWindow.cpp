@@ -62,7 +62,7 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ImGui::TextDisabled("No selection");
 	}
 	const FEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
-	ImGui::BeginDisabled(!ActiveViewport || ActiveViewport->GetWorldType() != EWorldType::Editor);
+	ImGui::BeginDisabled(!ActiveViewport || !Editor.CanUseEditorControls(ActiveViewport->GetWorldType()));
 	ShowGizmoSettings(Editor);
 	ImGui::EndDisabled();
 	ImGui::End();

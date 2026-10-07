@@ -155,7 +155,10 @@ void FImguiToolbar::ShowViewBar(FEditor& Editor, FImguiConsoleWindow& ConsoleWin
 
     static const char* GizmoModes[4] = { "None", "Translation", "Rotation", "Scale" };
     const int SelectedItem = static_cast<int>(Editor.GetGizmo().Mode);
-    ImGui::BeginDisabled(Editor.IsPlaying());
+    const FEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
+
+    // PIE 탈출 상태와 다른 Editor 뷰에서도 기즈모 모드를 변경할 수 있다.
+    ImGui::BeginDisabled(!ActiveViewport || !Editor.CanUseEditorControls(ActiveViewport->GetWorldType()));
     if (ImGui::Button(GizmoModes[SelectedItem], { 150.0f, 0.0f }))
     {
         Gizmo.Mode = static_cast<EGizmoMode>((SelectedItem + 1) % 4);
