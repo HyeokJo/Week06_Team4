@@ -872,8 +872,14 @@ void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementCompone
 	ImGui::TextDisabled("Rotation Settings");
 
 	// XYZ 속도는 도/s 단위다. 체크를 끄면 월드축 기준으로 회전한다.
-	ImGui::DragFloat3("Rotation Rate XYZ (deg/s)", &Movement.RotationRate.X, 1.0f);
+	ImGui::DragFloat("Roll Rate (X, deg/s)", &Movement.RotationRate.X, 1.0f);
+	ImGui::DragFloat("Pitch Rate (Y, deg/s)", &Movement.RotationRate.Y, 1.0f);
+	ImGui::DragFloat("Yaw Rate (Z, deg/s)", &Movement.RotationRate.Z, 1.0f);
+
 	ImGui::Checkbox("Rotate In Local Space", &Movement.bRotationInLocalSpace);
+
+	ImGui::DragFloat3("Pivot Offset XYZ", &Movement.PivotTranslation.X, 0.1f);
+
 }
 
 void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& Movement) const

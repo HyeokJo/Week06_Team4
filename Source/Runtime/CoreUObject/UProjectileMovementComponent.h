@@ -17,7 +17,7 @@ public:
     void Update(float DeltaTime) override;
 
     FVector LaunchDirection = FVector::ForwardVector;   //발사 방향
-    float InitialSpeed = 1.0f; // 초기속도
+    float InitialSpeed = 1.0f; // 초기속력
     float MaxSpeed = 0.0f;     // 0 이하이면 속도를 제한하지 않는다.
     bool bInitialVelocityInLocalSpace = true;
     FVector Acceleration = FVector::ZeroVector; //가속도
