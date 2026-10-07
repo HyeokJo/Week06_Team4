@@ -21,6 +21,7 @@
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UFont.h"
 #include "Runtime/CoreUObject/URotationMovementComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 
 namespace
 {
@@ -153,7 +154,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 		ShowMovementSettings(Actor, *Movement);
 		if (URotationMovementComponent* Rotating = Comp.Cast<URotationMovementComponent>())
 			ShowRotationMovementSettings(*Rotating);
+		else if (UProjectileMovementComponent* Projectile = Comp.Cast<UProjectileMovementComponent>())
+			ShowProjectileMovementSettings(*Projectile);
 		return;
+
 	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
@@ -870,4 +874,31 @@ void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementCompone
 	// XYZ 속도는 도/s 단위다. 체크를 끄면 월드축 기준으로 회전한다.
 	ImGui::DragFloat3("Rotation Rate XYZ (deg/s)", &Movement.RotationRate.X, 1.0f);
 	ImGui::Checkbox("Rotate In Local Space", &Movement.bRotationInLocalSpace);
+}
+
+void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Projectile Settings");
+
+	// 방향과 초기 속력은 다음 발사 또는 Apply 버튼을 누를 때 반영한다.
+	ImGui::DragFloat3("Launch Direction XYZ", &Movement.LaunchDirection.X, 0.1f);
+
+	if (ImGui::DragFloat("Initial Speed (units/s)", &Movement.InitialSpeed, 0.1f))
+		Movement.InitialSpeed = std::max(0.0f, Movement.InitialSpeed);
+
+	if (ImGui::DragFloat("Max Speed (0 = unlimited)", &Movement.MaxSpeed, 0.1f))
+		Movement.MaxSpeed = std::max(0.0f, Movement.MaxSpeed);
+
+	ImGui::DragFloat3("Accelaretion", &Movement.Acceleration.X, 0.1f);
+	ImGui::Checkbox("Enable Gravity", &Movement.bEnableGravity);
+	ImGui::DragFloat3("Gravity Acceleration", &Movement.GravityAcceleration.X, 0.1f);
+	ImGui::Checkbox("Initial Velocity In Local Space", &Movement.bInitialVelocityInLocalSpace);
+
+	// 현재 위치를 유지하고 현재 대상의 자세로 발사 설정을 다시 적용한다.
+	if (ImGui::Button("Apply Launch Settings"))
+		Movement.ResetVelocity();
+
+	const FVector& Velocity = Movement.GetVelocity();
+	ImGui::Text("World Velocity: %.3f, %.3f, %.3f", Velocity.X, Velocity.Y, Velocity.Z);
 }
