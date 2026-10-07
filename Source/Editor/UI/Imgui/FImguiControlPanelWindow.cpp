@@ -214,7 +214,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         FScopeCycleCounter Counter;
         if (bUseBVH)
         {
-            World->GetSceneBVH().QueryRay(Ray, HitComponent, ImpactPoint);
+            World->GetSceneBVH().QueryRay(Ray, Viewport->ViewportCamera, HitComponent, ImpactPoint);
         }
         else
         {

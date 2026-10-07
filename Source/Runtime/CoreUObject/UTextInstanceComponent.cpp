@@ -271,3 +271,28 @@ void UTextInstanceComponent::Deserialize(const FJsonArchive &Archive) {
 
   RebuildTextMesh();
 }
+
+FAxisAlignedBoundingBox UTextInstanceComponent::GetLocalBounds() const
+{
+    const float Radius = std::sqrtf(Width * Width) / 2.0f;
+    FAxisAlignedBoundingBox Box;
+    Box.Center = { 0.0f, 0.0f, 0.0f };
+    Box.Extent = { Radius, Radius, Radius };
+    Box.Min = Box.Center - Box.Extent;
+    Box.Max = Box.Center + Box.Extent;
+    return Box;
+}
+
+void UTextInstanceComponent::UpdateWorldBounds()
+{
+    const FTransform GlobalTransform = GetGlobalTransform();
+    const FVector Scale3D = GlobalTransform.GetScale3D();
+    const float ScaleFactor = std::max(std::abs(Scale3D.Y), std::abs(Scale3D.Z));
+    const float BaseRadius = std::sqrtf(Width * Width) / 2.0f;
+    const float WorldRadius = BaseRadius * ScaleFactor;
+
+    WorldBounds.Center = GlobalTransform.GetLocation();
+    WorldBounds.Extent = { WorldRadius, WorldRadius, WorldRadius };
+    WorldBounds.Max = WorldBounds.Center + WorldBounds.Extent;
+    WorldBounds.Min = WorldBounds.Center - WorldBounds.Extent;
+}
