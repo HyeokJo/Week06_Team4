@@ -37,5 +37,6 @@ public:
   FVector2 GetUVOffset() const;
 
   virtual bool IsOcclusionTarget() const override { return false; }
+  virtual FAxisAlignedBoundingBox GetLocalBounds() const override;
 };
 
