@@ -320,6 +320,10 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     Renderer.ClearLastRenderState();
 
     // 후처리 패스
+    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_FXAA)) != 0)
+    {
+        Renderer.RenderFXAA(View.TopLeftUV, View.LengthUV);
+    }
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
 
     Renderer.ClearLastRenderState();

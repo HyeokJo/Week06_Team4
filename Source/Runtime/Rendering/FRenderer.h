@@ -143,6 +143,7 @@ public:
   void RenderNDCtoWorldView();
   //Fog Rendering
   void RenderPostProcessFog();
+  void RenderFXAA(FVector2 TopLeftUV, FVector2 LengthUV);
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);
@@ -198,6 +199,9 @@ private:
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> EditorRenderTarget;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> FXAARenderTarget;
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> FXAARTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FXAASRV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
 

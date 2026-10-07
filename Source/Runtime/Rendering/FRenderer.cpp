@@ -70,6 +70,9 @@ void FRenderer::Shutdown()
 		FrameResources[i].ViewConstantBuffer.Reset();
 	}
 	LightConstantBuffer.Reset();
+	FXAASRV.Reset();
+	FXAARTV.Reset();
+	FXAARenderTarget.Reset();
 
 	BackBufferRTV.Reset();
 	DepthStencilView.Reset();
@@ -160,6 +163,9 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height)
 	EditorViewPortRTV.Reset();
 	EditorViewPortSRV.Reset();
 	EditorRenderTarget.Reset();
+	FXAASRV.Reset();
+	FXAARTV.Reset();
+	FXAARenderTarget.Reset();
 	DepthSRV.Reset();
 
 	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
@@ -1017,6 +1023,12 @@ bool FRenderer::InitializeEditorViewportRenderTarget()
 	{
 		return false;
 	}
+	if (FAILED(Device->CreateTexture2D(&ColorTexDesc, nullptr, &FXAARenderTarget)) ||
+		FAILED(Device->CreateRenderTargetView(FXAARenderTarget.Get(), nullptr, &FXAARTV)) ||
+		FAILED(Device->CreateShaderResourceView(FXAARenderTarget.Get(), nullptr, &FXAASRV)))
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -1780,6 +1792,40 @@ void FRenderer::ClearTextInstances()
 	}
 
 	FRenderResourceLibrary::Get().DestroyAllInstancingArray();
+}
+
+void FRenderer::RenderFXAA(FVector2 TopLeftUV, FVector2 LengthUV)
+{
+	if (!FXAARTV || !FXAASRV || Viewport.Width <= 0 || Viewport.Height <= 0) return;
+	const FVector2 InvSize{1.0f / Viewport.Width, 1.0f / Viewport.Height};
+	const FVector2 MinUV{(std::ceil(TopLeftUV.X * Viewport.Width - 0.5f) + 0.5f) * InvSize.X,
+		(std::ceil(TopLeftUV.Y * Viewport.Height - 0.5f) + 0.5f) * InvSize.Y};
+	const FVector2 MaxUV{(std::ceil((TopLeftUV.X + LengthUV.X) * Viewport.Width - 0.5f) - 0.5f) * InvSize.X,
+		(std::ceil((TopLeftUV.Y + LengthUV.Y) * Viewport.Height - 0.5f) - 0.5f) * InvSize.Y};
+	if (MaxUV.X < MinUV.X || MaxUV.Y < MinUV.Y) return;
+	UpdateBuffer(FFXAAConstants{InvSize, MinUV, MaxUV}, 2);
+	SetViewportUV(TopLeftUV, LengthUV);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	ID3D11Buffer* NullVB = nullptr;
+	UINT Zero = 0;
+	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+	Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &NullSRV);
+	Context->OMSetRenderTargets(1, FXAARTV.GetAddressOf(), nullptr);
+	GetPipeline(FName("#FXAAInput"))->Bind(*Context.Get());
+	Context->PSSetShaderResources(0, 1, EditorViewPortSRV.GetAddressOf());
+	Context->Draw(3, 0);
+	Context->PSSetShaderResources(0, 1, &NullSRV);
+	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
+	GetPipeline(FName("#FXAA"))->Bind(*Context.Get());
+	Context->PSSetShaderResources(0, 1, FXAASRV.GetAddressOf());
+	Context->Draw(3, 0);
+	Context->PSSetShaderResources(0, 1, &NullSRV);
+	BindEditorViewportRenderTargets();
+	PendingDrawCount += 2;
+	PendingPrimCount += 2;
+	ClearLastRenderState();
 }
 
 void FRenderer::RenderOutline()

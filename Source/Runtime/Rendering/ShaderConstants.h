@@ -155,3 +155,11 @@ struct FFogConstants
 };
 
 static_assert(sizeof(FFogConstants) % 16 == 0);
+
+struct FFXAAConstants {
+	FVector2 InvTextureSize;
+	FVector2 ViewMinUV;
+	FVector2 ViewMaxUV;
+	FVector2 Padding{};
+};
+static_assert(sizeof(FFXAAConstants) == 32);

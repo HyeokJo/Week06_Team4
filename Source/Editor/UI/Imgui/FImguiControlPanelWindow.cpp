@@ -445,6 +445,11 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
             {
                 ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Fog);
             }
+            bool bFXAA = ActiveViewport->HasShowFlag(EEngineShowFlags::SF_FXAA);
+            if (ImGui::Checkbox("FXAA", &bFXAA))
+            {
+                ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_FXAA);
+            }
             ImGui::EndCombo();
         }
         ImGui::SameLine();
