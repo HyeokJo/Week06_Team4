@@ -8,7 +8,7 @@
 #include "Runtime/CoreUObject/FUObjectArray.h"
 #include "Runtime/Core/Log.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
-// 임시코드
+// TODO: 대회 씬 로딩 지원 제거 시 Converter.h 의존성도 제거한다.
 #include "Converter.h"
 
 void FWorldSerializer::SaveWorld(const FString& InPath, UWorld* InWorld)
@@ -82,7 +82,7 @@ UWorld* FWorldSerializer::LoadWorld(const FString& InPath, FCamera* OutCamera)
 	nlohmann::json JSON = nlohmann::json::parse(buffer.str());
 	FJsonArchive Archive{ JSON };
 
-	// TODO: TEMP: 경연 대회용 임시 컨버터 로직
+	// TODO: 대회 씬 바로 불러오기 UI 제거에 맞춰 아래 Version 1 변환/로딩 경로도 제거한다.
 	if (Archive.IsNull("Version") || Archive.GetInt32("Version") == 1)
 	{
 		Archive = Converter::GetStandardArchive(Archive, std::filesystem::path(InPath), OutCamera);

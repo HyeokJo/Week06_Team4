@@ -23,6 +23,11 @@ public:
     [[nodiscard]] const TArray<UFogComponent*>& GetFogComponents() const { return FogComponents; }
 
     void SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary);
+    void SetAmbientLight(const FVector& Color, float Intensity)
+    {
+        WorldLightConstants.AmbientColor = Color;
+        WorldLightConstants.AmbientIntensity = Intensity;
+    }
     void AddRenderComponent(UPrimitiveComponent* Prim);
     void RemoveRenderComponent(UPrimitiveComponent* Prim);
 

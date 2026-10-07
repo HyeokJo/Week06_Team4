@@ -4,13 +4,7 @@
 #include "Runtime/Core/TMap.h"
 #include "Runtime/Core/TSet.h"
 #include "Runtime/Core/PointerTypes.h"
-#include "Runtime/Rendering/FRenderPipeline.h"
 #include "Runtime/Asset/UAsset.h"
-
-#include "Runtime/Asset/UStaticMesh.h"
-#include "Runtime/Asset/UMaterial.h"
-#include "Runtime/Asset/UPipeline.h"
-#include "Runtime/Asset/UFont.h"
 
 #include <filesystem>
 

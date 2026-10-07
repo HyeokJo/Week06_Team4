@@ -3,7 +3,9 @@
 #include "Runtime/Core/TArray.h"
 #include "Runtime/Core/TMap.h"
 #include "Runtime/Core/TDeque.h"
+#include <d3d11.h>
 #include <dxgi1_4.h>
+#include <wrl/client.h>
 #include <Runtime/Core/FName.h>
 
 #define PP_CAT_INNER(A, B) A##B

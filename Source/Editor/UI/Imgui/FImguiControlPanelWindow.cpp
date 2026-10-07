@@ -35,11 +35,6 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::BeginDisabled(!Editor.CanEditSceneStructure());
 
-    if (ImGui::Button("대회 씬 바로 불러오기"))
-    {
-        Editor.LoadWorld("DefaultScene/Default.scene");
-    }
-
     //액터 스폰
     ActorSpawnSetting(Editor);
 
@@ -53,8 +48,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     //카메라 
     CameraSetting(Editor);
     ImGui::Separator();
-    // 전역조명(DEPRECATED)
-    //DirectionLightSetting(Editor);
+    AmbientLightSetting(Editor);
 
     ImGui::Separator();
     BVHDebugSetting(Editor);
@@ -72,6 +66,25 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     CullingSetting(Editor);
 
     ImGui::End();
+}
+
+void FImguiControlPanelWindow::AmbientLightSetting(FEditor& Editor)
+{
+    UWorld* World = Editor.GetCurrentWorld();
+    if (!World || !World->GetScene()) return;
+
+    FScene& Scene = *World->GetScene();
+    FLightConstants Light = Scene.GetWorldLightConstants();
+
+    ImGui::SeparatorText("Ambient Light");
+    ImGui::SetNextItemWidth(180.0f);
+    bool bChanged = ImGui::ColorEdit3("Ambient Color", &Light.AmbientColor.X);
+    ImGui::SetNextItemWidth(180.0f);
+    bChanged |= ImGui::SliderFloat("Ambient Intensity", &Light.AmbientIntensity,
+        0.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+
+    if (bChanged)
+        Scene.SetAmbientLight(Light.AmbientColor, Light.AmbientIntensity);
 }
 
 void FImguiControlPanelWindow::BVHDebugSetting(FEditor& Editor)

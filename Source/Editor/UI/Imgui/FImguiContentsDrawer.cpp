@@ -3,6 +3,7 @@
 #include "ThirdParty/Imgui/imgui_internal.h"
 #include "Runtime/Core/FString.h"
 #include "Runtime/Asset/FAssetRegistry.h"
+#include "Runtime/Asset/UFont.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/FTexture.h"

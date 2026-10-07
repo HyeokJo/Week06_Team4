@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <numbers>
 
-// 임시 코드 - 대회 끝나고 지울 것
+// TODO: 대회 씬 로딩 경로 정리 시 이 임시 컨버터와 FWorldSerializer의 호출 코드를 제거한다.
 namespace Converter
 {
 	inline TMap<FString, FString> LoadedObjs;

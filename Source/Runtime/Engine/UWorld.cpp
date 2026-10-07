@@ -219,7 +219,14 @@ void UWorld::Serialize(FArchive& Archive)
     if (Archive.IsLoading() && StoredLevel != Level)
         throw std::runtime_error("World level reference mismatch.");
 
-    // WorldType, FScene, 활성화·BeginPlay 상태는 실행 환경에서 다시 구성한다.
+    // 앰비언트 설정은 씬 저장·로드와 PIE 복제에서 공통으로 보존한다.
+    FLightConstants Light = Scene->GetWorldLightConstants();
+    Archive.OptionalField("AmbientColor", Light.AmbientColor);
+    Archive.OptionalField("AmbientIntensity", Light.AmbientIntensity);
+    if (Archive.IsLoading())
+        Scene->SetAmbientLight(Light.AmbientColor, Light.AmbientIntensity);
+
+    // WorldType, FScene의 등록 목록, 활성화·BeginPlay 상태는 실행 환경에서 다시 구성한다.
 }
 
 void UWorld::RemoveActor(AActor* Actor) { std::erase(Level->Actors, Actor); }
