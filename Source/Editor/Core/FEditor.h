@@ -78,6 +78,8 @@ public:
 
     // 아웃라이너 버튼과 Delete 키가 같은 삭제 경로를 사용한다.
     bool DeleteSelectedActor();
+    // UI 목록 순회 중에는 객체를 폐기하지 않고 요청만 보관한다.
+    void RequestComponentDeletion(UActorComponent* Component){ PendingComponentDeletion = Component; }
     void NewScene();
     void SaveWorld(const FString &Path);
     void LoadWorld(const FString &Path);
@@ -159,6 +161,8 @@ private:
     TWeakObjectPtr<AActor> SelectedActor;
     TWeakObjectPtr<UActorComponent> SelectedComponent;
     bool bComponentSelection = false;
+    TWeakObjectPtr<UActorComponent> PendingComponentDeletion;
+    void ProcessComponentDeletion();
     bool bFocusSelectedComponent = false;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 

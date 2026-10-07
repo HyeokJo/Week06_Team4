@@ -309,7 +309,7 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
 
 
     // 기즈모를 드래그하는 중에는 모드가 바뀌면 안 된다.
-    if (!Editor.IsPlaying() && !Editor.GetGizmo().IsInteracting())
+    if (Viewport.GetWorldType() == EWorldType::Editor && !Editor.GetGizmo().IsInteracting())
     {
         UpdateShortcuts(Editor);
     }

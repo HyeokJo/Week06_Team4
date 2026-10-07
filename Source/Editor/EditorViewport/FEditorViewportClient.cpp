@@ -126,8 +126,8 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 		ViewportCamera, SceneView, Editor.SelectedTransform,
 		Editor.GetGizmo(), Editor.GetTextcomp());
 
-	// 기즈모 표시와 입력에 같은 허용 조건을 사용한다.
-	if (!Editor.CanManipulateSelection()) return;
+	// 활성 뷰의 입력 허용 여부와 관계없이 선택 대상은 표시한다.
+	if (!Editor.GetTransformTarget()) return;
 
 	RenderView.SetRenderMode(ViewMode);
 	RenderView.RenderGizmo(
