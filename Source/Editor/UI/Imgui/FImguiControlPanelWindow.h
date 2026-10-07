@@ -30,4 +30,5 @@ private:
 	void SIMDCullingDebugSetting(FEditor& Editor);
 	void LODSetting(FEditor& Editor);
 	void CullingSetting(FEditor& Editor);
+	void FogSetting(FEditor& Editor);
 };

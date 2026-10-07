@@ -6,6 +6,7 @@
 #include "Runtime/Core/TArray.h"
 
 class UPointLightComponent;
+class UFogComponent;
 
 class FScene final
 {
@@ -19,6 +20,7 @@ public:
     [[nodiscard]] const TArray<uint8>& GetOcclusionTargetFlags() const { return OcclusionTargetFlags; }
     [[nodiscard]] const FLightConstants GetWorldLightConstants() const { return WorldLightConstants; }
     [[nodiscard]] const TArray<UPointLightComponent*> GetPointLights() const { return PointLights; }
+    [[nodiscard]] const TArray<UFogComponent*>& GetFogComponents() const { return FogComponents; }
 
     void SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary);
     void AddRenderComponent(UPrimitiveComponent* Prim);
@@ -26,6 +28,9 @@ public:
 
     bool AddPointLight(UPointLightComponent* PointLight);
     bool RemovePointLight(UPointLightComponent* PointLight);
+
+    void AddFogComponent(UFogComponent* FogComp);
+    void RemoveFogComponent(UFogComponent* FogComp);
 
     // dirty 컴포넌트만 월드 AABB 재계산. 렌더 전에 프레임당 1회
     void UpdateDirtyBounds();
@@ -54,4 +59,7 @@ private:
     TArray<UPointLightComponent*> PointLights;
 
     FLightConstants WorldLightConstants;
+
+    //Fog Components
+    TArray<UFogComponent*> FogComponents;
 };

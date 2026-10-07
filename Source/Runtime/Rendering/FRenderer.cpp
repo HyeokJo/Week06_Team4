@@ -16,6 +16,7 @@
 #include "ThirdParty/DirectXTK/Inc/DDSTextureLoader.h"
 #include "ThirdParty/DirectXTK/Inc/WICTextureLoader.h"
 #include "Vertices.h"
+#include "Runtime/CoreUObject/UFogComponent.h"
 #include <Windows.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -728,7 +729,7 @@ void FRenderer::ClearLastRenderState()
 	LastRenderPipeline = nullptr;
 }
 
-void FRenderer::RenderSceneDepthView(const FMatrix& ViewProjection)
+void FRenderer::RenderSceneDepthView()
 {
 	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#SceneDepthView"));
 	pipeline->Bind(*GetContext());
@@ -762,7 +763,7 @@ void FRenderer::RenderSceneDepthView(const FMatrix& ViewProjection)
 	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
 }
 
-void FRenderer::RenderNDCtoWorldView(const FMatrix& ViewProjection)
+void FRenderer::RenderNDCtoWorldView()
 {
 	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#NDCtoWorldView"));
 	pipeline->Bind(*GetContext());
@@ -794,6 +795,42 @@ void FRenderer::RenderNDCtoWorldView(const FMatrix& ViewProjection)
 	Context->PSSetShaderResources(0, 1, NullSRVs);
 	//뎁스 DSV 원복
 	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
+}
+
+void FRenderer::RenderPostProcessFog()
+{
+	TSharedPtr<FRenderPipeline> pipeline = FRenderResourceLibrary::Get().GetPipeline(FName("#PostProcessFog"));
+	pipeline->Bind(*GetContext());
+
+	//OM Render Target에 DSV 바인딩 제거
+	//이걸 안해주면 출력의 DSV와 SRV로 넣어줄 DepthSRV가 같은 텍스처여서 SRV쪽이 null이 된다.
+	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
+
+	//Depth Buffer SRV 넣어주기
+	Context->PSSetShaderResources(0u, 1u, DepthSRV.GetAddressOf());
+
+	//메시 관련
+	// 토폴로지
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//버텍스 버퍼
+	ID3D11Buffer* NullVB = nullptr;
+	UINT Zero = 0;
+	Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+	//인덱스 버퍼 필요??
+	Context->IASetIndexBuffer(NullVB, DXGI_FORMAT_R32_UINT, 0);
+
+	Context->Draw(3, 0);
+	//Context->DrawIndexed(0, 0, 0);
+
+	// 슬롯 해제
+	ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
+	Context->PSSetShaderResources(0, 1, NullSRVs);
+	//뎁스 DSV 원복
+	Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), DepthStencilView.Get());
+	//Blend State 끄기로 전환
+	Context->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 }
 
 bool FRenderer::InitializeDeviceAndSwapChain(HWND Window)
@@ -1210,6 +1247,18 @@ bool FRenderer::InitializeConstantBuffers()
 		{
 			return false;
 		}
+
+		D3D11_BUFFER_DESC FogConstantBufferDesc = {
+			.ByteWidth = sizeof(FFogConstants),
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		};
+		Result = Device->CreateBuffer(&FogConstantBufferDesc, nullptr, &FogConstantBuffer);
+		if (FAILED(Result))
+		{
+			return false;
+		}
 	}
 
 	return true;
@@ -1257,6 +1306,19 @@ void FRenderer::UpdateSceneDepthConstants(const FSceneDepthConstants& Constants)
 {
 	Context->UpdateSubresource(SceneDepthConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
 	Context->PSSetConstantBuffers(5, 1, SceneDepthConstantBuffer.GetAddressOf());
+}
+
+void FRenderer::UpdateFogConstants(const FFogConstants& Constants)
+{
+	D3D11_MAPPED_SUBRESOURCE MappedResource{};
+	if (FAILED(Context->Map(FogConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0,	&MappedResource)))
+	{
+		return;
+	}
+	std::memcpy(MappedResource.pData, &Constants, sizeof(Constants));
+	Context->Unmap(FogConstantBuffer.Get(), 0);
+
+	Context->PSSetConstantBuffers(6, 1u, FogConstantBuffer.GetAddressOf());
 }
 
 void FRenderer::Draw(const FDrawCommand& Command, uint32 Slot,

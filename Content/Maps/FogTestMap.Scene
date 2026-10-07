@@ -1,0 +1,1670 @@
+{
+    "Objects": [
+        {
+            "Class": "UWorld",
+            "Data": {
+                "Level": 2
+            },
+            "Outer": 0
+        },
+        {
+            "Class": "ULevel",
+            "Data": {
+                "Actors": [
+                    3,
+                    5,
+                    7,
+                    9,
+                    11,
+                    13,
+                    15,
+                    17,
+                    19,
+                    21,
+                    23,
+                    25,
+                    27,
+                    29,
+                    31,
+                    33,
+                    35,
+                    37,
+                    39,
+                    41,
+                    43,
+                    45,
+                    47
+                ]
+            },
+            "Outer": 1
+        },
+        {
+            "Class": "AExponentialHeightFogActor",
+            "Data": {
+                "CanEverTick": true,
+                "FogComponent": 4,
+                "OwnedComponents": [
+                    4
+                ],
+                "RootComponent": 4,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UFogComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "FogColor": [
+                    0.27300000190734863,
+                    0.4039652645587921,
+                    0.5929999947547913,
+                    1.0
+                ],
+                "FogDensity": 0.05000000074505806,
+                "FogHeightFalloff": 0.15000000596046448,
+                "FogMaxOpacity": 0.36000001430511475,
+                "InheritRotation": true,
+                "Location": [
+                    -2.630000114440918,
+                    -1.9800000190734863,
+                    -2.5299999713897705
+                ],
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "StartDistance": 7.829999923706055,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 3
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 6,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    6
+                ],
+                "RootComponent": 6,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    0.9900000095367432,
+                    0.4399999976158142,
+                    -1.7400000095367432
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 5
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 8,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    8
+                ],
+                "RootComponent": 8,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -0.47999998927116394,
+                    1.6399999856948853,
+                    0.4099999964237213
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 7
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 10,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    10
+                ],
+                "RootComponent": 10,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    2.5,
+                    0.36000001430511475,
+                    1.850000023841858
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 9
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 12,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    12
+                ],
+                "RootComponent": 12,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -2.059999942779541,
+                    0.9399999976158142,
+                    1.0499999523162842
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 11
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 14,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    14
+                ],
+                "RootComponent": 14,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    0.7599999904632568,
+                    1.0399999618530273,
+                    1.2400000095367432
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 13
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 16,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    16
+                ],
+                "RootComponent": 16,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -0.4099999964237213,
+                    -1.2400000095367432,
+                    1.9299999475479126
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 15
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 18,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    18
+                ],
+                "RootComponent": 18,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -0.9700000286102295,
+                    2.690000057220459,
+                    -0.9100000262260437
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 17
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 20,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    20
+                ],
+                "RootComponent": 20,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -0.8700000047683716,
+                    -1.9900000095367432,
+                    1.4299999475479126
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 19
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 22,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    22
+                ],
+                "RootComponent": 22,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    2.569999933242798,
+                    2.819999933242798,
+                    1.9600000381469727
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 21
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 24,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    24
+                ],
+                "RootComponent": 24,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    1.5499999523162842,
+                    2.359999895095825,
+                    1.2100000381469727
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 23
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 26,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    26
+                ],
+                "RootComponent": 26,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    0.41999998688697815,
+                    -2.9700000286102295,
+                    -2.4200000762939453
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 25
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 28,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    28
+                ],
+                "RootComponent": 28,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -0.1599999964237213,
+                    -0.05999999865889549,
+                    0.9900000095367432
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 27
+        },
+        {
+            "Class": "AAppleNormalActor",
+            "Data": {
+                "AppleComponent": 30,
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    30
+                ],
+                "RootComponent": 30,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    1.850000023841858,
+                    -1.0299999713897705,
+                    0.6100000143051147
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "StaticMesh/JungleApple/MatID_1",
+                        "Pipeline": "Pipeline/Optimize.json",
+                        "Specular": 1.0,
+                        "Texture": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "StaticMesh/JungleApple/Apple_Normal.json",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 29
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    32
+                ],
+                "RootComponent": 32,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -6.237542152404785,
+                    -9.486483573913574,
+                    0.7099999785423279
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    11.566398620605469,
+                    9.844313621520996
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 31
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    34
+                ],
+                "RootComponent": 34,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -1.9700000286102295,
+                    -2.0799999237060547,
+                    -0.8799999952316284
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 33
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    36
+                ],
+                "RootComponent": 36,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -57.28000259399414,
+                    -49.400970458984375,
+                    -2.1600000858306885
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    13.164665222167969,
+                    13.013358116149902
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 35
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    38
+                ],
+                "RootComponent": 38,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    2.7899999618530273,
+                    -4.847104072570801,
+                    -1.2100000381469727
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    10.375358581542969,
+                    10.534341812133789
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 37
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    40
+                ],
+                "RootComponent": 40,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -2.049999952316284,
+                    -1.7799999713897705,
+                    0.07999999821186066
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 39
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    42
+                ],
+                "RootComponent": 42,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -19.608980178833008,
+                    -16.264972686767578,
+                    1.940000057220459
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    12.897503852844238,
+                    9.59842586517334
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 41
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    44
+                ],
+                "RootComponent": 44,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -1.909999966621399,
+                    2.7799999713897705,
+                    13.385147094726563
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    15.551288604736328,
+                    13.841180801391602
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 43
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    46
+                ],
+                "RootComponent": 46,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -19.608999252319336,
+                    -16.264999389648438,
+                    21.443424224853516
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    27.2269287109375,
+                    18.203125
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 45
+        },
+        {
+            "Class": "ACubeActor",
+            "Data": {
+                "CanEverTick": false,
+                "OwnedComponents": [
+                    48
+                ],
+                "RootComponent": 48,
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 2
+        },
+        {
+            "Class": "UStaticMeshComponent",
+            "Data": {
+                "AttachParent": null,
+                "CanEverTick": false,
+                "HiddenInGame": false,
+                "InheritRotation": true,
+                "Location": [
+                    -57.279998779296875,
+                    -49.81446838378906,
+                    32.951416015625
+                ],
+                "Materials": [
+                    {
+                        "Albedo": 1.0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ],
+                        "Diffuse": 1.0,
+                        "DisableShading": false,
+                        "FilterMode": 1,
+                        "Material": "Material/Textured.json",
+                        "Pipeline": "Pipeline/UVScroll.json",
+                        "Specular": 1.0,
+                        "Texture": "Texture/oiiaii.json",
+                        "UVOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "UVScale": [
+                            1.0,
+                            1.0
+                        ],
+                        "WrapMode": 0
+                    }
+                ],
+                "Mesh": "#Cube",
+                "RenderType": 0,
+                "Rotation": [
+                    -0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    0.5,
+                    16.514087677001953,
+                    16.699369430541992
+                ],
+                "TickEnabled": false,
+                "TickGroup": 0,
+                "TickInEditor": false
+            },
+            "Outer": 47
+        }
+    ],
+    "Version": 3
+}
