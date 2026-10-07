@@ -37,6 +37,7 @@ public:
   FVector2 GetUVOffset() const;
 
   virtual bool IsOcclusionTarget() const override { return false; }
+  virtual void UpdateWorldBounds() override;
   virtual FAxisAlignedBoundingBox GetLocalBounds() const override;
 };
 
