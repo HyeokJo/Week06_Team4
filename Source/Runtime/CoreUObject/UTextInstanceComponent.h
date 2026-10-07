@@ -43,6 +43,9 @@ public:
     float GetWidth() const { return Width; }
     float GetHeight() const { return Height; }
 
+    virtual void UpdateWorldBounds() override;
+    virtual FAxisAlignedBoundingBox GetLocalBounds() const override;
+
 private:
     TSharedPtr<FFont> Font;
     UFont* FontAsset = nullptr;
