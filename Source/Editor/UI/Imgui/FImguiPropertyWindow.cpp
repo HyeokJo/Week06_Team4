@@ -150,6 +150,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowTransform(Editor, *SceneComp);
 	}
+	if (UPrimitiveComponent* PrimitiveComp = Comp.Cast<UPrimitiveComponent>())
+	{
+		ShowPrimitiveSettings(*PrimitiveComp);
+	}
 	if (UMovementComponent* Movement = Comp.Cast<UMovementComponent>())
 	{
 		ShowMovementSettings(Actor, *Movement);
@@ -850,6 +854,18 @@ void FImguiPropertyWindow::ShowAddComponentMenu(FEditor& Editor, AActor& Actor)
 	}
 
 	ImGui::EndDisabled();
+}
+
+void FImguiPropertyWindow::ShowPrimitiveSettings(UPrimitiveComponent& Primitive) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Primitive Settings");
+
+	bool bHiddenInGame = Primitive.IsHiddenInGame();
+	if (ImGui::Checkbox("Hide in Game", &bHiddenInGame))
+	{
+		Primitive.ToggleHiddenInGame();
+	}
 }
 
 void FImguiPropertyWindow::ShowMovementSettings(AActor& Actor, UMovementComponent& Movement) const

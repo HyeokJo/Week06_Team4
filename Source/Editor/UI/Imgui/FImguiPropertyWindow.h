@@ -46,6 +46,8 @@ private:
 	// Root와 자식 모두 자신의 상대 Transform을 편집한다.
 	void ShowTransform(FEditor& Editor, USceneComponent& Comp) const;
 
+	void ShowPrimitiveSettings(UPrimitiveComponent& Primitive) const;
+
 	// 이동 관련 컴포넌트 타입별 속성
 	void ShowMovementSettings(AActor& Actor, UMovementComponent& Movement) const;
 	void ShowRotationMovementSettings(URotationMovementComponent& Movement) const;
