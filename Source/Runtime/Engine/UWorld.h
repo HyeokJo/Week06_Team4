@@ -7,7 +7,7 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "FScene.h"
 #include "ULevel.h"
-
+#include "FTick.h"
 #include <concepts>
 #include <type_traits>
 
@@ -46,6 +46,8 @@ public:
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
     void SetPaused(bool bInPaused) { bPaused = bInPaused; }
     [[nodiscard]] bool IsPaused() const { return bPaused; }
+    void RefreshActorTick(AActor* Actor, bool bRegistered);
+    void RefreshComponentTick(UActorComponent* Component, bool bRegistered);
 
     // 액터 목록 반환
     [[nodiscard]] const TArray<AActor*>& GetActors() const { return Level->Actors; }
@@ -131,7 +133,10 @@ public:
 
     const EWorldType GetWorldType() const { return WorldType; }
 
+    FScene* GetScene() const { return Scene; }
 private:
+    TTickRegistry<AActor> ActorTickRegistry;
+    TTickRegistry<UActorComponent> ComponentTickRegistry;
     FScene* Scene = nullptr;
     ULevel* Level = nullptr;// persistent level
 	// TODO: SubLevel 지원 필요

@@ -45,7 +45,7 @@ public:
 	// 뷰포트 패스 파이프라인
 	void BeginView(const FSceneView& View);
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
-	void FlushBasePass(const FCamera& Camera);
+	void FlushBasePass(const FCamera& Camera, TArray<FPointLightConstants>& PointLightConstants);
 	void FlushLinePass(const FCamera& Camera);
 	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
@@ -72,7 +72,7 @@ public:
 	void DrawInstances(const FCamera& Camera);
 	void ClearTextInstances();
 	void FlushLineBatch(const FMatrix& ViewProjection, const FName& PipelineId = FName("Simple_Line"));
-	void FlushQueue(const FCamera& Camera);
+	void FlushQueue(const FCamera& Camera, TArray<FPointLightConstants>& PointLightConstants);
 
 	FRenderQueue& GetRenderQueue() { return RenderQueue; }
 	const FRenderQueue& GetRenderQueue() const { return RenderQueue; }
@@ -135,4 +135,6 @@ private:
 	//나중에 멀티 뷰포트 고쳐지고, 카메라의 Far 값 개별 수정이 가능해진다면
 	//카메라의 값으로 넘기고 뷰포트마다 개별 적용해야 할 것이다.
 	FSceneDepthConstants SceneDepthConstants;
+	TArray<FPointLightConstants> PointLightConstants;
+	void GatherPointLightConstants(FScene& Scene);
 };

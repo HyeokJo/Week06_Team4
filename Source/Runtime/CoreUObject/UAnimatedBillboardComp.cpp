@@ -8,6 +8,8 @@
 IMPLEMENT_UCLASS(UAnimatedBillboardComp, UBillBoardComp)
 UCLASS_META(UAnimatedBillboardComp, DisplayName, "AnimatedBillboard")
 
+// 같은 Actor에 여러 개 생성할 수 있는 컴포넌트다.
+UCLASS_META(UAnimatedBillboardComp, SpawnableComponent, "true")
 
 void UAnimatedBillboardComp::PostInitProperties()
 {

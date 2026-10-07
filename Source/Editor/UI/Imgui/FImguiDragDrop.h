@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Runtime/Asset/UAsset.h";
+#include "Runtime/Asset/UAsset.h"
 
 struct FContentDragPayload
 {
@@ -8,3 +8,5 @@ struct FContentDragPayload
 };
 
 inline constexpr const char* ContentDragPayloadType = "ENGINE_CONTENT";
+
+inline constexpr const char* ComponentClassDragPayloadType = "ENGINE_COMPONENT_CLASS";

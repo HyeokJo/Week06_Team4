@@ -254,7 +254,7 @@ inline float FVector::SizeSquared() const
 
 inline void FVector::Normalize() 
 {
-	float Length = this->SizeSquared();
+	float Length = this->Size();
 	X /= Length;
 	Y /= Length;
 	Z /= Length;

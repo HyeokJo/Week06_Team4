@@ -15,6 +15,9 @@ IMPLEMENT_UCLASS(UBillBoardComp, UPrimitiveComponent)
 UCLASS_META(UBillBoardComp, DisplayName, "BillBoard")
 UCLASS_META(UBillBoardComp, MeshName, "BillBoard")
 
+// 기존 DisplayName과 기본 에셋 설정은 유지한다.
+UCLASS_META(UBillBoardComp, SpawnableComponent, "true")
+
 void UBillBoardComp::PostInitProperties()
 {
     Super::PostInitProperties();

@@ -53,11 +53,8 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     //카메라 
     CameraSetting(Editor);
     ImGui::Separator();
-    //전역조명, 현재는 복제 및 복원되지않음.
-    //TODO: 전역 조명을 Component로 만들면, 해당 조건을 삭제해줘야함.
-    ImGui::BeginDisabled(Editor.IsPlaying());
-    DirectionLightSetting(Editor);
-    ImGui::EndDisabled();
+    // 전역조명(DEPRECATED)
+    //DirectionLightSetting(Editor);
 
     ImGui::Separator();
     BVHDebugSetting(Editor);
@@ -552,67 +549,68 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
     }
 }
 
-void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
-{
-    ImGui::SeparatorText("Sun Light Control");
-    // 엑스축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.32f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.15f, 1.0f));
-    ImGui::Button("X", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.LightDirection.X, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir X (Forward/Back)");
-
-    // 와이축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.85f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.65f, 0.15f, 1.0f));
-    ImGui::Button("Y", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.35f, 0.95f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.LightDirection.Y, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Y (Right/Left)");
-
-    // 제트축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.55f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.35f, 0.85f, 1.0f));
-    ImGui::Button("Z", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.LightDirection.Z, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Z (Up/Down)");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.LightColor.X);
-    ImGui::SameLine();
-    ImGui::Text("Color");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.Intensity, 0.0f, 5.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Intensity");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.AmbientIntensity, 0.0f, 1.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Ambient");
-}
-
+//DEPRECATED
+//void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
+//{
+//    ImGui::SeparatorText("Sun Light Control");
+//    // 엑스축 조명 방향 설정
+//    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.32f, 0.32f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.15f, 1.0f));
+//    ImGui::Button("X", ImVec2(22.0f, 0.0f));
+//    ImGui::PopStyleColor(3);
+//    ImGui::SameLine();
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.LightDirection.X, -1.0f, 1.0f, "%.2f");
+//    ImGui::PopStyleColor(2);
+//    ImGui::SameLine();
+//    ImGui::Text("Light Dir X (Forward/Back)");
+//
+//    // 와이축 조명 방향 설정
+//    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.85f, 0.32f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.65f, 0.15f, 1.0f));
+//    ImGui::Button("Y", ImVec2(22.0f, 0.0f));
+//    ImGui::PopStyleColor(3);
+//    ImGui::SameLine();
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.35f, 0.95f, 0.35f, 1.0f));
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.LightDirection.Y, -1.0f, 1.0f, "%.2f");
+//    ImGui::PopStyleColor(2);
+//    ImGui::SameLine();
+//    ImGui::Text("Light Dir Y (Right/Left)");
+//
+//    // 제트축 조명 방향 설정
+//    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.55f, 1.0f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.35f, 0.85f, 1.0f));
+//    ImGui::Button("Z", ImVec2(22.0f, 0.0f));
+//    ImGui::PopStyleColor(3);
+//    ImGui::SameLine();
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
+//    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.LightDirection.Z, -1.0f, 1.0f, "%.2f");
+//    ImGui::PopStyleColor(2);
+//    ImGui::SameLine();
+//    ImGui::Text("Light Dir Z (Up/Down)");
+//
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.LightColor.X);
+//    ImGui::SameLine();
+//    ImGui::Text("Color");
+//
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.Intensity, 0.0f, 5.0f, "%.2f");
+//    ImGui::SameLine();
+//    ImGui::Text("Intensity");
+//
+//    ImGui::SetNextItemWidth(180.0f);
+//    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.AmbientIntensity, 0.0f, 1.0f, "%.2f");
+//    ImGui::SameLine();
+//    ImGui::Text("Ambient");
+//}
+//

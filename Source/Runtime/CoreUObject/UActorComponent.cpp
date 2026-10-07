@@ -3,7 +3,7 @@
 #include "UObjectGlobals.h"
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/Engine/ULevel.h"
-
+#include "Runtime/Engine/UWorld.h"
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
 void UActorComponent::Serialize(FArchive& Archive)
@@ -14,7 +14,8 @@ void UActorComponent::Serialize(FArchive& Archive)
     Archive.OptionalField("CanEverTick", PrimaryComponentTick.bCanEverTick);
     Archive.OptionalField("TickEnabled", PrimaryComponentTick.bTickEnabled);
     Archive.OptionalField("TickGroup", PrimaryComponentTick.TickGroup);
-
+    Archive.OptionalField("TickInEditor", bTickInEditor);
+    if (Archive.IsLoading()) RefreshTickRegistration();
     // RegisteredGroup, 초기화·등록·BeginPlay 상태는 저장하지 않는다.
 }
 
@@ -44,6 +45,7 @@ void UActorComponent::Register(ULevel& InLevel)
     if (Level == &InLevel) { return; }
     if (Level) { Unregister(); }
     Level = &InLevel;
+    RefreshTickRegistration();
 }
 
 void UActorComponent::BeginPlay()
@@ -61,21 +63,26 @@ void UActorComponent::EndPlay()
 void UActorComponent::Unregister()
 {
     if (bHasBegunPlay) { EndPlay(); }
+    if (Level) Level->GetWorld()->RefreshComponentTick(this, false);
     Level = nullptr;
+}
+
+void UActorComponent::RefreshTickRegistration()
+{
+    // 소속 World가 생긴 뒤에만 목록을 갱신한다.
+    if (Level) Level->GetWorld()->RefreshComponentTick(this, true);
 }
 
 void UActorComponent::SetComponentTickEnabled(bool bEnabled)
 {
-    // Tick Registry 연결 전에는 설정만 보관한다.
     PrimaryComponentTick.bTickEnabled = bEnabled;
+    RefreshTickRegistration();
 }
 
 void UActorComponent::SetComponentTickGroup(ETickGroup Group)
 {
     // Count는 실행 그룹이 아닌 미등록 상태를 나타낸다.
-    if (static_cast<uint32>(Group) >= TickGroupCount)
-    {
-        return;
-    }
+    if (static_cast<uint32>(Group) >= TickGroupCount) return;
     PrimaryComponentTick.TickGroup = Group;
+    RefreshTickRegistration();
 }

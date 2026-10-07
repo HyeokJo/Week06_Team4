@@ -42,7 +42,7 @@ public:
 	const FMatrix& GetGlobalTransformMatrix() const { return GetGlobalTransform().GetMatrix(); }
 	// 월드 행렬의 역행렬. 스케일이 0에 가까워 역행렬이 없으면 nullptr.
 	const FMatrix* GetGlobalInverseMatrix() const;
-	//void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
+	bool SetWorldTransform(const FTransform& GlobalTransform);
 
     virtual void SetRelativeLocation(const FVector& RelativeLocation);
     virtual void SetRelativeRotation(const FVector& RelativeRotation);

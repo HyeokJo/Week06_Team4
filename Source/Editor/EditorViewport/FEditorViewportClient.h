@@ -3,8 +3,8 @@
 #include "Runtime/Engine/FCamera.h"
 #include "Editor/Grid/FGrid.h"
 #include "Runtime/Engine/ShowFlags.h"
+#include "Runtime/Engine/UWorld.h"
 
-class UWorld;
 class FEditor;
 class FRenderView;
 
@@ -13,6 +13,7 @@ class FEditorViewportClient final {
 	bool bHovered = false;
 	FGrid Grid;
 	//Grid 이식중, ShowFlag 추가필요
+	EWorldType WorldType = EWorldType::Editor;
 
 public:
 	// Type에 따라 키보드,마우스 조작이 달라지기 때문에 ViewportClient에 있어야 한다고 생각함
@@ -55,8 +56,10 @@ public:
 
 	[[nodiscard]] bool IsFocused() const { return bFocused; }
 	[[nodiscard]] bool IsHovered() const { return bHovered; }
+	[[nodiscard]] EWorldType GetWorldType() const { return WorldType; }
 
 	void Update();
-	void Draw(FRenderView& RenderView, UWorld& InWorld, FEditor& Editor);
+	void Draw(FRenderView& RenderView, FEditor& Editor);
 	void DrawGizmo(FRenderView& RenderView, FEditor& Editor);
+	void SetWorldType(EWorldType InType) { WorldType = InType; }
 };

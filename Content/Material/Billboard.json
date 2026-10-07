@@ -2,7 +2,7 @@
     "Version": 1,
     "Name": "Billboard",
     "AssetType": "Material",
-    "UPipelineID": "Pipeline/Textured.json",
+    "UPipelineID": "Pipeline/Billboard.json",
     "UTextureID": "Texture/Unreal.json",
     "TextureSampler": { "FilterMode": "Bilinear", "WrapMode": "Wrap" }
 }

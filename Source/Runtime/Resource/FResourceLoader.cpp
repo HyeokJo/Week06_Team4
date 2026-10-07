@@ -695,7 +695,7 @@ void FResourceLoader::LoadTextureAsset(const FJsonArchive& Archive, const FName&
 			RawTexturePath.string());
 	}
 
-	ResourceLibrary.RegisterTexture(fs::path(ID.ToString()).stem().string(), Texture);
+	ResourceLibrary.RegisterTexture(ID, Texture);
 	TextureDesc.Texture = Texture.get();
 
 	TextureAsset->Load(TextureDesc);

@@ -12,6 +12,7 @@ class UActorComponent : public UObject {
 	GENERATED_BODY()
 	DECLARE_UCLASS(UActorComponent, UObject)
 	friend class AActor;
+	friend class UWorld;
 public:
 	using Super::Serialize;
 	virtual void Initialize() override;
@@ -26,23 +27,21 @@ public:
 	virtual void EndPlay();
 	virtual void Unregister();
 
-	// TODO : FTick에 Register 하는 형태로 변경해야함.
-	//[[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
 	[[nodiscard]] bool IsRegistered() const { return Level != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 	[[nodiscard]] bool IsInitialized() const { return bInitialized; }
+	bool IsTickEnabled() const { return PrimaryComponentTick.bTickEnabled; }
 
-	//virtual void Serialize(FArchive& Archive) const override;
-	//virtual void Deserialize(const FArchive& Archive) override;
-	//일단 임시 조정
-	bool IsTickEnabled() const{ return PrimaryComponentTick.bTickEnabled; }
-	// Component Tick의 활성 상태를 변경합니다.
+	// Actor Tick이 꺼져 있어도 Component 자신의 설정으로 실행한다.
+	bool bTickInEditor = false;
+	bool ShouldTick(bool bEditorWorld) const
+	{
+		return IsRegistered() && PrimaryComponentTick.bCanEverTick && IsTickEnabled()
+			&& (bEditorWorld ? bTickInEditor : HasBegunPlay());
+	}
+
 	void SetComponentTickEnabled(bool bEnabled);
-
-	// Component Tick의 실행 그룹을 변경합니다.
 	void SetComponentTickGroup(ETickGroup Group);
-
-
 protected:
 	AActor* ActorOwner = nullptr;
 	ULevel* Level = nullptr;
@@ -54,5 +53,6 @@ private:
 	//TODO : Outer 구조 도입시 구조 수정해야함.
 	void SetActorOwner(AActor* InOwner) { ActorOwner = InOwner; }
 	bool bInitialized = false;
+	void RefreshTickRegistration();
 
 };

@@ -5,6 +5,8 @@
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Core/TArray.h"
 
+class UPointLightComponent;
+
 class FScene final
 {
 public:
@@ -15,10 +17,15 @@ public:
     [[nodiscard]] const TArray<UPrimitiveComponent*>& GetRenderComponents() const { return RenderComponents; }
     [[nodiscard]] FRenderResourceLibrary* GetRenderResourceLibrary() const { return RenderResourceLibrary; }
     [[nodiscard]] const TArray<uint8>& GetOcclusionTargetFlags() const { return OcclusionTargetFlags; }
+    [[nodiscard]] const FLightConstants GetWorldLightConstants() const { return WorldLightConstants; }
+    [[nodiscard]] const TArray<UPointLightComponent*> GetPointLights() const { return PointLights; }
 
     void SetRenderResourceLibrary(FRenderResourceLibrary* InRenderResourceLibrary);
     void AddRenderComponent(UPrimitiveComponent* Prim);
     void RemoveRenderComponent(UPrimitiveComponent* Prim);
+
+    bool AddPointLight(UPointLightComponent* PointLight);
+    bool RemovePointLight(UPointLightComponent* PointLight);
 
     // dirty 컴포넌트만 월드 AABB 재계산. 렌더 전에 프레임당 1회
     void UpdateDirtyBounds();
@@ -43,4 +50,8 @@ private:
 
     //캐시해둘 오클루전 대상
     TArray<uint8> OcclusionTargetFlags;
+
+    TArray<UPointLightComponent*> PointLights;
+
+    FLightConstants WorldLightConstants;
 };

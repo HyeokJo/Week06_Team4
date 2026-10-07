@@ -28,6 +28,31 @@ struct FDrawCommand;
 
 #include "Runtime/Engine/ShowFlags.h"
 
+struct FStructuredBuffer
+{
+    ID3D11DeviceContext* DeviceContext;
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+    UINT ElementSize;
+    UINT ElementCount;
+
+    void UpdateStructuredBuffer(const void* Data, uint32 DataCount)
+    {
+        D3D11_BOX Box = {};
+        Box.left = 0;
+        Box.right = DataCount * ElementSize;
+        Box.top = 0;
+        Box.bottom = 1;
+        Box.front = 0;
+        Box.back = 1;
+
+        DeviceContext->UpdateSubresource(Buffer.Get(), 0, &Box, Data, 0, 0);
+    }
+};
+
+
+
 struct FFrameResource
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> FrameConstantBuffer;
@@ -88,7 +113,7 @@ public:
   void Draw(const FDrawCommand& Command, uint32 Slot = 2,
             bool bApplyViewMode = true);
 
-  void DrawPrimitiveBatch(std::span<const FDrawCommand> Commands);
+  void DrawPrimitiveBatch(std::span<const FDrawCommand> Commands, TArray<FPointLightConstants>& PointLightConstants);
 
   bool UploadObjectConstants(std::span<const FDrawCommand> Commands);
 
@@ -161,6 +186,8 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
   //TODO : 일단은 상수 버퍼로 하겠지만 멀티 뷰포트가 멀티 RTV로 수정된다면 카메라마다 다를 경우를 대비해 늘려야한다.
   Microsoft::WRL::ComPtr<ID3D11Buffer> SceneDepthConstantBuffer;
+
+  TSharedPtr<FStructuredBuffer> PointLightBuffer;
 
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
@@ -333,6 +360,35 @@ public:
 
       Context->VSSetConstantBuffers(Slot, 1u, GetCurrentFrameResource()->ObjectConstantBuffer.GetAddressOf());
       Context->PSSetConstantBuffers(Slot, 1u, GetCurrentFrameResource()->ObjectConstantBuffer.GetAddressOf());
+  }
+
+  template <typename T>
+  TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount)
+  {
+      TSharedPtr<FStructuredBuffer> StructuredBuffer = MakeShared<FStructuredBuffer>();
+      StructuredBuffer->DeviceContext = Context.Get();
+
+      D3D11_BUFFER_DESC StructuredBufferDesc = {};
+      StructuredBufferDesc.ByteWidth = sizeof(T) * ElementCount;
+      StructuredBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+      StructuredBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+      StructuredBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+      StructuredBufferDesc.StructureByteStride = sizeof(T);
+
+      Device->CreateBuffer(&StructuredBufferDesc, nullptr, StructuredBuffer->Buffer.GetAddressOf());
+
+      D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+      SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+      SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+      SRVDesc.Buffer.FirstElement = 0;
+      SRVDesc.Buffer.NumElements = ElementCount;
+
+      Device->CreateShaderResourceView(StructuredBuffer->Buffer.Get(), &SRVDesc, StructuredBuffer->SRV.GetAddressOf());
+
+      StructuredBuffer->ElementSize = sizeof(T);
+      StructuredBuffer->ElementCount = ElementCount;
+
+      return StructuredBuffer;
   }
 public:
   //현재 깊이 버퍼 기준으로 각 명령이 실제로 보이는 픽셀 수를 GPU에 묻는다.

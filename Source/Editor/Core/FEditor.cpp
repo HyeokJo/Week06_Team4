@@ -16,7 +16,10 @@
 #include "Runtime/Engine/FWorldSerializer.h"
 #include "Runtime/Engine/FRenderView.h"
 #include "Runtime/Engine/ULevel.h"
-
+#include "Runtime/CoreUObject/UActorComponent.h"
+#include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/UClass.h"
+#include "Runtime/CoreUObject/UObjectGlobals.h"
 
 void FEditor::Initialize() {
   State.ReadFromFile();
@@ -48,8 +51,6 @@ bool FEditor::StartPIE()
     UWorld* EditorWorld = GEngine ? GEngine->GetWorld(EWorldType::Editor) : nullptr;
     if (!EditorWorld) return false;
 
-    // 편집 중인 마지막 Transform을 적용한 뒤 복제한다.
-    if (SelectedActor) SelectedActor->SetTransform(SelectedTransform);
     UWorld* PIEWorld = UWorld::DuplicateWorld(EditorWorld, EWorldType::PIE);
     if (!PIEWorld) return false;
 
@@ -65,6 +66,7 @@ bool FEditor::StartPIE()
     // AddWorld가 Activate, BeginPlay, BVH 생성까지 처리한다.
     // 기본 인자는 Editor이므로 PIE를 명시해야 원본 World가 유지된다.
     GEngine->AddWorld(PIEWorld, EWorldType::PIE);
+    EditorViewports[ActiveViewportBeforePIE].SetWorldType(EWorldType::PIE);
     return true;
 }
 
@@ -79,16 +81,15 @@ void FEditor::Process() {
         DeleteSelectedActor();
     }
 
+    // 표시 캐시만 갱신
+    RefreshSelectedTransform();
+
     // 씬의 액터 업데이트
-    if(!IsPlaying())
-    {
-        if (SelectedActor) {
-            SelectedActor->SetTransform(SelectedTransform);
-        }
+    if (SelectedActor && SelectedActor->IsEditorActor()) {
         SaveState();
     }
 
-  State.Tick(FTimeManager::GetDeltaTime());
+    State.Tick(FTimeManager::GetDeltaTime());
 }
 
 void FEditor::SaveState() {
@@ -150,8 +151,10 @@ void FEditor::LoadWorld(const FString& Path)
     // 씬 로드
     FEditorViewportClient* Viewport = GetActiveViewport();
     UWorld* LoadedWorld = FWorldSerializer::LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+    if (!LoadedWorld) return;
+    
+    ClearSelectionForGC();
     GEngine->AddWorld(LoadedWorld);
-    SelectedActor = nullptr;
 }
 
 void FEditor::AddViewport(FEditorViewportClient Viewport) {
@@ -177,18 +180,17 @@ FEditorViewportClient* FEditor::GetActiveViewport() {
 
 bool FEditor::SelectActor(AActor *Actor) {
     if (Actor && !CanEditActorProperties(Actor)) return false;
-    if (SelectedActor) {
-      UnSelectActor();
-    }
-
+    ClearSelectionForGC();
     SelectedActor = Actor;
-    if (SelectedActor) {
-    SelectedTransform = SelectedActor->GetTransform();
-    SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
+
+    if (!Actor) return true;
+    
+	RefreshSelectedTransform();
+
     if (Gizmo.Mode == EGizmoMode::None) {
       Gizmo.Mode = EGizmoMode::Translate;
     }
-
+    
     if (SelectedActorTextComp && !IsPlaying())
     {
         SelectedActorTextComp->SetupAttachment(SelectedActor->GetRootComponent());
@@ -198,17 +200,17 @@ bool FEditor::SelectActor(AActor *Actor) {
         SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
         SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
     }
-  }
-
   return true;
 }
 
 void FEditor::UnSelectActor() {
-    if (!IsPlaying() && SelectedActor)
-        SelectedActor->SetTransform(SelectedTransform);
-    // 선택 Actor의 소유 컴포넌트가 아니므로 삭제하지 않고 분리한다.
-    if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
-    SelectedActor = nullptr;
+    ClearSelectionForGC();
+
+    //if (!IsPlaying() && SelectedActor)
+    //    SelectedActor->SetTransform(SelectedTransform);
+    //// 선택 Actor의 소유 컴포넌트가 아니므로 삭제하지 않고 분리한다.
+    //if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
+    //SelectedActor = nullptr;
 }
 
 const TArray<UPrimitiveComponent*>& FEditor::GetPrimitiveComponents() const
@@ -222,7 +224,12 @@ const TArray<UPrimitiveComponent*>& FEditor::GetPrimitiveComponents() const
 void FEditor::ClearSelectionForGC() {
     // World가 폐기되기 전에 에디터 오버레이의 연결부터 끊는다.
     if (SelectedActorTextComp) SelectedActorTextComp->SetupDetachment(true);
+    SelectedComponent = nullptr;
     SelectedActor = nullptr;
+    bComponentSelection = false;
+    bFocusSelectedComponent = false;
+    SelectedTransform = FTransform{};
+
     Gizmo.EndInteraction();
     Gizmo.HoveredHandle = EGizmoHandle::None;
 }
@@ -389,20 +396,17 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 void FEditor::RenderViewports(FRenderView& RenderView)
 {
     //Active인 ViewportClient만 렌더링
-    UWorld* World = GetCurrentWorld();
-    if (!World) return;
     for (SWindow& Lf : Leaf)
     {
         if (!Lf.bisActive) 
             continue;
         // 현재 월드를 받아서 렌더링
-        EditorViewports[Lf.ViewportIndex].Draw(RenderView, *World, *this);
+        EditorViewports[Lf.ViewportIndex].Draw(RenderView, *this);
     }
 }
 
 void FEditor::RenderGizmo(FRenderView& RenderView)
 {
-    if (IsPlaying()) return;
     if (ObjectSelected())
     {
         for (const SWindow& Lf : Leaf)
@@ -427,6 +431,9 @@ void FEditor::EndPIE()
 {
     UWorld* PIEWorld = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
     if (!PIEWorld) return;
+
+
+    EditorViewports[ActiveViewportBeforePIE].SetWorldType(EWorldType::Editor);
 
     // 폐기할 Component를 오버레이와 기즈모가 참조하지 않도록 한다.
     ClearSelectionForGC();
@@ -469,9 +476,136 @@ bool FEditor::CanEditActorProperties(const AActor* Actor) const
 
 bool FEditor::DeleteSelectedActor()
 {
+    if (!ActorSelected()) return false;
     AActor* Actor = GetSelectedActor();
     if (!CanEditActorProperties(Actor)) return false;
     ClearSelectionForGC();
     Actor->Destroy();
     return true;
+}
+
+bool FEditor::SelectComponent(UActorComponent* Component)
+{
+    if (!Component) return false;
+
+    AActor* Actor = Component->GetActorOwner();
+    if (!CanEditActorProperties(Actor)) return false;
+
+    // 다른 Actor의 Component를 선택하면 소유 Actor부터 전환한다.
+    if (GetSelectedActor() != Actor && !SelectActor(Actor)) return false;
+
+    // 기존 드래그의 시작 Transform이 새 선택 대상에 적용되지 않도록 종료한다.
+    Gizmo.EndInteraction();
+    Gizmo.HoveredHandle = EGizmoHandle::None;
+
+    SelectedComponent = Component;
+    bComponentSelection = true;
+    bFocusSelectedComponent = true;
+    RefreshSelectedTransform();
+
+    // 일반 ActorComponent는 선택할 수 있지만 Transform 조작 대상은 아니다.
+    if (GetTransformTarget() && Gizmo.Mode == EGizmoMode::None)
+        Gizmo.Mode = EGizmoMode::Translate;
+
+    return true;
+}
+
+USceneComponent* FEditor::GetTransformTarget() const
+{
+    AActor* Actor = GetSelectedActor();
+    if (!Actor) return nullptr;
+
+    if (bComponentSelection)
+    {
+        // 선택 Component가 없거나 SceneComponent가 아니면 기즈모 대상이 없다.
+        UActorComponent* Component = GetSelectedComponent();
+        return Component ? Component->Cast<USceneComponent>() : nullptr;
+    }
+
+    return Actor->GetRootComponent();
+}
+
+bool FEditor::CanManipulateSelection() const
+{
+    // PIE에서는 프로퍼티 편집과 별개로 기즈모 조작을 허용하지 않는다.
+    AActor* Actor = GetSelectedActor();
+    return !IsPlaying() && Actor && Actor->IsEditorActor() &&
+        CanEditActorProperties(Actor) && GetTransformTarget() != nullptr;
+}
+
+void FEditor::RefreshSelectedTransform()
+{
+    // SelectedTransform은 실제 Component 데이터를 따라가는 표시용 캐시다.
+    USceneComponent* Target = GetTransformTarget();
+    SelectedTransform = Target ? Target->GetGlobalTransform() : FTransform{};
+}
+
+bool FEditor::ApplySelectedWorldTransform(const FTransform& WorldTransform)
+{
+    if (!CanManipulateSelection()) return false;
+
+    // 월드 목표값을 상대값으로 변환하고 기존 Dirty 처리 경로로 적용한다.
+    const bool bApplied = GetTransformTarget()->SetWorldTransform(WorldTransform);
+
+    // 적용 실패 시에도 기즈모 표시를 실제 Component 상태와 일치시킨다.
+    RefreshSelectedTransform();
+    return bApplied;
+}
+
+bool FEditor::ConsumeComponentFocusRequest(const UActorComponent* Component)
+{
+    if (!bFocusSelectedComponent || GetSelectedComponent() != Component) return false;
+
+    // 해당 섹션이 실제로 그려지는 시점에 요청을 소비한다.
+    bFocusSelectedComponent = false;
+    return true;
+}
+
+bool FEditor::IsAddableComponentClass(const UClass* ClassType)
+{
+    // 명시적으로 허용한 ActorComponent 계열만 생성 목록에 표시한다.
+    return ClassType && ClassType->IsChildOrSelfOf(UActorComponent::StaticClass()) 
+        && ClassType->HasMetaValue("SpawnableComponent", "true");
+}
+
+UActorComponent* FEditor::AddComponentToActor(AActor* Actor, UClass* ClassType, USceneComponent* AttachParent)
+{
+    // 현재 World의 Actor에만 추가하며, 다른 Actor의 컴포넌트를 부모로 받지 않는다.
+    if (!CanEditActorProperties(Actor) || !IsAddableComponentClass(ClassType) ||
+        (AttachParent && AttachParent->GetActorOwner() != Actor))
+        return nullptr;
+
+    // 인수 순서는 Outer, ClassType이다. 기본 에셋은 팩토리의 PostInitProperties()가 설정한다.
+    UObject* Object = NewObjectWithOuter(Actor, ClassType);
+    if (!Object) return nullptr;
+
+    // 위 클래스 검사로 ActorComponent 계열임이 보장된다.
+    UActorComponent* Component = Object->Cast<UActorComponent>();
+
+    if (USceneComponent* SceneComponent = Component->Cast<USceneComponent>())
+    {
+        // 새 컴포넌트는 부모 원점에서 시작한다: 위치 0, 회전 0, 스케일 1.
+        SceneComponent->SetRelativeTransform(FTransform{});
+
+        if (USceneComponent* Root = Actor->GetRootComponent())
+        {
+            USceneComponent* Parent = AttachParent ? AttachParent : Root;
+
+            // 등록 전에 부착 관계를 결정한다. 실패한 객체는 소유 목록에 넣지 않는다.
+            if (!SceneComponent->SetupAttachment(Parent))
+            {
+                DestroyObject(Component);
+                return nullptr;
+            }
+        }
+        // Root가 없으면 아래 AddComponent()가 이 컴포넌트를 Root로 지정한다.
+    }
+
+    // 기존 경로가 ActorOwner, 소유 목록, Initialize, Register, BeginPlay를 처리한다.
+    // 일반 ActorComponent는 부착 부모 없이 소유 목록에만 들어간다.
+    Actor->AddComponent(Component);
+
+    // 기존 선택 경로가 Property 섹션 이동과 Editor 기즈모 대상을 갱신한다.
+    SelectComponent(Component);
+    return Component;
 }

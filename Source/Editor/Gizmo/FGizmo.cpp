@@ -165,10 +165,12 @@ void FGizmo::UpdateInteraction(FEditor& Editor, const FVector2& MousePosition)
 	float ViewportDistance = MouseDelta.Dot(InteractionAxisViewport);
 	float WorldDistance = ViewportDistance * InteractionWorldUnitsPerPixel;
 
+	FTransform DesiredWorld = InteractionStartTransform;
+
 	switch (Mode)
 	{
 	case EGizmoMode::Translate:
-		Editor.SelectedTransform.SetLocation(InteractionStartTransform.GetLocation() + InteractionAxisWorld * WorldDistance);
+		DesiredWorld.SetLocation(InteractionStartTransform.GetLocation() + InteractionAxisWorld * WorldDistance);
 		break;
 		
 	case EGizmoMode::Rotate:
@@ -179,24 +181,24 @@ void FGizmo::UpdateInteraction(FEditor& Editor, const FVector2& MousePosition)
 		if (GetSpace() == EGizmoSpace::World)
 		{
 			FQuaternion Delta = FQuaternion::FromAxisAngle(InteractionAxisWorld, Theta);
-			Editor.SelectedTransform.SetRotation(Delta * InteractionStartTransform.GetRotation());
+			DesiredWorld.SetRotation((Delta * InteractionStartTransform.GetRotation()).Normalized());
 		}
 		else
 		{
 			FQuaternion Delta = FQuaternion::FromAxisAngle(InteractionAxisLocal, Theta);
-			Editor.SelectedTransform.SetRotation(InteractionStartTransform.GetRotation() * Delta);
+			DesiredWorld.SetRotation((InteractionStartTransform.GetRotation() * Delta).Normalized());
 		}
-		Editor.SelectedEulerDegDisplay = Editor.SelectedTransform.GetRotation().GetEulerXYZ() * 180.0f / std::numbers::pi_v<float>;
 		break;
 	}
 
 	case EGizmoMode::Scale:
-		Editor.SelectedTransform.SetScale3D(InteractionStartTransform.GetScale3D() + InteractionAxisLocal * WorldDistance);
+		DesiredWorld.SetScale3D(InteractionStartTransform.GetScale3D() + InteractionAxisLocal * WorldDistance);
 		break;
 
 	case EGizmoMode::None:
 		return;
 	}
+	Editor.ApplySelectedWorldTransform(DesiredWorld);
 }
 
 void FGizmo::EndInteraction()
@@ -246,7 +248,7 @@ void FGizmo::DrawAxis(FRenderer& Renderer, EGizmoHandle Handle, const FMatrix& W
 	}
 
 	FObjectConstants Constants{};
-	Constants.World = World;
+	Constants.SetWorld(World);
 	Constants.Color = DrawColor;
 	Constants.DisableShading = 1.0f;
 	Renderer.Draw(*GizmoMesh, *GizmoMaterial, Constants);

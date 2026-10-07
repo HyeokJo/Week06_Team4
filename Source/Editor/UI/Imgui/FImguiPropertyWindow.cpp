@@ -2,6 +2,7 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/PointLightComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
@@ -20,7 +21,8 @@
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Asset/UFont.h"
-
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 
 namespace
 {
@@ -35,14 +37,18 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		return;
 	}
 
-	ImGui::Begin("Jungle Property Window");
+	if (!ImGui::Begin("Jungle Property Window"))
+	{
+		ImGui::End();
+		return;
+	}
 
 	if (AActor* SelectedActor = Editor.GetSelectedActor())
 	{
 		ShowActorHeader(*SelectedActor);
 		ImGui::Separator();
 
-		ShowComponentHierarchy(*SelectedActor);
+		ShowComponentHierarchy(Editor, *SelectedActor);
 		ImGui::Separator();
 		ShowComponentSections(Editor, *SelectedActor);
 
@@ -68,27 +74,34 @@ void FImguiPropertyWindow::ShowActorHeader(const AActor& Actor) const
 	ImGui::Text("Actor UUID: %u", Actor.GetUUID());
 }
 
-void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
+void FImguiPropertyWindow::ShowComponentHierarchy(FEditor& Editor, AActor& Actor)
 {
+	ImGui::PushID(&Actor);
+	ShowAddComponentMenu(Editor, Actor);
+	ImGui::Separator();
 	ImGui::TextDisabled("Owned Components");
 
-	const USceneComponent* RootComp = Actor.GetRootComponent();
-	if (RootComp)
-	{
-		const char* RootName = RootComp->GetClass() ? RootComp->GetClass()->GetDisplayName().c_str() : "RootComponent";
-		ImGui::BulletText("[Root] %s (ID: %u)", RootName, RootComp->GetUUID());
-	}
+	if (ImGui::Selectable("Actor", Editor.ActorSelected()))
+		Editor.SelectActor(Editor.GetSelectedActor());
 
-	for (const UActorComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetAttachedComponents())
 	{
-		if (!Comp || Comp == RootComp)
-		{
-			continue;
-		}
+		if (!Comp) continue;
 
-		const char* SubName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "SubComponent";
-		ImGui::BulletText("%s (ID: %u)", SubName, Comp->GetUUID());
+		const char* Name = Comp->GetClass()
+			? Comp->GetClass()->GetDisplayName().c_str() : "Component";
+		const std::string Label =
+			(Comp == Actor.GetRootComponent() ? std::string("[Root] ") : std::string()) +
+			Name + " (ID: " + std::to_string(Comp->GetUUID()) + ")";
+
+		// 같은 클래스의 Component가 여러 개 있어도 위젯 ID가 겹치지 않는다.
+		ImGui::PushID(Comp);
+		if (ImGui::Selectable(Label.c_str(), Editor.GetSelectedComponent() == Comp))
+			Editor.SelectComponent(Comp);
+		ImGui::PopID();
 	}
+	ImGui::PopID();
+
 }
 
 void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
@@ -106,21 +119,26 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 		const char* CompTypeName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
 
 		// ### 뒤쪽이 실제 ID 라서, 앞의 표시 이름이 바뀌어도 접힘 상태가 유지된다.
-		std::string SectionTitle = (bIsRoot ? "[Root] " : "") + std::string(CompTypeName)
-			+ " (ID: " + std::to_string(Comp->GetUUID()) + ")###CompHeader_" + std::to_string(Comp->GetUUID());
+		std::string SectionTitle = (bIsRoot ? std::string("[Root] ") : std::string()) + CompTypeName + 
+			" (ID: " + std::to_string(Comp->GetUUID()) + ")###CompHeader_" + std::to_string(Comp->GetUUID());
+		
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen;
+		if (Editor.GetSelectedComponent() == Comp)
+			Flags |= ImGuiTreeNodeFlags_Selected;
 
-		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			continue;
-		}
+		// 아웃라이너·목록에서 선택하면 해당 섹션을 펼치고 그 위치로 이동한다.
+		const bool bFocus = Editor.ConsumeComponentFocusRequest(Comp);
+		if (bFocus) ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
-		// 컴포넌트마다 위젯 ID 를 분리해야 같은 라벨끼리 충돌하지 않는다.
+		const bool bOpen = ImGui::CollapsingHeader(SectionTitle.c_str(), Flags);
+		if (bFocus) ImGui::SetScrollHereY(0.0f);
+		if (!bOpen) continue;
+
 		ImGui::PushID(Comp);
 		ImGui::BeginDisabled(!Editor.CanEditActorProperties(&Actor));
 		ShowComponentDetails(Editor, Actor, *Comp, bIsRoot);
 		ImGui::EndDisabled();
 		ImGui::PopID();
-
 		ImGui::Spacing();
 	}
 }
@@ -130,9 +148,18 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 {
 	if (USceneComponent* SceneComp = Comp.Cast<USceneComponent>())
 	{
-		ShowTransform(Editor, *SceneComp, bIsRoot);
+		ShowTransform(Editor, *SceneComp);
 	}
+	if (UMovementComponent* Movement = Comp.Cast<UMovementComponent>())
+	{
+		ShowMovementSettings(Actor, *Movement);
+		if (URotationMovementComponent* Rotating = Comp.Cast<URotationMovementComponent>())
+			ShowRotationMovementSettings(*Rotating);
+		else if (UProjectileMovementComponent* Projectile = Comp.Cast<UProjectileMovementComponent>())
+			ShowProjectileMovementSettings(*Projectile);
+		return;
 
+	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -151,6 +178,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
 	}
+	else if (Comp.IsA<UPointLightComponent>())
+	{
+		ShowPointLightSettings(static_cast<UPointLightComponent&>(Comp));
+	}
 
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
@@ -158,59 +189,40 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	}
 }
 
-void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const
+void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp) const
 {
-	ImGui::TextDisabled("Transform");
+	ImGui::TextDisabled("Relative Transform");
 
-	if (bIsRoot && !Editor.IsPlaying()) 
-	{
-		// 루트 컴포넌트 트랜스폼은 에디터 기즈모와 동기화
-		FVector Location = Editor.SelectedTransform.GetLocation();
-		if (ImGui::DragFloat3("Translation", &Location.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetLocation(Location);
-		}
-		if (ImGui::DragFloat3("Rotation (deg)", &Editor.SelectedEulerDegDisplay.X, 0.5f))
-		{
-			Editor.SelectedTransform.SetRotation(FQuaternion::FromEulerXYZDeg(Editor.SelectedEulerDegDisplay));
-		}
-		FVector Scale = Editor.SelectedTransform.GetScale3D();
-		if (ImGui::DragFloat3("Scale", &Scale.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetScale3D(Scale);
-		}
-		return;
-	}
+	FTransform Relative = Comp.GetRelativeTransform();
+	bool bChanged = false;
 
-	// 서브 컴포넌트 상대 트랜스폼 편집
-	FTransform RelTransform = Comp.GetRelativeTransform();
-	FVector RelLocation = RelTransform.GetLocation();
-	bool bTransformChanged = false;
-	if (ImGui::DragFloat3("Rel Location", &RelLocation.X, 0.01f))
+	FVector Location = Relative.GetLocation();
+	if (ImGui::DragFloat3("Rel Location", &Location.X, 0.01f))
 	{
-		bTransformChanged = true;
-		RelTransform.SetLocation(RelLocation);
+		Relative.SetLocation(Location);
+		bChanged = true;
 	}
+	FVector Euler = Relative.GetRotation().ToEulerXYZDeg();
+	if (ImGui::DragFloat3("Rel Rotation (deg)", &Euler.X, 0.5f))
+	{
+		Relative.SetRotation(FQuaternion::FromEulerXYZDeg(Euler));
+		bChanged = true;
+	}
+	FVector Scale = Relative.GetScale3D();
+	if (ImGui::DragFloat3("Rel Scale", &Scale.X, 0.01f))
+	{
+		Relative.SetScale3D(Scale);
+		bChanged = true;
+	}
+	if (bChanged)
+	{
+		// 기존 Setter가 자손까지 Dirty 처리한다.
+		Comp.SetRelativeTransform(Relative);
 
-	FVector RelEuler = RelTransform.GetRotation().ToEulerXYZDeg();
-	if (ImGui::DragFloat3("Rel Rotation (deg)", &RelEuler.X, 0.5f))
-	{
-		bTransformChanged = true;
-		RelTransform.SetRotation(FQuaternion::FromEulerXYZDeg(RelEuler));
-	}
-	FVector RelScale = RelTransform.GetScale3D();
-	if (ImGui::DragFloat3("Rel Scale", &RelScale.X, 0.01f))
-	{
-		bTransformChanged = true;
-		RelTransform.SetScale3D(RelScale);
+		// 선택 대상의 부모를 편집한 경우에도 기즈모 월드 위치를 함께 갱신한다.
+		Editor.RefreshSelectedTransform();
 	}
 
-	if (bTransformChanged)
-	{
-		//Setter내부적으로 Marking중, Setter이외에서 바꿔야 할때만 Marking 호출.
-		//Comp.MarkActorTransformDirty();
-		Comp.SetRelativeTransform(RelTransform);
-	}
 }
 
 void FImguiPropertyWindow::ShowTextSettings(UTextInstanceComponent& TextComp) const
@@ -262,19 +274,45 @@ void FImguiPropertyWindow::ShowBillboardSettings(UBillBoardComp& BillboardComp) 
 {
 	ImGui::Separator();
 	ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "Billboard Settings");
-
+	
+	const TMap<FName, TSharedPtr<FTexture>> AllTextures = FRenderResourceLibrary::Get().GetAllTextures();
 	UTexture* TextureAsset = BillboardComp.GetTexture();
 	FTexture* Texture = TextureAsset ? TextureAsset->Get() : nullptr;
+	FName SelectedSpriteName = TextureAsset ? TextureAsset->GetName() : "";
 	const float FullWidth = ImGui::GetContentRegionAvail().x;
 
 	ImGui::TextDisabled("Texture");
 	if (Texture && Texture->GetSRV())
 	{
-		ImGui::Image(reinterpret_cast<ImTextureID>(Texture->GetSRV()), ImVec2(FullWidth, SlotSize));
+		ImGui::Image(reinterpret_cast<ImTextureID>(Texture->GetSRV()), ImVec2(SlotSize, SlotSize));
 	}
 	else
 	{
 		ImGui::Button("No\nTexture", ImVec2(FullWidth, SlotSize));
+	}
+
+	ImGui::SameLine(0.0f, 10.0f);
+	
+	if (ImGui::BeginCombo("##Sprite", SelectedSpriteName.ToString().c_str()))
+	{
+		for (const auto& Item : AllTextures)
+		{
+			UTexture* Texture = FAssetRegistry::GetInstance().Get<UTexture>(Item.first);
+			const bool bIsSelected = (SelectedSpriteName == Texture->GetName());
+			FString ItemDisplayName = Texture->GetName().ToString();
+
+			if (ImGui::Selectable(ItemDisplayName.c_str(), bIsSelected))
+			{
+				SelectedSpriteName = ItemDisplayName;
+				BillboardComp.SetTexture(Texture);
+			}
+
+			if (bIsSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 
 	if (ImGui::BeginDragDropTarget())
@@ -382,6 +420,30 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
 	{
 		LightComp.SetRange(LightRange);
+	}
+}
+
+void FImguiPropertyWindow::ShowPointLightSettings(UPointLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Point Light Settings");
+
+	FVector4 LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
+	}
+
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	float LightRadius = LightComp.GetAttenuationRadius();
+	if (ImGui::DragFloat("Attenuation Radius", &LightRadius, 0.1f, 0.1f, 100.0f))
+	{
+		LightComp.SetAttenuationRadius(LightRadius);
 	}
 }
 
@@ -579,7 +641,8 @@ void FImguiPropertyWindow::ShowStaticMeshSlot(UStaticMeshComponent& MeshComp) co
 
 	// 슬롯 만들기
 	float FullWidth = ImGui::GetContentRegionAvail().x;
-	ImGui::Button(StaticMesh->GetID().ToString().c_str(), ImVec2(FullWidth, SlotSize));
+	const FString MeshLabel = StaticMesh ? StaticMesh->GetID().ToString() : "None";
+	ImGui::Button(MeshLabel.c_str(), ImVec2(FullWidth, SlotSize));
 
 	// 드롭 타깃은 아이템을 그린 직후여야 한다.
 	if (!ImGui::BeginDragDropTarget()) { return; }
@@ -730,4 +793,147 @@ void FImguiPropertyWindow::ShowGizmoSettings(FEditor& Editor) const
 			Editor.GetGizmo().SetGizmoSpace(static_cast<EGizmoSpace>(SelectedItem));
 		}
 	}
+}
+
+void FImguiPropertyWindow::ShowAddComponentMenu(FEditor& Editor, AActor& Actor)
+{
+	// 현재 World의 Actor라면 Editor와 PIE 모두 추가를 허용한다.
+	ImGui::BeginDisabled(!Editor.CanEditActorProperties(&Actor));
+
+	// 버튼 폭은 표시 문자열과 ImGui 스타일로 계산한다.
+	// 항목이 많아지면 드롭리스트 내부에 스크롤이 생긴다.
+	if (ImGui::BeginCombo("##AddComponentCombo", "+ Add Component", ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightLarge))
+	{
+		// 목록을 새로 열 때 검색을 초기화하고 입력란에 포커스를 준다.
+		if (ImGui::IsWindowAppearing())
+		{
+			ComponentFilter.Clear();
+			ImGui::SetKeyboardFocusHere();
+		}
+
+		ComponentFilter.Draw("Search");
+		ImGui::Separator();
+
+		bool bHasMatch = false;
+		for (uint32 Index = 0; Index < UClass::GetRegisteredClassCount(); ++Index)
+		{
+			UClass* ClassType = UClass::GetClassById(Index);
+			if (!FEditor::IsAddableComponentClass(ClassType)) continue;
+
+			const FString& Name = ClassType->GetDisplayName();
+			if (!ComponentFilter.PassFilter(Name.c_str())) continue;
+			bHasMatch = true;
+
+			// 표시 이름이 같더라도 클래스별 위젯 ID를 구분한다.
+			ImGui::PushID(ClassType);
+			bool bAdded = false;
+
+			// 추가에 성공했을 때 직접 닫도록 자동 닫기를 해제한다.
+			if (ImGui::Selectable(Name.c_str(), false, ImGuiSelectableFlags_NoAutoClosePopups))
+			{
+				// 선택한 SceneComponent 아래에 추가한다.
+				// 부모가 nullptr이면 공통 생성 함수가 Root 아래로 처리한다.
+				bAdded = Editor.AddComponentToActor(&Actor, ClassType, Editor.GetTransformTarget()) != nullptr;
+			}
+
+			ImGui::PopID();
+
+			if (bAdded)
+			{
+				ImGui::CloseCurrentPopup();
+				break;
+			}
+		}
+
+		if (!bHasMatch) ImGui::TextDisabled("No matching components");
+		ImGui::EndCombo();
+	}
+
+	ImGui::EndDisabled();
+}
+
+void FImguiPropertyWindow::ShowMovementSettings(AActor& Actor, UMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Movement Settings");
+
+	// Tick 활성 상태 변경은 기존 Setter를 통해 World 레지스트리에 반영한다.
+	bool bTickEnabled = Movement.IsTickEnabled();
+	if (ImGui::Checkbox("Tick Enabled", &bTickEnabled))
+		Movement.SetComponentTickEnabled(bTickEnabled);
+
+	ImGui::Checkbox("Tick In Editor", &Movement.bTickInEditor);
+	ImGui::Checkbox("Auto Root When Unassigned", &Movement.bAutoRegisterUpdatedComponent);
+
+	// 같은 클래스가 여러 개 있어도 UUID로 이동 대상을 구분한다.
+	USceneComponent* Target = Movement.GetUpdatedComponent();
+	const FString Preview = Target
+		? Target->GetClass()->GetDisplayName()
+		+ " (ID: " + std::to_string(Target->GetUUID()) + ")"
+		: "None";
+
+	if (ImGui::BeginCombo("Updated Component", Preview.c_str()))
+	{
+		if (ImGui::Selectable("None", Target == nullptr))
+			Movement.SetUpdatedComponent(nullptr);
+
+		// Actor의 전체 소유 목록에서 SceneComponent만 고른다.
+		for (UActorComponent* Component : Actor.GetAttachedComponents())
+		{
+			USceneComponent* Scene = Component ? Component->Cast<USceneComponent>() : nullptr;
+			if (!Scene) continue;
+
+			const FString Label =
+				(Scene == Actor.GetRootComponent() ? FString("[Root] ") : FString())
+				+ Scene->GetClass()->GetDisplayName()
+				+ " (ID: " + std::to_string(Scene->GetUUID()) + ")";
+
+			if (ImGui::Selectable(Label.c_str(), Scene == Target))
+				Movement.SetUpdatedComponent(Scene);
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Rotation Settings");
+
+	// XYZ 속도는 도/s 단위다. 체크를 끄면 월드축 기준으로 회전한다.
+	ImGui::DragFloat("Roll Rate (X, deg/s)", &Movement.RotationRate.X, 1.0f);
+	ImGui::DragFloat("Pitch Rate (Y, deg/s)", &Movement.RotationRate.Y, 1.0f);
+	ImGui::DragFloat("Yaw Rate (Z, deg/s)", &Movement.RotationRate.Z, 1.0f);
+
+	ImGui::Checkbox("Rotate In Local Space", &Movement.bRotationInLocalSpace);
+
+	ImGui::DragFloat3("Pivot Offset XYZ", &Movement.PivotTranslation.X, 0.1f);
+
+}
+
+void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& Movement) const
+{
+	ImGui::Separator();
+	ImGui::TextDisabled("Projectile Settings");
+
+	// 방향과 초기 속력은 다음 발사 또는 Apply 버튼을 누를 때 반영한다.
+	ImGui::DragFloat3("Launch Direction XYZ", &Movement.LaunchDirection.X, 0.1f);
+
+	if (ImGui::DragFloat("Initial Speed (units/s)", &Movement.InitialSpeed, 0.1f))
+		Movement.InitialSpeed = std::max(0.0f, Movement.InitialSpeed);
+
+	if (ImGui::DragFloat("Max Speed (0 = unlimited)", &Movement.MaxSpeed, 0.1f))
+		Movement.MaxSpeed = std::max(0.0f, Movement.MaxSpeed);
+
+	ImGui::DragFloat3("Accelaretion", &Movement.Acceleration.X, 0.1f);
+	ImGui::Checkbox("Enable Gravity", &Movement.bEnableGravity);
+	ImGui::DragFloat3("Gravity Acceleration", &Movement.GravityAcceleration.X, 0.1f);
+	ImGui::Checkbox("Initial Velocity In Local Space", &Movement.bInitialVelocityInLocalSpace);
+
+	// 현재 위치를 유지하고 현재 대상의 자세로 발사 설정을 다시 적용한다.
+	if (ImGui::Button("Apply Launch Settings"))
+		Movement.ResetVelocity();
+
+	const FVector& Velocity = Movement.GetVelocity();
+	ImGui::Text("World Velocity: %.3f, %.3f, %.3f", Velocity.X, Velocity.Y, Velocity.Z);
 }

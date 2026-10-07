@@ -16,8 +16,6 @@ void AAnimatedBillboardActor::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	// 기본 재생 설정은 복원 전에 적용한다.
-	bTickEnabled = true;
 	UAnimatedBillboardComp* Component = GetAnimatedBillboardComponent();
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 
