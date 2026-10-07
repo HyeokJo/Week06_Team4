@@ -27,6 +27,7 @@ void UPrimitiveComponent::Serialize(FArchive& Archive)
     // 에셋 참조의 표현은 Archive가 결정한다. JSON에서는 에셋 ID 문자열이다.
     Archive.OptionalField("Mesh", RenderData.Mesh);
     Archive.OptionalField("RenderType", RenderData.Type);
+    Archive.OptionalField("HiddenInGame", bHiddenInGame);
 
     uint32 Count = static_cast<uint32>(RenderData.Materials.size());
     if (!Archive.BeginArray("Materials", Count)) return;

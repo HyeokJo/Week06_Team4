@@ -22,6 +22,8 @@ void UBillBoardComp::PostInitProperties()
 {
     Super::PostInitProperties();
 
+    bHiddenInGame = true;
+
     // 부모가 준비한 Material 슬롯에 Billboard 기본 에셋을 지정한다.
     FAssetRegistry& Registry = FAssetRegistry::GetInstance();
     SetMesh(Registry.Get<UStaticMesh>("#Rect"));
