@@ -18,7 +18,7 @@ public:
 	virtual void Initialize() override;
 	virtual void Release() override;
 	void Serialize(FArchive& Archive) override;
-
+	virtual bool DestroyComponent();
 	AActor* GetActorOwner() const { return ActorOwner; };
 
 	virtual void Register(ULevel& InLevel);

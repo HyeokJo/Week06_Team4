@@ -22,6 +22,7 @@ public:
 
     bool SetupAttachment(USceneComponent* InParent);
     void SetupDetachment(bool bKeepWorldTransform = true);
+    bool AttachToComponent(USceneComponent* InParent, bool bKeepWorldTransform = true);
 	virtual void Serialize(FJsonArchive& Archive) const override;
 	virtual void Deserialize(const FJsonArchive& Archive) override;
     void SetInheritRotation(bool bInherit);

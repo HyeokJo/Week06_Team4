@@ -7,6 +7,8 @@
 #include "Runtime/Engine/FJsonArchive.h"
 #include "Runtime/Engine/UWorld.h"
 #include <algorithm>
+#include "Runtime/CoreUObject/UMovementComponent.h"
+
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -235,6 +237,73 @@ void AActor::RemoveOwnedComponentReference(UActorComponent* Component)
 
 }
 
+bool AActor::DestroyOwnedComponent(UActorComponent* Component)
+{
+	// 소유 목록의 실제 멤버인 경우에만 단독 삭제 정책을 적용한다.
+	if (!Component || Component->GetActorOwner() != this) return false;
+	if (std::find(AttachedComp.begin(), AttachedComp.end(), Component) == AttachedComp.end())
+		return false;
+
+	if (USceneComponent* SceneComponent = Component->Cast<USceneComponent>())
+	{
+		USceneComponent* NewParent = SceneComponent->GetAttachParent();
+		USceneComponent* PromotedRoot = nullptr;
+
+		// 재부착 중 원본 자식 목록이 바뀌므로 직계 자식 포인터만 복사한다.
+		const TArray<USceneComponent*> Children = SceneComponent->GetAttachedComponents();
+
+		if (RootComponent == SceneComponent)
+		{
+			// UUID 오버레이처럼 다른 객체가 소유한 자식은 Root 후보에서 제외한다.
+			for (USceneComponent* Child : Children)
+			{
+				if (Child && Child->GetAttachParent() == SceneComponent	&& Child->GetActorOwner() == this)
+				{
+					PromotedRoot = Child;
+					break;
+				}
+			}
+
+			// 직계 자식이 없으면 다른 소유 SceneComponent를 사용한다.
+			if (!PromotedRoot)
+			{
+				for (UActorComponent* OwnedComponent : AttachedComp)
+				{
+					USceneComponent* Candidate = OwnedComponent	? OwnedComponent->Cast<USceneComponent>() : nullptr;
+
+					if (Candidate && Candidate != SceneComponent)
+					{
+						PromotedRoot = Candidate;
+						break;
+					}
+				}
+			}
+
+			// 이미 소유·초기화·등록된 객체이므로 다시 AddComponent하지 않는다.
+			if (PromotedRoot) PromotedRoot->SetupDetachment(true);
+			RootComponent = PromotedRoot;
+			NewParent = PromotedRoot;
+		}
+
+		for (USceneComponent* Child : Children)
+		{
+			if (!Child || Child == PromotedRoot	|| Child->GetAttachParent() != SceneComponent)
+				continue;
+
+			// 직계 자식만 재부착한다. 손자 이하는 기존 계층을 유지한다.
+			if (!Child->AttachToComponent(NewParent, true))
+			{
+				// 새 부모의 역변환이 불가능해도 자식의 월드 Transform은 보존한다.
+				Child->SetupDetachment(true);
+			}
+		}
+	}
+
+	// Release가 소유 목록, 파생 Actor 참조, Scene·BVH·Tick 등록을 정리한다.
+	DestroyObject(Component);
+	return true;
+}
+
 void AActor::MarkComponentsTransformDirty()
 {
 	for (UActorComponent* Component : AttachedComp)
@@ -427,4 +496,20 @@ void AActor::Destroy() {
 	if (!World) return false;
 
 	return World->GetWorldType() == EWorldType::Editor; 
+}
+
+void AActor::OnComponentRemoved(UActorComponent* RemovedComponent)
+{
+	// 삭제된 대상을 사용하는 Movement만 정리한다.
+	for (UActorComponent* Component : AttachedComp)
+	{
+		UMovementComponent* Movement = Component ? Component->Cast<UMovementComponent>() : nullptr;
+
+		if (!Movement || Movement->GetUpdatedComponent() != RemovedComponent)
+			continue;
+
+		// 다른 Root를 갑자기 움직이지 않도록 자동 대상 선택도 끈다.
+		Movement->SetUpdatedComponent(nullptr);
+		Movement->bAutoRegisterUpdatedComponent = false;
+	}
 }

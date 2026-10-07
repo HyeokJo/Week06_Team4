@@ -98,6 +98,18 @@ void FImguiPropertyWindow::ShowComponentHierarchy(FEditor& Editor, AActor& Actor
 		ImGui::PushID(Comp);
 		if (ImGui::Selectable(Label.c_str(), Editor.GetSelectedComponent() == Comp))
 			Editor.SelectComponent(Comp);
+
+		// 기존 Component PushID 범위 안에서 목록 항목의 우클릭 메뉴를 연다.
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Delete Component", nullptr, false, Editor.CanEditActorProperties(&Actor)))
+			{
+				// Owned Components 순회와 ImGui 스택 처리가 끝난 뒤 삭제한다.
+				Editor.RequestComponentDeletion(Comp);
+			}
+			ImGui::EndPopup();
+		}
+
 		ImGui::PopID();
 	}
 	ImGui::PopID();

@@ -40,6 +40,17 @@ void UActorComponent::Release()
     Super::Release();
 }
 
+bool UActorComponent::DestroyComponent()
+{
+    // 소유·Root 정책은 소유 Actor가 판단한다.
+    if (AActor* Owner = GetActorOwner())
+        return Owner->DestroyOwnedComponent(this);
+
+    // 소유 Actor가 없는 컴포넌트도 기존 Release 경로로 폐기한다.
+    DestroyObject(this);
+    return true; // 폐기 후에는 this의 멤버를 접근하지 않는다.
+}
+
 void UActorComponent::Register(ULevel& InLevel)
 {
     if (Level == &InLevel) { return; }

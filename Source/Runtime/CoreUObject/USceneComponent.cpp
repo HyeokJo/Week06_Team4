@@ -324,3 +324,17 @@ const FVector& USceneComponent::GetRelativeScale() const
     return GetRelativeTransform().GetScale3D();
 }
 
+bool USceneComponent::AttachToComponent(USceneComponent* InParent, bool bKeepWorldTransform)
+{
+    // 부착 또는 상대 Transform 환산에 실패하면 기존 상태로 돌아간다.
+    USceneComponent* PreviousParent = AttachParent;
+    const FTransform PreviousRelative = RelativeTransform;
+    const FTransform PreviousWorld = GetGlobalTransform();
+
+    if (!SetupAttachment(InParent)) return false;
+    if (!bKeepWorldTransform || SetWorldTransform(PreviousWorld)) return true;
+
+    SetupAttachment(PreviousParent);
+    SetRelativeTransform(PreviousRelative);
+    return false;
+}
