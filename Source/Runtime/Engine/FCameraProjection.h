@@ -18,7 +18,7 @@ private:
 	float Aspect = 1.0f; // Perspective 전용. Width / Height
 	float Height = 8.0f; // Orthographic 전용
 	float NearZ = 0.1f;
-	float FarZ = 100.0f;
+	float FarZ = 500.0f;
 	
 	FMatrix ProjectionMatrix;
 

@@ -38,12 +38,12 @@ public:
 	// 전체 렌더링 준비
 	void PrepareRender();
 
-	// 전체 뷰포트 렌더링
-	void RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx);
+	// 뷰포트 하나를 표면에 렌더링 (씬 ~ 외곽선까지). 기즈모와 합성은 호출자가 이어서 한다.
+	void RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx, FViewportRenderSurface& Surface);
 	void CollectScenePrimitives(const UWorld& World, const FSceneView& View, const AActor* SelectedActor);
 
 	// 뷰포트 패스 파이프라인
-	void BeginView(const FSceneView& View);
+	void BeginView(const FSceneView& View, FViewportRenderSurface& Surface);
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
 	void FlushBasePass(const FCamera& Camera, TArray<FPointLightConstants>& PointLightConstants);
 	void FlushLinePass(const FCamera& Camera);
@@ -55,7 +55,7 @@ public:
 	void NDCtoWorldViewMode();
 
 	// 개별 렌더 및 디버그 라인
-	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
+	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, const FGizmo& Gizmo);
 
 	void RenderLine(const FVector& Start, const FVector& End, const FVector4& Color);
 	void RenderBoxCenterExtent(const FVector& Center, const FVector& Extent, const FVector4& Color);
@@ -64,7 +64,8 @@ public:
 	void RenderSphere(const FVector& Center, float Radius, const FVector4& Color, uint32 Segments = 16);
 
 	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor);
-	void DrawStencilMask(const FCamera& Camera, const AActor* SelectedActor);
+	// 선택 물체의 스텐실을 그렸으면 true
+	bool DrawStencilMask(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderVerticetoline();
 
 	void SetRenderMode(EViewModeIndex InMode);

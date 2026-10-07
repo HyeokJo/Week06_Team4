@@ -47,7 +47,7 @@ void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogon
 	}
 }
 
-void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
+void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor, FViewportRenderSurface& Surface)
 {
 	if (!GEngine) return;
 
@@ -87,11 +87,19 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 		}
 	}
 
-	// 뷰포트 렌더링 일괄 수행
-	RenderView.RenderView(SceneView, *CurrentWorld, EditorCtx);
+	// 씬 ~ 외곽선까지 표면에 렌더링
+	RenderView.RenderView(SceneView, *CurrentWorld, EditorCtx, Surface);
+
+	// 기즈모와 오버레이는 외곽선 이후 같은 표면에 그린다. (Fog, 외곽선의 영향을 받지 않음)
+	DrawGizmo(RenderView, Editor, SceneView);
+
+	// 표면의 최종 컬러를 백버퍼의 뷰포트 영역으로 합성
+	FRenderer& Renderer = RenderView.GetRenderer();
+	Renderer.CompositeViewportSurface(Surface, TopLeftUV, LengthUV);
+	Renderer.EndViewportSurface();
 }
 
-void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
+void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor, const FSceneView& SceneView)
 {
 	AActor* Actor = Editor.GetSelectedActor();
 	if (WorldType != EWorldType::Editor || !Actor || !Actor->IsEditorActor())
@@ -99,27 +107,7 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 
 	Editor.RefreshSelectedTransform();
 
-	FSceneView SceneView{
-		.Camera = ViewportCamera,
-		.ViewProj = ViewportCamera.GetViewProjectionMatrix(),
-		.TopLeftUV = TopLeftUV,
-		.LengthUV = LengthUV,
-		.ViewMode = ViewMode,
-		.ShowFlags = ShowFlags,
-		.LightConstants{}
-	};
-
-	// 기존 카메라 상수 버퍼 갱신을 유지하여 현재 뷰포트의 카메라로 그린다.
-	FRenderer& Renderer = RenderView.GetRenderer();
-	const FViewConstants ViewConstants{
-		.View = SceneView.Camera.GetViewMatrix(),
-		.Projection = SceneView.Camera.GetProjectionMatrix(),
-		.ViewportSize = FVector2{
-			SceneView.LengthUV.X * Renderer.GetWidth(),
-			SceneView.LengthUV.Y * Renderer.GetHeight()
-		}
-	};
-	Renderer.UpdateViewConstants(ViewConstants);
+	// View 상수(b1)는 RenderView에서 이 뷰포트의 카메라로 올린 값이 그대로 남아 있다.
 
 	// 일반 ActorComponent를 선택해도 소유 Actor의 UUID 오버레이는 유지한다.
 	RenderView.RenderOverlayPass(
@@ -131,7 +119,5 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor)
 
 	RenderView.SetRenderMode(ViewMode);
 	RenderView.RenderGizmo(
-		Editor.SelectedTransform, ViewportCamera,
-		TopLeftUV, LengthUV, Editor.GetGizmo());
-
+		Editor.SelectedTransform, ViewportCamera, Editor.GetGizmo());
 }

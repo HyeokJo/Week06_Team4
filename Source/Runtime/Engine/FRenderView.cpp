@@ -230,10 +230,10 @@ void FRenderView::PrepareRender()
     Renderer.UpdateFrameConstants(FrameConstants);
 }
 
-void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx)
+void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const FEditorRenderContext& EditorCtx, FViewportRenderSurface& Surface)
 {
     // 뷰포트 시작
-    BeginView(View);
+    BeginView(View, Surface);
     GatherPointLightConstants(*World.GetScene());
 
     //PP Constants Buffer Update
@@ -268,6 +268,13 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
     }*/
 
     Renderer.ClearLastRenderState();
+    
+    // 후처리 패스
+    // FXAA는 씬(라인 포함)에만 적용하고, 외곽선과 기즈모는 그 위에 그린다.
+    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_FXAA)) != 0)
+    {
+        Renderer.RenderFXAA();
+    }
 
     //Base Pass 직후 안개 그리기
     // 아래쪽 Scene Depth ViewMode에서는 덮어져야 한다.
@@ -319,21 +326,17 @@ void FRenderView::RenderView(const FSceneView& View, const UWorld& World, const 
 
     Renderer.ClearLastRenderState();
 
-    // 후처리 패스
-    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_FXAA)) != 0)
-    {
-        Renderer.RenderFXAA(View.TopLeftUV, View.LengthUV);
-    }
+
+    // 선택 외곽선. 기즈모는 외곽선 위에 그려지도록 이후에 그린다.
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
 
     Renderer.ClearLastRenderState();
 }
 
-void FRenderView::BeginView(const FSceneView& View)
+void FRenderView::BeginView(const FSceneView& View, FViewportRenderSurface& Surface)
 {
-    // 에디터 뷰포트 렌더타겟 바인딩
-    Renderer.BindEditorViewportRenderTargets();
-    Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
+    // 뷰포트 표면 바인딩 및 클리어. 뷰포트는 표면 전체다.
+    Renderer.BeginViewportSurface(Surface);
     Renderer.SetRenderMode(View.ViewMode);
     Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
@@ -347,14 +350,16 @@ void FRenderView::BeginView(const FSceneView& View)
     CameraProj.ToD3DMatrix().Inverse(InvP);
 
     // ViewConstants 갱신
+    // ViewportSize는 렌더 타깃(표면) 크기다. SV_Position이 표면 기준 픽셀이므로 셰이더의 UV 계산과 맞는다.
+    // 리사이즈 대기 중에는 화면 영역 크기와 다를 수 있다.
     FViewConstants ViewConstants
     {
         .View = View.Camera.GetViewMatrix(),
         .Projection = View.Camera.GetProjectionMatrix(),
         .ViewportSize = FVector2
         {
-            View.LengthUV.X * Renderer.GetWidth(),
-            View.LengthUV.Y * Renderer.GetHeight(),
+            static_cast<float>(Surface.GetWidth()),
+            static_cast<float>(Surface.GetHeight()),
         },
         .InvViewProjection = InvP * InvV,
         .CameraPos = View.Camera.GetPosition()
@@ -402,8 +407,8 @@ void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* Sel
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
 {
-    // 뷰포트 영역 재설정
-    Renderer.SetViewportUV(SceneView.TopLeftUV, SceneView.LengthUV);
+    // 후처리가 바꾼 바인딩을 표면의 최신 컬러 + 깊이로 되돌린다
+    Renderer.BindViewportSurfaceTargets();
 
     //// 기즈모 렌더링
     //Renderer.ClearDepth();
@@ -424,9 +429,8 @@ void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& Sce
 }
 
 void FRenderView::RenderGizmo(const FTransform &Transform,
-                              const FCamera &Camera, FVector2 TopLeftUV,
-                              FVector2 LengthUV, const FGizmo &Gizmo) {
-  Renderer.SetViewportUV(TopLeftUV, LengthUV);
+                              const FCamera &Camera, const FGizmo &Gizmo) {
+  Renderer.BindViewportSurfaceTargets();
   Renderer.ClearDepth();
   Gizmo.Draw(Renderer, Transform, Camera);
 }
@@ -470,33 +474,38 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
 
 void FRenderView::RenderOutline(const FCamera &Camera,
                                 const AActor *SelectedActor) {
-  DrawStencilMask(Camera, SelectedActor);
-  Renderer.RenderOutline();
+  // 스텐실을 그린 경우에만 외곽선 패스를 돈다.
+  // 그리지 않았다면 씬 컬러가 그대로 합성되므로 복사 패스가 필요 없다.
+  if (DrawStencilMask(Camera, SelectedActor))
+  {
+    Renderer.RenderOutline();
+  }
 }
 
-void FRenderView::DrawStencilMask(const FCamera& Camera,
+bool FRenderView::DrawStencilMask(const FCamera& Camera,
                                   const AActor* SelectedActor) {
-    if (!SelectedActor) return;
+    if (!SelectedActor) return false;
 
     USceneComponent* RootComp = SelectedActor->GetRootComponent();
-    if (!RootComp) return;
+    if (!RootComp) return false;
 
     UPrimitiveComponent* PrimComp = RootComp->Cast<UPrimitiveComponent>();
-    if (!PrimComp) return;
+    if (!PrimComp) return false;
 
     const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
     FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
+    if (!DrawCommand.Mesh) return false;
 
     DrawCommand.Constants.DisableShading = true;
     DrawCommand.Constants.SetWorld(ModelMatrix);
 
     auto OutlineMaterial = FRenderResourceLibrary::Get().GetMaterial("#Outline");
-    if (OutlineMaterial)
-    {
-        OutlineMaterial->GetPipeline()->SetStencilRef(1);
-        DrawCommand.Materials = std::span<const FMaterial>(OutlineMaterial.get(), 1);
-        Renderer.Draw(DrawCommand, 2, false);
-    }
+    if (!OutlineMaterial) return false;
+
+    OutlineMaterial->GetPipeline()->SetStencilRef(1);
+    DrawCommand.Materials = std::span<const FMaterial>(OutlineMaterial.get(), 1);
+    Renderer.Draw(DrawCommand, 2, false);
+    return true;
 }
 
 void FRenderView::SetRenderMode(EViewModeIndex InMode)

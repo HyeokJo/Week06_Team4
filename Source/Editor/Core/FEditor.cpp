@@ -39,6 +39,12 @@ void FEditor::Initialize() {
 void FEditor::Shutdown() {
     if (!IsPlaying()) SaveState();
     State.FlushToFile();
+
+    // 렌더러(Device)가 정리되기 전에 뷰포트 표면을 먼저 해제한다.
+    for (FViewportRenderSurface& Surface : ViewportSurfaces)
+    {
+        Surface.Release();
+    }
 }
 
 FRenderResourceLibrary *FEditor::GetRendererLibrary() {
@@ -391,31 +397,87 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
         break;
 
     }
+
+    // View 메뉴로 배치를 바꾼 경우에만 쓰지 않는 표면을 해제한다.
+    // 최대화/복원(ApplyPendingViewportMaximize)은 ResizeView만 거치므로 표면이 유지된다.
+    ReleaseUnusedViewportSurfaces();
 }
 
 void FEditor::RenderViewports(FRenderView& RenderView)
 {
+    FRenderer& Renderer = RenderView.GetRenderer();
+
+    // 스플리터나 패널을 드래그하는 동안에는 재생성하지 않고 기존 표면을 늘려서 표시한다.
+    // 창 테두리 드래그는 Win32 모달 루프라 프레임이 돌지 않으므로, 놓은 뒤 첫 프레임에 한 번 재생성된다.
+    const bool bDeferResize = FInputManager::Get().IsMousePressed(EMouseButton::Left);
+
     //Active인 ViewportClient만 렌더링
     for (SWindow& Lf : Leaf)
     {
-        if (!Lf.bisActive) 
+        if (!Lf.bisActive)
             continue;
-        // 현재 월드를 받아서 렌더링
-        EditorViewports[Lf.ViewportIndex].Draw(RenderView, *this);
+
+        const int32 ViewportIndex = Lf.ViewportIndex;
+        if (ViewportIndex < 0 || ViewportIndex >= MaxViewportCount ||
+            ViewportIndex >= static_cast<int32>(EditorViewports.size()))
+            continue;
+
+        FEditorViewportClient& Viewport = EditorViewports[ViewportIndex];
+        FViewportRenderSurface& Surface = ViewportSurfaces[ViewportIndex];
+
+        if (!UpdateViewportSurface(Renderer, Viewport, Surface, bDeferResize))
+            continue;
+
+        // 현재 월드를 받아서 표면에 렌더링한 뒤 백버퍼 영역에 합성
+        Viewport.Draw(RenderView, *this, Surface);
     }
 }
 
-void FEditor::RenderGizmo(FRenderView& RenderView)
+bool FEditor::UpdateViewportSurface(FRenderer& Renderer, const FEditorViewportClient& Viewport,
+                                    FViewportRenderSurface& Surface, bool bDeferResize)
 {
-    if (ObjectSelected())
-    {
-        for (const SWindow& Lf : Leaf)
-        {
-            if (!Lf.bisActive)
-                continue;
+    // 합성 영역과 같은 정수 픽셀 크기를 쓴다.
+    const D3D11_VIEWPORT Rect = Renderer.GetViewportPixelRect(Viewport.TopLeftUV, Viewport.LengthUV);
+    const uint32 Width = static_cast<uint32>(Rect.Width);
+    const uint32 Height = static_cast<uint32>(Rect.Height);
 
-            FEditorViewportClient& Viewport = EditorViewports[Lf.ViewportIndex];
-            Viewport.DrawGizmo(RenderView, *this);
+    // 영역이 없으면(최소화, 접힌 창) 이번 프레임은 그리지 않는다.
+    if (Width == 0u || Height == 0u)
+        return false;
+
+    ID3D11Device* Device = Renderer.GetDevice();
+    if (!Device)
+        return false;
+
+    // 처음 보이는 표면은 기다리지 않고 바로 만든다.
+    if (!Surface.IsValid())
+        return Surface.Create(*Device, Width, Height);
+
+    if (Surface.GetWidth() == Width && Surface.GetHeight() == Height)
+        return true;
+
+    if (bDeferResize)
+        return true;
+
+    return Surface.Create(*Device, Width, Height);
+}
+
+void FEditor::ReleaseUnusedViewportSurfaces()
+{
+    bool bUsed[MaxViewportCount] = {};
+    for (const SWindow& Lf : Leaf)
+    {
+        if (Lf.bisActive && Lf.ViewportIndex >= 0 && Lf.ViewportIndex < MaxViewportCount)
+        {
+            bUsed[Lf.ViewportIndex] = true;
+        }
+    }
+
+    for (int32 Index = 0; Index < MaxViewportCount; ++Index)
+    {
+        if (!bUsed[Index])
+        {
+            ViewportSurfaces[Index].Release();
         }
     }
 }

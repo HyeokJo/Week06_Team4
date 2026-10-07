@@ -471,6 +471,39 @@ bool FRenderResourceLibrary::CreatePPFog_AlphaBlendingPipeline(FRenderer& Render
 	return AllPipelineMap[FName("#PostProcessFog")] != nullptr;
 }
 
+bool FRenderResourceLibrary::CreateViewportCompositePipeline(FRenderer& Renderer)
+{
+	const FWString Path = EngineUtil::GetContentDirectory();
+	const FWString VsPath = Path + L"/Shader/FullScreenTriangleVS.cso";
+	const FWString PsPath = Path + L"/Shader/ViewportCompositePS.cso";
+
+	if (!std::filesystem::exists(VsPath) || !std::filesystem::exists(PsPath))
+	{
+		return false;
+	}
+
+	// 표면 크기와 화면 영역이 다를 때(리사이즈 대기 중) 늘려 그리므로 Bilinear로 샘플링한다.
+	// 크기가 같으면 픽셀 중심끼리 맞아 원본과 같은 값이 나온다.
+	FRenderPipelineDesc Desc = {
+		.VertexShaderFilePath = std::filesystem::path(VsPath).string(),
+		.PixelShaderFilePath = std::filesystem::path(PsPath).string(),
+		.Blend = { EBlendMode::Opaque },
+		.Rasterizer = FRasterizerDesc{},
+		.DepthStencil = FDepthStencilDesc{false, false, EDepthWriteMode::Disable},
+		.bIsInstancing = false,
+		.bCreateInputLayout = false,
+		.Sampler = FTextureSamplerDesc{ETextureSamplerFilterMode::Bilinear, ETextureSamplerWrapMode::Clamp}
+	};
+
+	TSharedPtr<FRenderPipeline> CompositePipeline = CreateRenderPipeline(Renderer, Desc);
+	if (CompositePipeline)
+	{
+		AllPipelineMap[FName("#ViewportComposite")] = std::move(CompositePipeline);
+	}
+
+	return AllPipelineMap[FName("#ViewportComposite")] != nullptr;
+}
+
 bool FRenderResourceLibrary::CreateFXAAPipelines(FRenderer& Renderer)
 {
 	const std::filesystem::path Path{EngineUtil::GetContentDirectory()};
@@ -480,6 +513,7 @@ bool FRenderResourceLibrary::CreateFXAAPipelines(FRenderer& Renderer)
 		.Blend = {EBlendMode::Opaque},
 		.Rasterizer = {ERasterizerFillMode::Solid, ERasterizerCullMode::None},
 		.DepthStencil = {false, false, EDepthWriteMode::Disable},
+		.bCreateInputLayout = false,
 		.Sampler = {ETextureSamplerFilterMode::Bilinear, ETextureSamplerWrapMode::Clamp}
 	};
 	auto InputPipeline = CreateRenderPipeline(Renderer, Desc);
@@ -794,6 +828,7 @@ bool FRenderResourceLibrary::InitializePipelines(FRenderer& Renderer)
 		CreateSceneDepthViewPipeline(Renderer) &&
 		CreateNDCtoWorldViewPipeline(Renderer)&&
 		CreatePPFog_AlphaBlendingPipeline(Renderer) &&
+		CreateViewportCompositePipeline(Renderer) &&
 		CreateFXAAPipelines(Renderer);
 }
 

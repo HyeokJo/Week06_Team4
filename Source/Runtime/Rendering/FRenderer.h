@@ -11,6 +11,7 @@
 #include "Runtime/Material/FTextureSamplerDesc.h"
 #include "Runtime/Math/FVector2.h"
 #include "Runtime/Rendering/FLineBatcher.h"
+#include "Runtime/Rendering/FViewportRenderSurface.h"
 #include "ShaderConstants.h"
 #include "Vertices.h"
 
@@ -18,6 +19,7 @@
 #include <d3d11.h>
 #include <d3d11_1.h>
 #include <wrl/client.h>
+#include <initializer_list>
 #include <span>
 
 class FTexture;
@@ -66,8 +68,7 @@ public:
   bool Initialize(HWND Window);
   void Shutdown();
   void BeginFrame();
-  void BindEditorViewportRenderTargets();
-  void SetViewportUV(FVector2 TopLeftUV, FVector2 LengthUV);
+  // 현재 렌더 대상(뷰포트 표면이 있으면 그 표면, 없으면 창 크기 깊이 버퍼)의 깊이/스텐실을 지운다
   void ClearDepth();
   void SwapBuffer();
   void FlushDrawStats();
@@ -128,7 +129,6 @@ public:
 
   void DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode = true);
 
-  void RenderOutline();
   ID3D11RenderTargetView* GetBackBuffer() { return BackBufferRTV.Get(); }
   ID3D11DepthStencilView* GetDepthStencilView() { return DepthStencilView.Get(); }
 
@@ -137,15 +137,40 @@ public:
 
   void ClearLastRenderState();
 
+  // 뷰포트 표면
+  // 백버퍼 기준 UV 영역을 정수 픽셀 영역으로 바꾼다. 표면 크기와 합성 영역이 같은 값을 쓴다.
+  [[nodiscard]] D3D11_VIEWPORT GetViewportPixelRect(FVector2 TopLeftUV, FVector2 LengthUV) const;
+  // 표면을 현재 렌더 대상으로 지정하고 컬러/깊이를 지운다
+  void BeginViewportSurface(FViewportRenderSurface& Surface);
+  void EndViewportSurface() { CurrentSurface = nullptr; }
+  // 현재 표면의 씬 컬러 + 깊이를 다시 바인딩한다. 후처리가 바인딩을 바꾼 뒤에 쓴다.
+  void BindViewportSurfaceTargets();
+  [[nodiscard]] const FViewportRenderSurface* GetCurrentSurface() const { return CurrentSurface; }
+
+  // 후처리 (현재 표면 대상)
   //Scene Depth View 그리기
   void RenderSceneDepthView();
   //NDC -> World View Mode 그리기
   void RenderNDCtoWorldView();
   //Fog Rendering
   void RenderPostProcessFog();
-  void RenderFXAA(FVector2 TopLeftUV, FVector2 LengthUV);
+  // 씬 컬러에 FXAA를 적용한다. 표면의 두 컬러를 번갈아 써서 추가 RT 없이 처리한다.
+  void RenderFXAA();
+  // 씬 컬러와 스텐실을 읽어 선택 외곽선을 입힌다. 결과는 표면의 다른 컬러에 쓰고 교체한다.
+  void RenderOutline();
+
+  // 표면의 최종 컬러를 백버퍼의 뷰포트 영역으로 옮긴다. sRGB 변환은 여기서 한 번만 일어난다.
+  void CompositeViewportSurface(const FViewportRenderSurface& Surface, FVector2 TopLeftUV, FVector2 LengthUV);
 
 private:
+  // 풀스크린 삼각형 패스의 공통 흐름.
+  // 출력 RT 바인딩(DSV 없음) → 입력 SRV 바인딩 → Draw(3) → 입력 SRV 해제 → 렌더 상태 캐시 무효화
+  void DrawFullScreenPass(const FName& PipelineId, ID3D11RenderTargetView* Target,
+                          const D3D11_VIEWPORT& TargetViewport,
+                          std::initializer_list<ID3D11ShaderResourceView*> Inputs);
+  // 깊이를 읽어 현재 표면의 씬 컬러에 그리는 후처리
+  void RenderDepthPostProcess(const FName& PipelineId);
+
   bool InitializeDeviceAndSwapChain(HWND Window);
   bool InitializeBackBufferAndDepthStencil();
   bool InitializeConstantBuffers();
@@ -176,8 +201,12 @@ private:
   Microsoft::WRL::ComPtr<ID3D11DeviceContext1> Context1;
 
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackBufferRTV;
+  // 창 크기 깊이 버퍼. 백버퍼에 직접 그리는 경로(ObjViewer)가 쓴다.
   Microsoft::WRL::ComPtr<ID3D11Texture2D> DepthStencilBuffer;
   Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthStencilView;
+
+  // 지금 그리고 있는 뷰포트 표면. 소유자는 FEditor다.
+  FViewportRenderSurface* CurrentSurface = nullptr;
 
   // 모든 ConstantBuffer의 최대 크기
   static constexpr UINT ConstantBufferSize = 256u;
@@ -196,21 +225,10 @@ private:
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
 
-  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> EditorRenderTarget;
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> FXAARenderTarget;
-  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> FXAARTV;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FXAASRV;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
-
   TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;
   TMap<FDepthStencilDesc, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> DepthStencilStateMap;
   TMap<FBlendDesc, Microsoft::WRL::ComPtr<ID3D11BlendState>> BlendStateMap;
   TMap<FTextureSamplerDesc, Microsoft::WRL::ComPtr<ID3D11SamplerState>> SamplerStateMap;
-
-  bool InitializeEditorViewportRenderTarget();
 
   // 텍스트 인스턴싱 버퍼
 

@@ -1,10 +1,11 @@
-cbuffer FXAAConstants : register(b2)
-{
-    float2 InvTextureSize;
-    float2 ViewMinUV;
-    float2 ViewMaxUV;
-    float2 FXAAPadding;
-};
+#include "Constants.hlsli"
+
+// FXAA는 뷰포트 표면 전체에 그리므로 텍스처 크기 = 표면 크기 = View 상수(b1)의 ViewportSize다.
+// 텍셀 크기와 샘플 범위(가장자리 텍셀 중심)를 여기서 계산하므로 별도 상수 버퍼가 필요 없다.
+#define InvTextureSize (1.0 / ViewportSize)
+#define ViewMinUV (0.5 * InvTextureSize)
+#define ViewMaxUV (1.0 - 0.5 * InvTextureSize)
+
 Texture2D<float4> SceneTexture : register(t0);
 SamplerState SceneSampler : register(s0);
 
