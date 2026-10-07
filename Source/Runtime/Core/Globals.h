@@ -49,4 +49,7 @@ namespace Globals
 	inline bool bRequestOcclusionOracle = false; // 버튼: 다음 뷰에서 오라클 1회 (한 프레임 멈춤)
 	inline bool bRequestOcclusionDump = false;   // 버튼: 다음 프레임 깊이 버퍼 BMP 저장
 	inline uint32 OccludedCount = 0;             // 표시용
+
+	// 포인트 라이트 최대 갯수
+	inline uint32 MaxPointLights = 16;
 };

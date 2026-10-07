@@ -21,7 +21,6 @@
 #include <d3dcompiler.h>
 #include <wrl/client.h>
 
-
 bool FRenderer::Initialize(HWND Window)
 {
 	if (!InitializeDeviceAndSwapChain(Window) ||
@@ -33,6 +32,8 @@ bool FRenderer::Initialize(HWND Window)
 	}
 
 	LineBatcher.Initialize(Device.Get()); // batch line
+
+	PointLightBuffer = CreateStructuredBuffer<FPointLightConstants>(Globals::MaxPointLights);
 
 	// 실패해도 렌더링은 되므로 GPU Time 스탯만 0으로 남는다.
 	InitializeGPUTimerQueries();
@@ -1284,9 +1285,11 @@ void FRenderer::Draw(const FDrawCommand& Command, uint32 Slot,
 
 }
 
-void FRenderer::DrawPrimitiveBatch(std::span<const FDrawCommand> Commands)
+void FRenderer::DrawPrimitiveBatch(std::span<const FDrawCommand> Commands, TArray<FPointLightConstants>& PointLightConstants)
 {
 	size_t Begin = 0;
+	PointLightBuffer->UpdateStructuredBuffer(PointLightConstants.data(), static_cast<uint32>(PointLightConstants.size()));
+	Context1->PSSetShaderResources(1, 1, PointLightBuffer->SRV.GetAddressOf());
 
 	while (Begin < Commands.size())
 	{
@@ -1546,7 +1549,7 @@ void FRenderer::DrawInstances(const FCamera& Camera)
 	auto& ResLib = FRenderResourceLibrary::Get();
 
 	FObjectConstants SC{};
-	SC.World = FMatrix::Identity;
+	SC.SetWorld(FMatrix::Identity);
 
 	// 배치 키(MaterialID, MeshID) 순회
 	for (const auto& [BatchKey, InstanceData] : ResLib.AllInstancingArrayMap)

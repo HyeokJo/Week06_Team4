@@ -4,6 +4,7 @@
 #include "Runtime/Math/FVector.h"
 #include "Runtime/Math/FVector2.h"
 #include "Runtime/Math/FVector4.h"
+#include <cstddef>
 
 // Register = b0
 struct FFrameConstants {
@@ -30,10 +31,27 @@ struct FObjectConstants {
   FVector2 UVScale{1.0f, 1.0f};
   FVector2 UVOffset{0.0f, 0.0f};
   FMatrix World = FMatrix::GetIdentity();
+  FMatrix InverseWorld = FMatrix::GetIdentity();
   float DisableShading = 0.0f;
   FVector Padding;
+
+  void SetWorld(const FMatrix& InWorld)
+  {
+    World = InWorld;
+    // Tiny nonzero scales are valid; FMatrix::Inverse's determinant threshold rejects them.
+    const DirectX::XMMATRIX Matrix = DirectX::XMLoadFloat4x4(
+        reinterpret_cast<const DirectX::XMFLOAT4X4*>(&World.M[0][0]));
+    DirectX::XMVECTOR Determinant;
+    const DirectX::XMMATRIX Inverse = DirectX::XMMatrixInverse(&Determinant, Matrix);
+    assert(DirectX::XMVectorGetX(Determinant) != 0.0f);
+    DirectX::XMStoreFloat4x4(
+        reinterpret_cast<DirectX::XMFLOAT4X4*>(&InverseWorld.M[0][0]), Inverse);
+  }
 };
 static_assert(sizeof(FObjectConstants) % 16 == 0);
+static_assert(sizeof(FObjectConstants) == 176);
+static_assert(offsetof(FObjectConstants, InverseWorld) == 96);
+static_assert(offsetof(FObjectConstants, DisableShading) == 160);
 
 static constexpr uint32 ConstantRangeAlignment = 256u;
 
@@ -58,6 +76,24 @@ static constexpr uint32 ObjectConstantUploadBufferSize = ObjectConstantStride * 
 //};
 //static_assert(sizeof(FShaderConstants) % 16 == 0);
 
+// Register = b4
+struct FLightConstants {
+	uint32 DirectionalLightCount = 0;
+	uint32 PointLightCount = 0;
+	uint32 SpotLightCount = 0;
+	float AmbientIntensity{0.4f};
+	FVector AmbientColor{1.0f, 1.0f, 1.0f};
+	float padding = 0.0f;
+};
+static_assert(sizeof(FLightConstants) % 16 == 0);
+
+struct FPointLightConstants { // structuredbuffer
+	FVector Position{};
+	float Intensity = 1.0f;
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
+	float AttenuationRadius = 1.0f;
+};
+static_assert(sizeof(FPointLightConstants) % 16 == 0);
 
 // Register = b2 / ObjectConstants Override
 struct FGridConstants {
@@ -81,18 +117,6 @@ struct FGridLineConstants {
 
 static_assert(sizeof(FGridLineConstants) % 16 == 0);
 
-// 나중에 수정 필요
-// Register = b4
-struct FLightConstants {
-  // 기본 조명 파라미터
-  FVector LightDirection{-0.5f, -0.5f, -1.0f};
-  float Intensity = 1.0f;
-
-  FVector LightColor{1.0f, 1.0f, 1.0f};
-  float AmbientIntensity = 0.2f;
-};
-
-static_assert(sizeof(FLightConstants) % 16 == 0);
 
 
 // PostProcess에서 쓸 Constant Buffer

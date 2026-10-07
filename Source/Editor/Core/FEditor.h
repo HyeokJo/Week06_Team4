@@ -29,10 +29,6 @@ public:
   FTransform SelectedTransform;
   //FVector SelectedEulerDegDisplay;
 
-  // TODO: 이건 Scene에 들어가야함. 아마 아래와 같은 컴포넌트가 부착된 액터로 들어가야할 것
-  // https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UDirectionalLightComponent
-  FLightConstants GlobalLight;
-
   FEditorState State;
 
   // 피킹 경로 선택 및 측정. 검증이 끝나면 제거한다.

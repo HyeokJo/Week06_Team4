@@ -14,18 +14,20 @@ struct PS_INPUT
     float4 Color : COLOR;
     float2 UV : TEXCOORD0;
     float3 Normal : NORMAL;
+    float3 WorldPos : TEXCOORD1;
 };
 
 PS_INPUT MainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
 
-    Output.Position = mul(float4(Input.Position, 1.0f), mul(World, mul(View, Projection)));
+    float4 WorldPosition = mul(float4(Input.Position, 1.0f), World);
+    Output.WorldPos = WorldPosition.xyz;
+    Output.Position = mul(WorldPosition, mul(View, Projection));
     Output.Color = Input.Color;
     Output.UV = Input.UV * UVScale + UVOffset;
 
-    // 월드 공간 법선 변환
-    Output.Normal = mul(float4(Input.Normal, 0.0f), World).xyz;
+    Output.Normal = mul(Input.Normal, transpose((float3x3)InverseWorld));
 
     return Output;
 }

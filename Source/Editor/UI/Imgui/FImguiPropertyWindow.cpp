@@ -2,6 +2,7 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/PointLightComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
@@ -176,6 +177,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	else if (Comp.IsA<USpotLightComponent>())
 	{
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
+	}
+	else if (Comp.IsA<UPointLightComponent>())
+	{
+		ShowPointLightSettings(static_cast<UPointLightComponent&>(Comp));
 	}
 
 	else if (Comp.IsA<UStaticMeshComponent>())
@@ -415,6 +420,30 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
 	{
 		LightComp.SetRange(LightRange);
+	}
+}
+
+void FImguiPropertyWindow::ShowPointLightSettings(UPointLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Point Light Settings");
+
+	FVector4 LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
+	}
+
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	float LightRadius = LightComp.GetAttenuationRadius();
+	if (ImGui::DragFloat("Attenuation Radius", &LightRadius, 0.1f, 0.1f, 100.0f))
+	{
+		LightComp.SetAttenuationRadius(LightRadius);
 	}
 }
 
