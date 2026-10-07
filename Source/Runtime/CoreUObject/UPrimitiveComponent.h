@@ -50,7 +50,7 @@ public:
     void SetBoundDirtyQueued(bool pDirtyQueued) { bBoundDirtyQueued = pDirtyQueued; }
 
     //월드 AABB 업데이트
-    void UpdateWorldBounds();
+    virtual void UpdateWorldBounds();
 
     const std::vector<FMaterial>& GetCachedMaterials() const { return CachedMaterials; }
     void UpdateMaterialCache();

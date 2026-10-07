@@ -92,13 +92,9 @@ void FSceneBVH::Build(const TArray<UPrimitiveComponent*>& Components)
     {
         if (!C) continue;
 
-        const FAxisAlignedBoundingBox& Local = C->GetLocalBounds();
+        const FAxisAlignedBoundingBox WorldBox = C->GetWorldBounds();
 
-        //빈 박스는 BVH에서 제외한다.
-        if (!Local.IsValid()) { continue; }
-
-        const FMatrix World = C->GetGlobalTransformMatrix();
-        FAxisAlignedBoundingBox WorldBox(Local, World);
+        if (!WorldBox.IsValid()) continue;
 
         //{AABB, 중심점, 컴포넌트}
         Prims.push_back({ WorldBox, (WorldBox.Min + WorldBox.Max) * 0.5f, C });
@@ -238,11 +234,11 @@ void FSceneBVH::RefitObject(UPrimitiveComponent* Moved)
     const int32 ObjectIndex = Moved->GetBVHIndex();
     if (ObjectIndex < 0 || static_cast<uint32>(ObjectIndex) >= Objects.size()) return;
 
-    const FAxisAlignedBoundingBox Local = Moved->GetLocalBounds();
-    if (!Local.IsValid()) { return; }
+    const FAxisAlignedBoundingBox WorldBound = Moved->GetWorldBounds();
+    if (!WorldBound.IsValid()) { return; }
 
     //변경된 Transform으로 AABB 다시 넣기
-    ObjectBounds[ObjectIndex] = FAxisAlignedBoundingBox(Local, Moved->GetGlobalTransformMatrix());
+    ObjectBounds[ObjectIndex] = WorldBound;
 
     RefitFromLeaf(LeafOfObject[ObjectIndex]);
 }
@@ -338,7 +334,7 @@ bool FSceneBVH::QueryFrustum(const FFrustum& Frustum, float MinScreenPixels, TAr
     return !OutVisible.empty();
 }
 
-bool FSceneBVH::QueryRay(const FRay& Ray, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
+bool FSceneBVH::QueryRay(const FRay& Ray, const FCamera& Camera, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
 {
     OutImpact = FVector{};
     float Closest = (std::numeric_limits<float>::max)();
@@ -349,26 +345,24 @@ bool FSceneBVH::QueryRay(const FRay& Ray, UPrimitiveComponent*& OutHit, FVector&
     //1) 트리 순회
     if (!Nodes.empty())
     {
-        TraverseRay(0, Ray, InvDir, Closest, OutHit, OutImpact);
+        TraverseRay(0, Ray, Camera, InvDir, Closest, OutHit, OutImpact);
     }
 
     //2) 아직 트리에 흡수되지 않은 대기열. 빠뜨리면 최근 스폰분이 조용히 누락된다
     for (UPrimitiveComponent* C : PendingObjects)
     {
         if (!C) { continue; }
-
-        const FAxisAlignedBoundingBox Local = C->GetLocalBounds();
-        if (!Local.IsValid()) { continue; }
+        const FAxisAlignedBoundingBox WorldBounds = C->GetWorldBounds();
+        if (!WorldBounds.IsValid()) { continue; }
 
         //대기열은 바운드 캐시가 없으므로 즉석 계산
-        const FAxisAlignedBoundingBox World(Local, C->GetGlobalTransformMatrix());
-        TestObjectRay(C, World, Ray, InvDir, Closest, OutHit, OutImpact);
+        TestObjectRay(C, WorldBounds, Ray, Camera, InvDir, Closest, OutHit, OutImpact);
     }
 
     return OutHit != nullptr;
 }
 
-void FSceneBVH::TraverseRay(uint32 RootIdx, const FRay& Ray, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
+void FSceneBVH::TraverseRay(uint32 RootIdx, const FRay& Ray, const FCamera& Camera, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
 {
     //재귀 대신 고정 크기 스택으로 순회한다. 노드와 진입 거리를 함께 쌓아,
     //꺼낼 때 그사이 줄어든 Closest로 다시 가지친다.
@@ -398,7 +392,7 @@ void FSceneBVH::TraverseRay(uint32 RootIdx, const FRay& Ray, const FVector& InvD
 
         if (N.bLeafNode)
         {
-            TestLeafRay(N, Ray, InvDir, Closest, OutHit, OutImpact);
+            TestLeafRay(N, Ray, Camera, InvDir, Closest, OutHit, OutImpact);
             continue;
         }
 
@@ -473,7 +467,7 @@ void FSceneBVH::TraverseRay(uint32 RootIdx, const FRay& Ray, const FVector& InvD
     }
 }
 
-void FSceneBVH::TestLeafRay(const FSceneBVHNode& N, const FRay& Ray, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
+void FSceneBVH::TestLeafRay(const FSceneBVHNode& N, const FRay& Ray, const FCamera& Camera, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
 {
     //박스에 맞은 오브젝트만 진입 거리(tNear) 순으로 모은 뒤 가까운 것부터 메시를 검사한다.
     //인덱스 순서로 검사하면 뒤쪽 오브젝트의 메시를 먼저 끝까지 도는 낭비가 생긴다.
@@ -495,7 +489,7 @@ void FSceneBVH::TestLeafRay(const FSceneBVHNode& N, const FRay& Ray, const FVect
         //후보가 넘치면(퇴화 리프 등) 정렬 없이 바로 검사한다
         if (NumCands == MaxCandidates)
         {
-            TestObjectMesh(Objects[i], Ray, Closest, OutHit, OutImpact);
+            TestObjectMesh(Objects[i], Ray, &Camera, Closest, OutHit, OutImpact);
             continue;
         }
 
@@ -513,7 +507,7 @@ void FSceneBVH::TestLeafRay(const FSceneBVHNode& N, const FRay& Ray, const FVect
     {
         //정렬돼 있으므로 이 후보가 이미 찾은 교차보다 멀면 나머지도 전부 멀다
         if (Cands[c].TNear >= Closest) { break; }
-        TestObjectMesh(Objects[Cands[c].Index], Ray, Closest, OutHit, OutImpact);
+        TestObjectMesh(Objects[Cands[c].Index], Ray, &Camera, Closest, OutHit, OutImpact);
     }
 }
 
@@ -557,17 +551,17 @@ void FSceneBVH::TraverseFrustum(uint32 NodeIdx, const FFrustum& Frustum, const F
 }
 
 //AABB -> 뮐러 트럼보어
-void FSceneBVH::TestObjectRay(UPrimitiveComponent* C, const FAxisAlignedBoundingBox& WorldBox, const FRay& Ray, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
+void FSceneBVH::TestObjectRay(UPrimitiveComponent* C, const FAxisAlignedBoundingBox& WorldBox, const FRay& Ray, const FCamera& Camera, const FVector& InvDir, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
 {
     float tNear = 0.0f;
     if (!FRayCastingManager::RayIntersectsBoundsInv(Ray.Origin, InvDir, WorldBox.Min, WorldBox.Max, tNear)) { return; }
     if (tNear >= Closest) { return; }           //이미 더 가까운 히트가 있으면 삼각형 검사 생략
 
-    TestObjectMesh(C, Ray, Closest, OutHit, OutImpact);
+    TestObjectMesh(C, Ray, &Camera, Closest, OutHit, OutImpact);
 }
 
 //월드 AABB를 통과한 오브젝트의 메시(삼각형)를 검사한다
-void FSceneBVH::TestObjectMesh(UPrimitiveComponent* C, const FRay& Ray, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
+void FSceneBVH::TestObjectMesh(UPrimitiveComponent* C, const FRay& Ray, const FCamera* Camera, float& Closest, UPrimitiveComponent*& OutHit, FVector& OutImpact) const
 {
     const UStaticMesh* Asset = C->GetMeshAsset();
     const FMesh* Mesh = Asset ? Asset->Get() : nullptr;
@@ -577,12 +571,15 @@ void FSceneBVH::TestObjectMesh(UPrimitiveComponent* C, const FRay& Ray, float& C
     FVector Impact{};
 
     //역행렬이 없으면(스케일 0 등) 로컬 공간으로 옮길 수 없으니 맞지 않은 것으로 본다
-    const FMatrix* InvWorld = C->GetGlobalInverseMatrix();
-    if (!InvWorld) { return; }
+    const FMatrix WorldMatrix = Camera ? C->GetRenderMatrix(*Camera) : C->GetGlobalTransformMatrix();
+    FMatrix InvWorld;
 
-    if (FRayCastingManager::RayIntersectsMeshWithInversedModel(Ray, *Mesh, *InvWorld, Dist, Impact, Closest, true))
+    if (!WorldMatrix.Inverse(InvWorld)) { return; }
+
+    if (FRayCastingManager::RayIntersectsMeshWithInversedModel(Ray, *Mesh, InvWorld, Dist, Impact, Closest, true))
     {
         OutHit = C;
+        Closest = Dist;
         OutImpact = Impact;
     }
 }
