@@ -403,7 +403,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     if (Editor.bUseBVHPicking && PickWorld)
     {
         PickWorld->UpdateDirtyBounds();
-        bHit = PickWorld->GetSceneBVH().QueryRay(PickRay, HitComponent, ImpactPoint);
+        bHit = PickWorld->GetSceneBVH().QueryRay(PickRay, Viewport.ViewportCamera, HitComponent, ImpactPoint);
     }
     else
     {
