@@ -131,6 +131,13 @@ void FRenderView::CollectScenePrimitives(const UWorld& World, const FSceneView& 
         //bCullResultValid가 false라면 통과
         // bCullResultValid가 true라면 컬링 결과 통과시에만 수집
         //if (bCullResultValid && !VisibleFlags[i]) continue;
+
+        const bool bIsGameWorld = (World.GetWorldType() == EWorldType::PIE || World.GetWorldType() == EWorldType::Game);
+
+        if (bIsGameWorld && PrimitiveComponent->IsHiddenInGame())
+        {
+            continue;
+        }
         
         // 쇼 플래그 확인
         if ((static_cast<uint64>(View.ShowFlags) & static_cast<uint64>(PrimitiveComponent->GetShowFlag())) == 0)

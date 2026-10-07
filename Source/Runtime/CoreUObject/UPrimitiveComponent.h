@@ -50,7 +50,7 @@ public:
     void SetBoundDirtyQueued(bool pDirtyQueued) { bBoundDirtyQueued = pDirtyQueued; }
 
     //월드 AABB 업데이트
-    void UpdateWorldBounds();
+    virtual void UpdateWorldBounds();
 
     const std::vector<FMaterial>& GetCachedMaterials() const { return CachedMaterials; }
     void UpdateMaterialCache();
@@ -58,6 +58,9 @@ public:
 
     //오클루전 대상인지
     virtual bool IsOcclusionTarget()const;
+
+    virtual const bool IsHiddenInGame() const { return bHiddenInGame; }
+    virtual void ToggleHiddenInGame() { bHiddenInGame = !bHiddenInGame; }
 
 protected:
     UPrimitiveComponent() = default;
@@ -80,6 +83,8 @@ protected:
     int32 BVHIndex = -1;
 
     void OnTransformChanged() override;
+
+    bool bHiddenInGame = false;
 
 private:
     int32 SceneIndex = -1;
