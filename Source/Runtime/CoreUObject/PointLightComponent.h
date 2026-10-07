@@ -10,11 +10,32 @@ class UPointLightComponent : public USceneComponent {
 	DECLARE_UCLASS(UPointLightComponent, USceneComponent)
 public:
 	using Super::Serialize;
+	float GetIntensity() const { return Intensity; }
+	void SetIntensity(float InIntensity) { Intensity = InIntensity; }
+
+	float GetAttenuationRadius() const { return AttenuationRadius; }
+	void SetAttenuationRadius(float InRadius) { AttenuationRadius = InRadius; }
+
+	const FVector4& GetLightColor() const { return LightColor; }
+	void SetLightColor(const FVector4& InColor) { LightColor = InColor; }
+
 	void Serialize(FArchive& Archive) override {
 		Super::Serialize(Archive);
 		Archive.Field("Intensity", Intensity);
 		Archive.Field("AttenuationRadius", AttenuationRadius);
 		Archive.Field("LightColor", LightColor);
+	}
+
+	void Register(ULevel& InLevel) override {
+		if (Level == &InLevel)
+			return;
+		Super::Register(InLevel);
+		RegisterToScene();
+	}
+	void Unregister() override {
+		if (bSceneRegistered)
+			UnregisterFromScene();
+		Super::Unregister();
 	}
 
 	FPointLightConstants GetShaderConstant() const {
@@ -26,6 +47,8 @@ public:
 		};
 	}
 	bool RegisterToScene() {
+		if (bSceneRegistered)
+			return true;
 		if (!IsRegistered()) {
 			UE_DEBUG_LOG_WARN("Component is Not Registered Yet");
 			return false;
@@ -39,6 +62,8 @@ public:
 		}
 	};
 	bool UnregisterFromScene() {
+		if (!bSceneRegistered)
+			return true;
 		if (!IsRegistered()) {
 			UE_DEBUG_LOG_WARN("Component without Level");
 			return false;

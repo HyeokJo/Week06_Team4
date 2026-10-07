@@ -1217,7 +1217,6 @@ bool FRenderer::InitializeConstantBuffers()
 
 void FRenderer::UpdateLightConstants(const FLightConstants& Constants, const EViewModeIndex InMode)
 {
-	CurrentLightConstants = Constants;
 	Context->UpdateSubresource(LightConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
 	Context->PSSetConstantBuffers(4, 1, LightConstantBuffer.GetAddressOf());
 }
@@ -1289,24 +1288,7 @@ void FRenderer::Draw(const FDrawCommand& Command, uint32 Slot,
 void FRenderer::DrawPrimitiveBatch(std::span<const FDrawCommand> Commands, TArray<FPointLightConstants>& PointLightConstants)
 {
 	size_t Begin = 0;
-	TArray<FPointLightConstants> experimentLightConstants{};
-	experimentLightConstants.push_back(FPointLightConstants{
-		.AttenuationRadius = 5.0f
-		});
-	experimentLightConstants.push_back(FPointLightConstants{
-		.Position = {2.0f, 2.0f, 0.0f},
-		.LightColor = {1.0f, 0.0f, 0.0f},
-		.AttenuationRadius = 5.0f
-		});
-#if 0
-	const auto& ActivePointLights = PointLightConstants;
-#else
-	const auto& ActivePointLights = experimentLightConstants;
-#endif
-	PointLightBuffer->UpdateStructuredBuffer(ActivePointLights.data(), static_cast<uint32>(ActivePointLights.size()));
-	FLightConstants LightConstants = CurrentLightConstants;
-	LightConstants.PointLightCount = static_cast<uint32>(ActivePointLights.size());
-	UpdateLightConstants(LightConstants, CurrentRenderMode);
+	PointLightBuffer->UpdateStructuredBuffer(PointLightConstants.data(), static_cast<uint32>(PointLightConstants.size()));
 	Context1->PSSetShaderResources(1, 1, PointLightBuffer->SRV.GetAddressOf());
 
 	while (Begin < Commands.size())

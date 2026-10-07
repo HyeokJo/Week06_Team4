@@ -49,6 +49,11 @@ void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogon
 
 void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 {
+	if (!GEngine) return;
+
+	UWorld* CurrentWorld = GEngine->GetWorld(WorldType);
+	if (!CurrentWorld) return;
+
 	// 뷰포트 렌더링 명세 구성
 	FSceneView SceneView{
 		.Camera = ViewportCamera,
@@ -57,7 +62,7 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 		.LengthUV = LengthUV,
 		.ViewMode = ViewMode,
 		.ShowFlags = ShowFlags,
-		.LightConstants = InWorld.GetScene()->GetWorldLightConstants()
+		.LightConstants = CurrentWorld->GetScene()->GetWorldLightConstants()
 	};
 
 	// 에디터 렌더링 컨텍스트 구성
@@ -81,12 +86,6 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor)
 			}
 		}
 	}
-
-	if (!GEngine) return;
-
-	UWorld* CurrentWorld = GEngine->GetWorld(WorldType);
-
-	if (!CurrentWorld) return;
 
 	// 뷰포트 렌더링 일괄 수행
 	RenderView.RenderView(SceneView, *CurrentWorld, EditorCtx);

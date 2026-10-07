@@ -182,7 +182,6 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> ViewConstantBuffer;
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantBuffer;*/
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
-  FLightConstants CurrentLightConstants{};
   //TODO : 일단은 상수 버퍼로 하겠지만 멀티 뷰포트가 멀티 RTV로 수정된다면 카메라마다 다를 경우를 대비해 늘려야한다.
   Microsoft::WRL::ComPtr<ID3D11Buffer> SceneDepthConstantBuffer;
 
