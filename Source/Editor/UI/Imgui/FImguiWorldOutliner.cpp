@@ -99,9 +99,17 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	// 하단 컨트롤 영역
 	if (AActor* Actor = Editor.GetSelectedActor())
 	{
-		ImGui::BeginDisabled(!Editor.ActorSelected() || !Editor.CanEditActorProperties(Actor));
-		if (ImGui::Button("Delete") && Editor.DeleteSelectedActor())
-			bCacheDirty = true;
+		ImGui::BeginDisabled(!Editor.ObjectSelected() || !Editor.CanEditActorProperties(Actor));
+
+		const char* Label = Editor.GetSelectedComponent() ? "Delete Component" : "Delete Actor";
+		if (ImGui::Button(Label))
+		{
+			if (UActorComponent* Component = Editor.GetSelectedComponent())
+				Editor.RequestComponentDeletion(Component);
+			else if (Editor.DeleteSelectedActor())
+				bCacheDirty = true;
+		}
+
 		ImGui::EndDisabled();
 	}
 	else
@@ -188,6 +196,17 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 			Editor.SelectActor(Item.Actor);
 		else
 			Editor.SelectComponent(Item.Component);
+	}
+
+	if (Item.Type == EOutlinerItemRowType::Component && ImGui::BeginPopupContextItem())
+	{
+		if (ImGui::MenuItem("Delete Component", nullptr, false,
+			Editor.CanEditActorProperties(Item.Actor)))
+		{
+			// DisplayList 순회 중에는 삭제하지 않는다.
+			Editor.RequestComponentDeletion(Item.Component);
+		}
+		ImGui::EndPopup();
 	}
 
 	// Actor 행은 Root 아래, SceneComponent 행은 해당 컴포넌트 아래를 대상으로 한다.

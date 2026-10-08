@@ -52,7 +52,6 @@ public:
 public:
     void Initialize();
     void Shutdown();
-
     void Process();
     bool StartPIE();
     [[nodiscard]] bool IsPlaying() const
@@ -62,7 +61,9 @@ public:
     // Pause와 Stop은 현재 PIE World를 대상으로 한다.
     void TogglePIEPause();
     void EndPIE();
-
+    void TogglePIEEject();
+    [[nodiscard]] bool CanUseEditorControls(EWorldType WorldType) const;
+    [[nodiscard]] bool IsPIEEjected()const { return bPIEEjected; }
     [[nodiscard]] bool IsPIEPaused() const
     {
         UWorld* World = GEngine ? GEngine->GetWorld(EWorldType::PIE) : nullptr;
@@ -79,6 +80,8 @@ public:
 
     // 아웃라이너 버튼과 Delete 키가 같은 삭제 경로를 사용한다.
     bool DeleteSelectedActor();
+    // UI 목록 순회 중에는 객체를 폐기하지 않고 요청만 보관한다.
+    void RequestComponentDeletion(UActorComponent* Component){ PendingComponentDeletion = Component; }
     void NewScene();
     void SaveWorld(const FString &Path);
     void LoadWorld(const FString &Path);
@@ -164,9 +167,13 @@ private:
     TWeakObjectPtr<AActor> SelectedActor;
     TWeakObjectPtr<UActorComponent> SelectedComponent;
     bool bComponentSelection = false;
+    TWeakObjectPtr<UActorComponent> PendingComponentDeletion;
+    void ProcessComponentDeletion();
     bool bFocusSelectedComponent = false;
     TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 
+    bool bPIEEjected = false;
+    void UpdateSelectionOverlay();
     FEditorState StateBeforePIE;
     TArray<FEditorViewportClient> ViewportsBeforePIE;
     int32 ActiveViewportBeforePIE = 0;

@@ -3,6 +3,7 @@
 #include "Editor/Core/FEditor.h"
 #include "Runtime/Engine/FRenderView.h"
 #include "Runtime/Engine/FEngine.h"
+#include "Runtime/Engine/ULevel.h"
 
 void FEditorViewportClient::UpdateFocusedAndHovered(bool bFocused, bool bHovered)
 {
@@ -68,23 +69,27 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor, FView
 	// 에디터 렌더링 컨텍스트 구성
 	FEditorRenderContext EditorCtx;
 
-	//Editor 모드일때만 렌더링.
-	if (WorldType == EWorldType::Editor)
+	//월드 모드에 따라, 기즈모를 그릴 수 있는가 여부로 편집
+	if (Editor.CanUseEditorControls(WorldType))
 	{
 		Editor.RefreshSelectedTransform();
 		AActor* Actor = Editor.GetSelectedActor();
-		const bool bIsEditorActor = Actor && Actor->IsEditorActor();
-		EditorCtx.SelectedActor = bIsEditorActor ? Actor : nullptr;
+		ULevel* Level = Actor ? Actor->GetOwner() : nullptr;
+		const bool bSelectionInThisWorld = Level && Level->GetWorld() == CurrentWorld;
+
+		EditorCtx.SelectedActor = bSelectionInThisWorld ? Actor : nullptr;
 		EditorCtx.SelectedTransform = Editor.SelectedTransform;
-		EditorCtx.Gizmo = Editor.CanManipulateSelection() ? &Editor.GetGizmo() : nullptr;
-		EditorCtx.TextComp = Editor.ObjectSelected() && bIsEditorActor ? Editor.GetTextcomp() : nullptr;
+		EditorCtx.Gizmo = bSelectionInThisWorld && Editor.GetTransformTarget() ? &Editor.GetGizmo() : nullptr;
+		EditorCtx.TextComp = bSelectionInThisWorld ? Editor.GetTextcomp() : nullptr;
 		EditorCtx.Grid = &Grid;
 		EditorCtx.VisualizerRegistry = &Editor.VisualizerRegistry;
-		if (bIsEditorActor) {
-			if (USceneComponent* RootComp = Editor.GetTransformTarget()) {
-				EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
-			}
+
+		if (bSelectionInThisWorld)
+		{
+			if (USceneComponent* Target = Editor.GetTransformTarget())
+				EditorCtx.SelectedPrimitive = Target->Cast<UPrimitiveComponent>();
 		}
+
 	}
 
 	// 씬 ~ 외곽선까지 표면에 렌더링
@@ -102,7 +107,10 @@ void FEditorViewportClient::Draw(FRenderView& RenderView, FEditor& Editor, FView
 void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor, const FSceneView& SceneView)
 {
 	AActor* Actor = Editor.GetSelectedActor();
-	if (WorldType != EWorldType::Editor || !Actor || !Actor->IsEditorActor())
+	ULevel* Level = Actor ? Actor->GetOwner() : nullptr;
+	UWorld* CurrentWorld = GEngine ? GEngine->GetWorld(WorldType) : nullptr;
+	if (!Editor.CanUseEditorControls(WorldType) || !CurrentWorld ||
+		!Level || Level->GetWorld() != CurrentWorld)
 		return;
 
 	Editor.RefreshSelectedTransform();
@@ -114,8 +122,8 @@ void FEditorViewportClient::DrawGizmo(FRenderView& RenderView, FEditor& Editor, 
 		ViewportCamera, SceneView, Editor.SelectedTransform,
 		Editor.GetGizmo(), Editor.GetTextcomp());
 
-	// 기즈모 표시와 입력에 같은 허용 조건을 사용한다.
-	if (!Editor.CanManipulateSelection()) return;
+	// 활성 뷰의 입력 허용 여부와 관계없이 선택 대상은 표시한다.
+	if (!Editor.GetTransformTarget()) return;
 
 	RenderView.SetRenderMode(ViewMode);
 	RenderView.RenderGizmo(

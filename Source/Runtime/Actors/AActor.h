@@ -29,7 +29,7 @@ protected:
 	virtual void Deserialize(const FJsonArchive& Archive) override;
 
 	// 파생 Actor가 별도로 보관하는 컴포넌트 포인터를 정리한다.
-	virtual void OnComponentRemoved(UActorComponent* Component) {}
+	virtual void OnComponentRemoved(UActorComponent* Component);
 public:
 	void Initialize() override;
 	void Release() override;
@@ -83,6 +83,7 @@ private:
 	bool bHasBegunPlay = false;
 	//소유권만 삭제, 객체 삭제는 하지않음.
 	void RemoveOwnedComponentReference(UActorComponent* Component);
+	bool DestroyOwnedComponent(UActorComponent* Component);
 	void RefreshTickRegistration();
 	bool bInitialized = false;
 };
